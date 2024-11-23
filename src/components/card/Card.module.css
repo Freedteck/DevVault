@@ -1,0 +1,38 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.primary {
+  text-align: center;
+  composes: card;
+  background-color: var(--secondary-color-1);
+}
+
+.secondary {
+  composes: card;
+  background-color: white;
+}
+
+.icon {
+  color: var(--primary-color-1);
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.actions div {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  color: #777;
+}

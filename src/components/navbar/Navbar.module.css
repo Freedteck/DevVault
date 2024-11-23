@@ -1,0 +1,32 @@
+.headerNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.logo {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.navLinks {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.navLinks ul {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+
+.active {
+  border-bottom: 2px solid var(--primary-color-1);
+  padding: 3px 0;
+  color: var(--primary-color-1);
+}
