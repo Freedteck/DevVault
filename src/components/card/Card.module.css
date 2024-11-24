@@ -8,8 +8,8 @@
 }
 
 .primary {
-  text-align: center;
   composes: card;
+  text-align: center;
   background-color: var(--secondary-color-1);
 }
 
