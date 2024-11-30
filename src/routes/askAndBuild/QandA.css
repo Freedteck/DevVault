@@ -1,24 +1,20 @@
-.QandA-box{
+.QandA-box {
   max-width: 1280px;
   margin: 0 auto;
   width: 100%;
   padding: 2rem;
 }
 
-.app h1{
-    font-size: 2rem;
-    text-align: center;
+.app h1 {
+  font-size: 2rem;
+  text-align: center;
 }
 
-
 .qna-list {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* flex-direction: column; */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 2rem;
   margin: 20px auto;
-  /* max-width: 600px; */
   width: 100%;
 }
 
@@ -45,4 +41,18 @@
   justify-content: space-between;
   font-size: 0.9rem;
   color: #555;
+}
+
+/* Top row */
+.top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  /* TO be removed later */
+  margin-bottom: 30px;
+}
+
+.top-row h2 {
+  font-size: 1.5rem;
 }

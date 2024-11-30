@@ -4,7 +4,9 @@ import "./index.css";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Root from "./routes/root/Root";
 import Home from "./routes/home/Home";
-import QandA from "./routes/QandA/QandA";
+import Discussions from "./routes/discussions/Discussions";
+import AskAndBuild from "./routes/askAndBuild/AskAndBuild";
+import Updates from "./routes/updates/Updates";
 
 const router = createBrowserRouter([
   {
@@ -16,8 +18,18 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: "QandA",
-        element: <QandA />,
+        path: "discussions",
+        element: <Discussions />,
+        children: [
+          {
+            index: true,
+            element: <AskAndBuild />,
+          },
+          {
+            path: "updates",
+            element: <Updates />,
+          },
+        ],
       },
     ],
   },

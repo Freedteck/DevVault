@@ -1,8 +1,9 @@
-import styles from "./QandA.module.css";
-import QnAList from './QnAList'
-import './QandA.css';
+// import styles from "./AskAndBuild.module.css";
+import QnAList from "./QnAList";
+import "./QandA.css";
+import Button from "../../components/button/Button";
 
-const QandA = () => {
+const AskAndBuild = () => {
   const qnaData = [
     {
       id: 1,
@@ -23,13 +24,16 @@ const QandA = () => {
   ];
 
   return (
-    <section className='QandA-box'>
+    <section className="QandA-box">
       <div className="app">
-        <h1>Q & A Section</h1>
+        <div className="top-row">
+          <h2> Debugger&lsquo;s Den</h2>
+          <Button text="Ask a Question" />
+        </div>
         <QnAList data={qnaData} />
       </div>
     </section>
   );
 };
 
-export default QandA;
+export default AskAndBuild;

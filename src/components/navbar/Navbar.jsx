@@ -23,12 +23,12 @@ const Navbar = () => {
             </li>
             <li>
               <NavLink
-                to="QandA"
+                to="discussions"
                 className={({ isActive }) =>
                   isActive ? `${styles.active}` : ""
                 }
               >
-                Q & A
+                Discussions
               </NavLink>
             </li>
             <li>
@@ -39,16 +39,6 @@ const Navbar = () => {
                 }
               >
                 profile
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="updates"
-                className={({ isActive }) =>
-                  isActive ? `${styles.active}` : ""
-                }
-              >
-                Updates
               </NavLink>
             </li>
             <li>
