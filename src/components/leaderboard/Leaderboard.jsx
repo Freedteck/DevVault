@@ -12,25 +12,23 @@ const Leaderboard = () => {
 
     const topContributors = contributors.slice(0, 3);
   return (
-    <div className="leaderboard-container">
-      <header className="leaderboard-header">
-        <h1>Leaderboard</h1>
-        <p>Recognizing our top contributors based on tokens received.</p>
-      </header>
-
-      <section className="top-contributors">
-        {topContributors.map((contributor, index) => (
-          <div key={contributor.rank} className="top-card">
-            <div className="rank-badge">{index + 1}</div>
-            <h2>{contributor.name}</h2>
-            <p>{contributor.tokens} Tokens</p>
-          </div>
-        ))}
+    <div className="dashboard">
+      <section className="top-panel">
+        <h2>Top Contributors</h2>
+        <div className="top-contributors">
+          {topContributors.map((contributor) => (
+            <div key={contributor.rank} className="top-card">
+              <div className="rank">{contributor.rank}</div>
+              <h3>{contributor.name}</h3>
+              <p>{contributor.tokens} Tokens</p>
+            </div>
+          ))}
+        </div>
       </section>
 
-      <section className="leaderboard-table">
+      <section className="all-panel">
         <h2>All Contributors</h2>
-        <table>
+        <table className="contributors-table">
           <thead>
             <tr>
               <th>Rank</th>

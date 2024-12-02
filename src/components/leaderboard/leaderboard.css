@@ -1,81 +1,114 @@
-.leaderboard-container {
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 2fr; 
+  gap: 1.5rem;
   padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: 1280px;
+  margin: 2rem auto;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.leaderboard-header {
-  text-align: center;
-  margin-bottom: 20px;
+.top-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
+  gap: 20px;
 }
 
-.leaderboard-header h1 {
-  font-size: 2.5rem;
+.top-panel h2 {
+  font-size: 1.5rem;
   margin-bottom: 10px;
 }
 
-.leaderboard-header p {
-  font-size: 1rem;
-  color: #555;
-}
-
 .top-contributors {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  margin-bottom: 40px;
-  
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
+  gap: 20px;
 }
 
 .top-card {
   background: #f4f4f4;
-  padding: 20px;
   border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
   text-align: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  max-width: 250px;
-  width: 100%;
- 
+  transition: transform 0.3s ease;
 }
 
-.rank-badge {
-  background: #535bf2;
-  color: #fff;
+.top-card:hover {
+  transform: translateY(-5px);
+}
+
+.rank {
+  font-size: 2rem;
   font-weight: bold;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 10px;
-}
-
-.leaderboard-table {
-  max-width: 600px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.leaderboard-table h2 {
+  color: #535bf2;
   margin-bottom: 10px;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
+.all-panel {
+  width: 100%; 
+  max-width: 800px; 
 }
 
-th, td {
+.all-panel h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.contributors-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.contributors-table th,
+.contributors-table td {
   padding: 10px;
   text-align: left;
   border-bottom: 1px solid #ddd;
 }
 
-th {
+.contributors-table th {
   background-color: #f2f2f2;
+  font-weight: bold;
+  color:#535bf2;
+
 }
 
-tr:hover {
+.contributors-table tr:hover {
   background-color: #f9f9f9;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .dashboard {
+    grid-template-columns: 1fr; 
+  }
+
+  .top-contributors {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+  }
+
+  .top-card {
+    max-width: 100%; 
+  }
+
+  .contributors-table th, .contributors-table td {
+    font-size: 0.9rem; 
+  }
+}
+
+@media (max-width: 480px) {
+  .top-panel h2,
+  .all-panel h2 {
+    font-size: 1.25rem; 
+  }
+
+  .contributors-table th, .contributors-table td {
+    font-size: 0.85rem; 
+  }
 }
