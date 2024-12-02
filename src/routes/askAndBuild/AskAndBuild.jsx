@@ -23,12 +23,16 @@ const AskAndBuild = () => {
     },
   ];
 
+  const toggleModal = () =>{
+    alert('i am here');
+  }
   return (
     <section className="QandA-box">
       <div className="app">
         <div className="top-row">
           <h2> Debugger&lsquo;s Den</h2>
-          <Button text="Ask a Question" />
+          <Button text="Ask a Question" onClick={toggleModal} />
+          
         </div>
         <QnAList data={qnaData} />
       </div>

@@ -7,6 +7,7 @@ import Home from "./routes/home/Home";
 import Discussions from "./routes/discussions/Discussions";
 import AskAndBuild from "./routes/askAndBuild/AskAndBuild";
 import Updates from "./routes/updates/Updates";
+import Leaderboard from "./components/leaderboard/Leaderboard";
 
 const router = createBrowserRouter([
   {
@@ -31,6 +32,10 @@ const router = createBrowserRouter([
           },
         ],
       },
+      {
+        path: "leaderboard",
+        element:<Leaderboard />
+      }
     ],
   },
 ]);

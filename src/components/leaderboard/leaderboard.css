@@ -1,0 +1,81 @@
+.leaderboard-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.leaderboard-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.leaderboard-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.leaderboard-header p {
+  font-size: 1rem;
+  color: #555;
+}
+
+.top-contributors {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 40px;
+  
+}
+
+.top-card {
+  background: #f4f4f4;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  max-width: 250px;
+  width: 100%;
+ 
+}
+
+.rank-badge {
+  background: #535bf2;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+}
+
+.leaderboard-table {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.leaderboard-table h2 {
+  margin-bottom: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+
+tr:hover {
+  background-color: #f9f9f9;
+}
