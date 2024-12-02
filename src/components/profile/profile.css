@@ -1,0 +1,118 @@
+.profile-page {
+  display: grid;
+  grid-template-columns: 1fr 3fr; 
+  gap: 20px;
+  padding: 20px;
+  max-width: 1280px;
+  margin: 2rem auto;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 20px;
+}
+
+.sidebar h2 {
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.sidebar .bio {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.sidebar-link {
+  font-size: 1.1rem;
+  color: #333;
+  text-decoration: none;
+  padding: 10px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.sidebar-link:hover {
+  background-color: #f4f4f4;
+}
+
+.main-content {
+  display: grid;
+  gap: 20px;
+}
+
+.content-section {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.content-section h3 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  color: #535bf2;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .profile-page {
+    grid-template-columns: 1fr; 
+  }
+
+  .sidebar {
+    text-align: left;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .content-section h3 {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .sidebar h2 {
+    font-size: 1.5rem;
+  }
+
+  .sidebar-nav {
+    gap: 8px;
+  }
+
+  .content-section {
+    padding: 15px;
+  }
+
+  .content-section h3 {
+    font-size: 1rem;
+  }
+}

@@ -8,6 +8,7 @@ import Discussions from "./routes/discussions/Discussions";
 import AskAndBuild from "./routes/askAndBuild/AskAndBuild";
 import Updates from "./routes/updates/Updates";
 import Leaderboard from "./components/leaderboard/Leaderboard";
+import Profile from "./components/profile/Profile";
 
 const router = createBrowserRouter([
   {
@@ -32,9 +33,15 @@ const router = createBrowserRouter([
           },
         ],
       },
+      
       {
         path: "leaderboard",
-        element:<Leaderboard />
+        element:<Leaderboard />,
+      },
+
+      {
+        path: "profile",
+        element: <Profile />
       }
     ],
   },
