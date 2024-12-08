@@ -9,6 +9,7 @@ import AskAndBuild from "./routes/askAndBuild/AskAndBuild";
 import Updates from "./routes/updates/Updates";
 import Leaderboard from "./components/leaderboard/Leaderboard";
 import Profile from "./components/profile/Profile";
+import WalletContext from "./context/WalletContext";
 
 const router = createBrowserRouter([
   {
@@ -33,22 +34,24 @@ const router = createBrowserRouter([
           },
         ],
       },
-      
+
       {
         path: "leaderboard",
-        element:<Leaderboard />,
+        element: <Leaderboard />,
       },
 
       {
         path: "profile",
-        element: <Profile />
-      }
+        element: <Profile />,
+      },
     ],
   },
 ]);
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <WalletContext>
+      <RouterProvider router={router} />
+    </WalletContext>
   </StrictMode>
 );

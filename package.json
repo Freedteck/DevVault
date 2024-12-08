@@ -11,6 +11,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hashgraph/sdk": "^2.14.2",
+    "axios": "^0.27.2",
+    "binary-loader": "^0.0.1",
+    "global": "^4.4.0",
+    "hashconnect": "^0.1.7",
     "lucide-react": "^0.460.0",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",

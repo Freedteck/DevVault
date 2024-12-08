@@ -1,13 +1,16 @@
 import { Link, NavLink } from "react-router-dom";
 import Button from "../button/Button";
 import styles from "./Navbar.module.css";
+import { useContext } from "react";
+import { userWalletContext } from "../../context/userWalletContext";
 
 const Navbar = () => {
+  const { accountId, connectWallet } = useContext(userWalletContext);
   return (
     <header>
       <nav className={styles.headerNav}>
         <Link to={"/"} className={styles.logo}>
-          DevVault
+          DeVault
         </Link>
         <div className={styles.navLinks}>
           <ul>
@@ -52,7 +55,11 @@ const Navbar = () => {
               </NavLink>
             </li>
           </ul>
-          <Button text={"Connect"} />
+          {accountId ? (
+            <Button text={accountId} />
+          ) : (
+            <Button text={"Connect"} handleClick={connectWallet} />
+          )}
         </div>
       </nav>
     </header>
