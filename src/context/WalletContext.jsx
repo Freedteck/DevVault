@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { userWalletContext } from "./userWalletContext";
 import walletConnectFcn from "../client/walletConnect";
@@ -6,6 +6,7 @@ import walletConnectFcn from "../client/walletConnect";
 const WalletContext = ({ children }) => {
   const [walletData, setWalletData] = useState(null);
   const [accountId, setAccountId] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
 
   const connectWallet = async () => {
     if (!accountId) {
@@ -13,16 +14,51 @@ const WalletContext = ({ children }) => {
       wData[0].pairingEvent.once((pairingData) => {
         pairingData.accountIds.forEach((id) => {
           setAccountId(id);
-          console.log(`- Paired account id: ${id}`);
+          console.log(`- Paired account ID: ${id}`);
+          console.log("Fetching user profile data...");
         });
       });
       setWalletData(wData);
     }
   };
 
+  useEffect(() => {
+    const getUserProfile = async () => {
+      if (!accountId) return;
+
+      try {
+        const request = await fetch(
+          "https://api.hashpack.app/user-profile/get",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ accountId: accountId, network: "testnet" }),
+          }
+        );
+
+        // Check for a successful response
+        if (!request.ok) {
+          console.error(`Failed to fetch user profile: ${request.statusText}`);
+          return;
+        }
+
+        const response = await request.json();
+        console.log("- User profile data (parsed):", response);
+
+        setUserProfile(response);
+      } catch (error) {
+        console.error("Error fetching user profile data:", error);
+      }
+    };
+
+    getUserProfile();
+  }, [accountId]);
+
   return (
     <userWalletContext.Provider
-      value={{ walletData, accountId, connectWallet }}
+      value={{ walletData, accountId, connectWallet, userProfile }}
     >
       {children}
     </userWalletContext.Provider>

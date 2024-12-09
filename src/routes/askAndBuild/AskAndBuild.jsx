@@ -2,8 +2,16 @@
 import QnAList from "./QnAList";
 import "./QandA.css";
 import Button from "../../components/button/Button";
+import { useState } from "react";
+import AddForm from "../../components/addForm/AddForm";
 
 const AskAndBuild = () => {
+  const [showForm, setShowForm] = useState(false);
+
+  const handleAdd = () => {
+    setShowForm(true);
+  };
+
   const qnaData = [
     {
       id: 1,
@@ -23,17 +31,16 @@ const AskAndBuild = () => {
     },
   ];
 
- 
   return (
     <section className="QandA-box">
       <div className="app">
         <div className="top-row">
           <h2> Debugger&lsquo;s Den</h2>
-          <Button text="Ask a Question" />
-          
+          <Button text="Ask a Question" handleClick={handleAdd} />
         </div>
         <QnAList data={qnaData} />
       </div>
+      {showForm && <AddForm />}
     </section>
   );
 };

@@ -1,11 +1,16 @@
 import { Link, NavLink } from "react-router-dom";
 import Button from "../button/Button";
 import styles from "./Navbar.module.css";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { userWalletContext } from "../../context/userWalletContext";
 
 const Navbar = () => {
-  const { accountId, connectWallet } = useContext(userWalletContext);
+  const { accountId, connectWallet, userProfile } =
+    useContext(userWalletContext);
+
+  useEffect(() => {
+    console.log(`User profile data: ${userProfile}`);
+  }, [userProfile]);
   return (
     <header>
       <nav className={styles.headerNav}>
