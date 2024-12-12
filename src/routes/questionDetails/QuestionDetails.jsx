@@ -1,29 +1,94 @@
-import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useState, useContext } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import styles from "./QuestionDetails.module.css";
 import Button from "../../components/button/Button";
+import topicMessageFnc from "../../client/topicMessage";
+import { userWalletContext } from "../../context/userWalletContext";
 
 const QuestionDetails = () => {
+  const { accountId: userAccountId, walletData } =
+    useContext(userWalletContext);
+  const answersTopicId = import.meta.env.VITE_ANSWERS_TOPIC_ID;
   const { state } = useLocation();
   const { question } = state;
-  const { title, description, accountId, date, icon } = question;
 
   const [tipAmount, setTipAmount] = useState("");
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+  const [shouldRefetch, setShouldRefetch] = useState(true);
+
+  const { title, description, accountId, date, icon } = question;
+  const { id } = useParams();
+
+  const handleAddComment = async () => {
+    if (newComment.trim() === "") return;
+
+    if (userAccountId) {
+      const metaData = {
+        commentsId: id,
+        text: newComment,
+        icon: "https://cryptologos.cc/logos/hedera-hbar-logo.png",
+        date: new Date().toISOString(),
+        accountId: userAccountId,
+      };
+
+      try {
+        await topicMessageFnc(
+          walletData,
+          userAccountId,
+          answersTopicId,
+          metaData
+        );
+
+        // Optimistic update
+        setComments((prev) => [{ ...metaData, id: prev.length + 1 }, ...prev]);
+
+        setNewComment(""); // Clear input field
+      } catch (error) {
+        console.error("Failed to submit comment:", error);
+        alert("Failed to submit the comment. Please try again.");
+      }
+    } else {
+      alert("Please connect to HashPack wallet");
+    }
+  };
+
+  useEffect(() => {
+    if (!shouldRefetch) return;
+
+    const fetchComments = async () => {
+      try {
+        const response = await fetch(
+          `https://testnet.mirrornode.hedera.com/api/v1/topics/${answersTopicId}/messages`
+        );
+        const data = await response.json();
+
+        const messages = data.messages.map((message) => {
+          const decodedMessage = atob(message.message);
+          return JSON.parse(decodedMessage);
+        });
+
+        const messagesWithId = messages
+          .map((message, index) => ({
+            ...message,
+            id: index + 1,
+          }))
+          .filter((message) => message.commentsId === id)
+          .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date
+
+        setComments(messagesWithId);
+        setShouldRefetch(false);
+      } catch (error) {
+        console.error("Failed to fetch comments:", error);
+      }
+    };
+
+    fetchComments();
+  }, [shouldRefetch, answersTopicId, id]);
 
   const handleTip = () => {
     alert(`You tipped ${tipAmount} tokens to ${accountId}!`);
     setTipAmount(0);
-  };
-
-  const handleAddComment = () => {
-    if (newComment.trim() === "") return;
-    setComments((prev) => [
-      ...prev,
-      { id: Date.now(), text: newComment, date: new Date().toISOString() },
-    ]);
-    setNewComment("");
   };
 
   return (
@@ -63,16 +128,16 @@ const QuestionDetails = () => {
       </section>
 
       <section className={styles.comments}>
-        <h2>Comments</h2>
+        <h2>Thoughts</h2>
         <ul>
           {comments.length > 0 ? (
-            comments.map((comment) => (
-              <li key={comment.id} className={styles.comment}>
+            comments.map((comment, index) => (
+              <li key={index} className={styles.comment}>
                 <div className={styles.author}>
                   <div className={styles.img}>
-                    <img src={icon} alt="icon" />
+                    <img src={comment.icon || icon} alt="icon" />
                   </div>
-                  <h4>{accountId}</h4>
+                  <h4>{comment.accountId}</h4>
                 </div>
                 <div className={styles.commentDetails}>
                   <p>{comment.text}</p>
@@ -90,7 +155,7 @@ const QuestionDetails = () => {
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Add a comment..."
           />
-          <Button text="Submit Comment" handleClick={handleAddComment} />
+          <Button text="Submit Thought" handleClick={handleAddComment} />
         </div>
       </section>
     </div>

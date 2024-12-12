@@ -1,30 +1,95 @@
-import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useContext, useEffect, useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import styles from "./UpdateDetails.module.css";
 import Button from "../../components/button/Button";
+import { userWalletContext } from "../../context/userWalletContext";
+import topicMessageFnc from "../../client/topicMessage";
 
 const UpdateDetails = () => {
+  const commentsTopicId = import.meta.env.VITE_COMMENTS_TOPIC_ID;
+  const { accountId: userAccountId, walletData } =
+    useContext(userWalletContext);
   const { state } = useLocation();
   const { update } = state;
-  const { title, description, accountId, date } = update;
+  const { id } = useParams();
 
   const [tipAmount, setTipAmount] = useState("");
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+  const [shouldRefetch, setShouldRefetch] = useState(true);
+
+  const { title, description, accountId, date } = update;
 
   const handleTip = () => {
     alert(`You tipped ${tipAmount} tokens to ${accountId}!`);
     setTipAmount(0);
   };
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (newComment.trim() === "") return;
-    setComments((prev) => [
-      ...prev,
-      { id: Date.now(), text: newComment, date: new Date().toISOString() },
-    ]);
-    setNewComment("");
+
+    if (userAccountId) {
+      const metaData = {
+        commentsId: id,
+        text: newComment,
+        icon: "https://cryptologos.cc/logos/hedera-hbar-logo.png",
+        date: new Date().toISOString(),
+        accountId: userAccountId,
+      };
+
+      try {
+        await topicMessageFnc(
+          walletData,
+          userAccountId,
+          commentsTopicId,
+          metaData
+        );
+
+        // Optimistic update
+        setComments((prev) => [{ ...metaData, id: prev.length + 1 }, ...prev]);
+
+        setNewComment(""); // Clear input field
+      } catch (error) {
+        console.error("Failed to submit comment:", error);
+        alert("Failed to submit the comment. Please try again.");
+      }
+    } else {
+      alert("Please connect to HashPack wallet");
+    }
   };
+
+  useEffect(() => {
+    if (!shouldRefetch) return;
+
+    const fetchComments = async () => {
+      try {
+        const response = await fetch(
+          `https://testnet.mirrornode.hedera.com/api/v1/topics/${commentsTopicId}/messages`
+        );
+        const data = await response.json();
+
+        const messages = data.messages.map((message) => {
+          const decodedMessage = atob(message.message);
+          return JSON.parse(decodedMessage);
+        });
+
+        const messagesWithId = messages
+          .map((message, index) => ({
+            ...message,
+            id: index + 1,
+          }))
+          .filter((message) => message.commentsId === id)
+          .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date
+
+        setComments(messagesWithId);
+        setShouldRefetch(false);
+      } catch (error) {
+        console.error("Failed to fetch comments:", error);
+      }
+    };
+
+    fetchComments();
+  }, [shouldRefetch, commentsTopicId, id]);
 
   return (
     <div className={styles.updateDetails}>
@@ -69,16 +134,19 @@ const UpdateDetails = () => {
         <h2>Comments</h2>
         <ul>
           {comments.length > 0 ? (
-            comments.map((comment) => (
-              <li key={comment.id} className={styles.comment}>
+            comments.map((comment, index) => (
+              <li key={index} className={styles.comment}>
                 <div className={styles.author}>
                   <div className={styles.img}>
                     <img
-                      src={"https://cryptologos.cc/logos/hedera-hbar-logo.png"}
+                      src={
+                        comment.icon ||
+                        "https://cryptologos.cc/logos/hedera-hbar-logo.png"
+                      }
                       alt="icon"
                     />
                   </div>
-                  <h4>{accountId}</h4>
+                  <h4>{comment.accountId}</h4>
                 </div>
                 <div className={styles.commentDetails}>
                   <p>{comment.text}</p>
