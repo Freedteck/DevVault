@@ -10,7 +10,6 @@ import Updates from "./routes/updates/Updates";
 import Leaderboard from "./components/leaderboard/Leaderboard";
 import Profile from "./components/profile/Profile";
 import WalletContext from "./context/WalletContext";
-import { subMitQuestion } from "./formActions/submitQuestion";
 
 const router = createBrowserRouter([
   {
@@ -28,7 +27,6 @@ const router = createBrowserRouter([
           {
             index: true,
             element: <AskAndBuild />,
-            action: subMitQuestion,
           },
           {
             path: "updates",

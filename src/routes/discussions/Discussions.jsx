@@ -7,21 +7,24 @@ const Discussions = () => {
   const [allDiscussions, setAllDiscussions] = useState([]);
 
   useEffect(() => {
-    fetch(
-      `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages`
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        const messages = data.messages.map((message) => {
-          const decodedMessage = atob(message.message); // decode base64
-          return JSON.parse(decodedMessage); // parse JSON
+    const fetchAllDiscussions = async () => {
+      await fetch(
+        `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages`
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          const messages = data.messages.map((message) => {
+            const decodedMessage = atob(message.message); // decode base64
+            return JSON.parse(decodedMessage); // parse JSON
+          });
+          setAllDiscussions(messages);
+        })
+        .catch((error) => {
+          console.log(error);
         });
-        setAllDiscussions(messages);
-        console.log(messages);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+    };
+
+    fetchAllDiscussions();
   }, [topicId]);
 
   return (
@@ -45,7 +48,7 @@ const Discussions = () => {
           Updates
         </NavLink>
       </nav>
-      <Outlet context={allDiscussions} />
+      <Outlet context={{ allDiscussions, setAllDiscussions, topicId }} />
     </main>
   );
 };

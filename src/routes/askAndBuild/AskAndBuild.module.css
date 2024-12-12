@@ -4,3 +4,32 @@
   width: 100%;
   padding: 2rem;
 }
+
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.app h1 {
+  font-size: 2rem;
+  text-align: center;
+}
+
+.top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.top-row h2 {
+  font-size: 1.5rem;
+}
+
+.list,
+.details {
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
