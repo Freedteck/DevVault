@@ -10,7 +10,8 @@ import Updates from "./routes/updates/Updates";
 import Leaderboard from "./components/leaderboard/Leaderboard";
 import Profile from "./components/profile/Profile";
 import WalletContext from "./context/WalletContext";
-import QuestionDetails from "./components/question/QuestionDetails";
+import QuestionDetails from "./routes/questionDetails/QuestionDetails";
+import UpdateDetails from "./routes/updateDetails/UpdateDetails";
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,10 @@ const router = createBrowserRouter([
       {
         path: "question/:id",
         element: <QuestionDetails />,
+      },
+      {
+        path: "update/:id",
+        element: <UpdateDetails />,
       },
 
       {

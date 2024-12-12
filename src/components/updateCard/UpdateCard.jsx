@@ -1,9 +1,15 @@
 import PropTypes from "prop-types";
 import styles from "./UpdateCard.module.css";
 import Button from "../button/Button";
+import { useNavigate } from "react-router-dom";
 
 const UpdateCard = ({ update }) => {
-  const { title, description, accountId, date } = update;
+  const { id, title, description, accountId, date } = update;
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/update/${id}`, { state: { update } });
+  };
   return (
     <article className={styles.updateCard}>
       <h3>{title.length > 34 ? `${title.slice(0, 34)}...` : title}</h3>
@@ -15,7 +21,7 @@ const UpdateCard = ({ update }) => {
           ? `${description.slice(0, 100)}...`
           : description}
       </p>
-      <Button text="Read More &rarr;" />
+      <Button text="Read More &rarr;" handleClick={handleClick} />
     </article>
   );
 };

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import styles from "./QuestionDetails.module.css";
-import Button from "../button/Button";
+import Button from "../../components/button/Button";
 
 const QuestionDetails = () => {
   const { state } = useLocation();
@@ -47,9 +47,9 @@ const QuestionDetails = () => {
         <h2>Send A Tip</h2>
         <p>Tip {accountId} for this question</p>
         <div className={styles.tipButtons}>
-          <Button text="1 DVT" onClick={() => setTipAmount(1)} />
-          <Button text="5 DVT" onClick={() => setTipAmount(5)} />
-          <Button text="10 DVT" onClick={() => setTipAmount(10)} />
+          <Button text="1 DVT" handleClick={() => setTipAmount(1)} />
+          <Button text="5 DVT" handleClick={() => setTipAmount(5)} />
+          <Button text="10 DVT" handleClick={() => setTipAmount(10)} />
         </div>
         <label>
           <input
@@ -58,7 +58,7 @@ const QuestionDetails = () => {
             onChange={(e) => setTipAmount(e.target.value)}
             placeholder="Enter tip amount"
           />
-          <Button text="Tip" onClick={handleTip} />
+          <Button text="Tip" handleClick={handleTip} />
         </label>
       </section>
 
