@@ -1,11 +1,17 @@
+import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import styles from "./Question.module.css";
 
 const Question = ({ question }) => {
-  const { title, description, accountId, date, icon } = question;
+  const { id, title, description, accountId, date, icon } = question;
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/question/${id}`, { state: { question } });
+  };
 
   return (
-    <div className={styles["questionItem"]}>
+    <div className={styles["questionItem"]} onClick={handleClick}>
       <div className={styles.img}>
         <img src={icon} alt="icon" />
       </div>

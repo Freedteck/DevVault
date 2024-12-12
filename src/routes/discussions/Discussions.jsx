@@ -17,7 +17,10 @@ const Discussions = () => {
             const decodedMessage = atob(message.message); // decode base64
             return JSON.parse(decodedMessage); // parse JSON
           });
-          setAllDiscussions(messages);
+          const messagesWithId = messages.map((message, index) => {
+            return { ...message, id: index + 1 };
+          });
+          setAllDiscussions(messagesWithId);
         })
         .catch((error) => {
           console.log(error);

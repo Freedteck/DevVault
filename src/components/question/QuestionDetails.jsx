@@ -1,26 +1,100 @@
-import PropTypes from "prop-types";
+import { useState } from "react";
+import { useLocation } from "react-router-dom";
+import styles from "./QuestionDetails.module.css";
+import Button from "../button/Button";
 
-const QuestionDetails = ({ question }) => {
-  if (!question) {
-    return <p>Select a question to view details</p>;
-  }
+const QuestionDetails = () => {
+  const { state } = useLocation();
+  const { question } = state;
+  const { title, description, accountId, date, icon } = question;
 
-  const { title, description, accountId, date } = question;
+  const [tipAmount, setTipAmount] = useState("");
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+
+  const handleTip = () => {
+    alert(`You tipped ${tipAmount} tokens to ${accountId}!`);
+    setTipAmount(0);
+  };
+
+  const handleAddComment = () => {
+    if (newComment.trim() === "") return;
+    setComments((prev) => [
+      ...prev,
+      { id: Date.now(), text: newComment, date: new Date().toISOString() },
+    ]);
+    setNewComment("");
+  };
 
   return (
-    <div className="question-details">
-      <h2>{title}</h2>
-      <p>{description}</p>
-      <div className="meta">
-        <span>By: {accountId}</span>
-        <span>Posted on: {new Date(date).toLocaleString()}</span>
-      </div>
+    <div className={styles.questionDetails}>
+      <header className={styles.header}>
+        <div className={styles.details}>
+          <h1>{title}</h1>
+          <div className={styles.author}>
+            <div className={styles.img}>
+              <img src={icon} alt="icon" />
+            </div>
+            <p className={styles.meta}>
+              By: {accountId} | {new Date(date).toLocaleDateString()}
+            </p>
+          </div>
+          <p>{description}</p>
+        </div>
+      </header>
+
+      <section className={styles.tipping}>
+        <h2>Send A Tip</h2>
+        <p>Tip {accountId} for this question</p>
+        <div className={styles.tipButtons}>
+          <Button text="1 DVT" onClick={() => setTipAmount(1)} />
+          <Button text="5 DVT" onClick={() => setTipAmount(5)} />
+          <Button text="10 DVT" onClick={() => setTipAmount(10)} />
+        </div>
+        <label>
+          <input
+            type="number"
+            value={tipAmount}
+            onChange={(e) => setTipAmount(e.target.value)}
+            placeholder="Enter tip amount"
+          />
+          <Button text="Tip" onClick={handleTip} />
+        </label>
+      </section>
+
+      <section className={styles.comments}>
+        <h2>Comments</h2>
+        <ul>
+          {comments.length > 0 ? (
+            comments.map((comment) => (
+              <li key={comment.id} className={styles.comment}>
+                <div className={styles.author}>
+                  <div className={styles.img}>
+                    <img src={icon} alt="icon" />
+                  </div>
+                  <h4>{accountId}</h4>
+                </div>
+                <div className={styles.commentDetails}>
+                  <p>{comment.text}</p>
+                  <small>{new Date(comment.date).toLocaleDateString()}</small>
+                </div>
+              </li>
+            ))
+          ) : (
+            <p>No comments yet. Be the first to comment!</p>
+          )}
+        </ul>
+        <div className={styles.addComment}>
+          <textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Add a comment..."
+          />
+          <Button text="Submit Comment" handleClick={handleAddComment} />
+        </div>
+      </section>
     </div>
   );
-};
-
-QuestionDetails.propTypes = {
-  question: PropTypes.object,
 };
 
 export default QuestionDetails;
