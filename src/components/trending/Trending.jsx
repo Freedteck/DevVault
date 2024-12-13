@@ -1,27 +1,33 @@
-import { UserCheck } from "lucide-react";
 import styles from "./Trending.module.css";
 import Card from "../card/Card";
+import { useEffect, useState } from "react";
 const Trending = () => {
-  const trending = [
-    {
-      title: "How do I optimize React components for performance?",
-      description:
-        "Explore best practices to improve rendering and reduce unnecessary re-renders.",
-      icon: <UserCheck size={48} absoluteStrokeWidth />, // Replace this with a relevant icon
-    },
-    {
-      title: "What's the difference between '==' and '===' in JavaScript?",
-      description:
-        "A concise explanation of the nuances between equality and strict equality operators.",
-      icon: <UserCheck size={48} absoluteStrokeWidth />,
-    },
-    {
-      title: "How do I set up authentication in a MERN stack application?",
-      description:
-        "A beginner-friendly guide to implementing JWT authentication in a MERN app.",
-      icon: <UserCheck size={48} absoluteStrokeWidth />,
-    },
-  ];
+  const topicId = import.meta.env.VITE_TOPIC_ID;
+  const [trending, setTrending] = useState([]);
+
+  useEffect(() => {
+    const fetchAllDiscussions = async () => {
+      await fetch(
+        `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages`
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          const messages = data.messages.map((message) => {
+            const decodedMessage = atob(message.message); // decode base64
+            return JSON.parse(decodedMessage); // parse JSON
+          });
+          const messagesWithId = messages.map((message, index) => {
+            return { ...message, id: index + 1 };
+          });
+          setTrending(messagesWithId.slice(-3));
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    };
+
+    fetchAllDiscussions();
+  }, [topicId]);
 
   return (
     <section className={styles.trending}>

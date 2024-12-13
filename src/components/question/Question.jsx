@@ -13,7 +13,10 @@ const Question = ({ question }) => {
   return (
     <div className={styles["questionItem"]} onClick={handleClick}>
       <div className={styles.img}>
-        <img src={icon} alt="icon" />
+        <img
+          src={icon || "https://cryptologos.cc/logos/hedera-hbar-logo.png"}
+          alt="icon"
+        />
       </div>
       <div className={styles.details}>
         <h3>{title.length > 34 ? `${title.slice(0, 34)}...` : title}</h3>

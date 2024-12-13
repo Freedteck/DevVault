@@ -1,31 +1,59 @@
 import PropTypes from "prop-types";
 import styles from "./Card.module.css";
-import { CalendarDays, LucideMessageCircleMore } from "lucide-react";
+import { CalendarDays, UserCircleIcon } from "lucide-react";
 
 const Card = ({ data, type = "primary", showActions = false }) => {
+  const { icon, title, description, accountId, date } = data;
+
+  const renderIcon = () => (
+    <div className={showActions ? styles.img : styles.icon}>
+      {showActions ? (
+        <img
+          src={icon || "https://cryptologos.cc/logos/hedera-hbar-logo.png"}
+          alt="icon"
+        />
+      ) : (
+        <div>{icon}</div>
+      )}
+    </div>
+  );
+
+  const renderActions = () =>
+    showActions && (
+      <div className={styles.actions}>
+        <div className={styles.actionItem}>
+          <UserCircleIcon size={24} />
+          <span>{accountId}</span>
+        </div>
+        <div className={styles.actionItem}>
+          <CalendarDays size={24} />
+          <span>{new Date(date).toLocaleDateString()}</span>
+        </div>
+      </div>
+    );
+
   return (
     <li className={styles[type]}>
-      <div className={styles.icon}>{data.icon}</div>
-      <h3 className={styles.title}>{data.title}</h3>
-      <p className={styles.description}>{data.description}</p>
-      {showActions && (
-        <div className={styles.actions}>
-          <div>
-            <LucideMessageCircleMore size={24} absoluteStrokeWidth />
-            <span>30</span>
-          </div>
-          <div>
-            <CalendarDays size={24} absoluteStrokeWidth />
-            <span>23rd Nov. 2024</span>
-          </div>
-        </div>
-      )}
+      {renderIcon()}
+      <h3>{title?.length > 34 ? `${title.slice(0, 34)}...` : title}</h3>
+      <p>
+        {description?.length > 100
+          ? `${description.slice(0, 100)}...`
+          : description}
+      </p>
+      {renderActions()}
     </li>
   );
 };
 
 Card.propTypes = {
-  data: PropTypes.object.isRequired,
+  data: PropTypes.shape({
+    icon: PropTypes.string,
+    title: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+    accountId: PropTypes.string,
+    date: PropTypes.string,
+  }).isRequired,
   type: PropTypes.string,
   showActions: PropTypes.bool,
 };
