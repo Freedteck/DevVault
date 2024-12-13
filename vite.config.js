@@ -10,6 +10,6 @@ export default defineConfig({
     setupFiles: "./tests/setup.js",
   },
   define: {
-    global: "globalThis",
+    global: "window",
   },
 });
