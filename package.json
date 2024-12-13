@@ -14,6 +14,7 @@
     "@hashgraph/sdk": "^2.14.2",
     "axios": "^0.27.2",
     "binary-loader": "^0.0.1",
+    "buffer": "^6.0.3",
     "global": "^4.4.0",
     "hashconnect": "^0.1.7",
     "lucide-react": "^0.460.0",
