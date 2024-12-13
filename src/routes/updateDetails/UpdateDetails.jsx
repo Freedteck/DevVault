@@ -4,9 +4,11 @@ import styles from "./UpdateDetails.module.css";
 import Button from "../../components/button/Button";
 import { userWalletContext } from "../../context/userWalletContext";
 import topicMessageFnc from "../../client/topicMessage";
+import tokenTransferFcn from "../../client/tokenTransfer";
 
 const UpdateDetails = () => {
   const commentsTopicId = import.meta.env.VITE_COMMENTS_TOPIC_ID;
+  const tokenId = import.meta.env.VITE_TOKEN_ID;
   const { accountId: userAccountId, walletData } =
     useContext(userWalletContext);
   const { state } = useLocation();
@@ -20,9 +22,17 @@ const UpdateDetails = () => {
 
   const { title, description, accountId, date } = update;
 
-  const handleTip = () => {
-    alert(`You tipped ${tipAmount} tokens to ${accountId}!`);
-    setTipAmount(0);
+  const handleTip = async () => {
+    const [status, txtId] = await tokenTransferFcn(
+      walletData,
+      userAccountId,
+      accountId,
+      tipAmount,
+      tokenId
+    );
+    if (status === "SUCCESS") {
+      console.log(status, txtId);
+    }
   };
 
   const handleAddComment = async () => {

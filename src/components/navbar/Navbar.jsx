@@ -1,16 +1,12 @@
 import { Link, NavLink } from "react-router-dom";
 import Button from "../button/Button";
 import styles from "./Navbar.module.css";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { userWalletContext } from "../../context/userWalletContext";
 
 const Navbar = () => {
-  const { accountId, connectWallet, userProfile } =
-    useContext(userWalletContext);
+  const { accountId, connectWallet, balance } = useContext(userWalletContext);
 
-  useEffect(() => {
-    console.log(`User profile data: ${userProfile}`);
-  }, [userProfile]);
   return (
     <header>
       <nav className={styles.headerNav}>
@@ -60,11 +56,19 @@ const Navbar = () => {
               </NavLink>
             </li>
           </ul>
-          {accountId ? (
-            <Button text={accountId} />
-          ) : (
-            <Button text={"Connect"} handleClick={connectWallet} />
-          )}
+
+          <div className={styles.right}>
+            {balance && (
+              <div className={styles.balance}>
+                <span>{balance}</span>
+              </div>
+            )}
+            {accountId ? (
+              <Button text={accountId} />
+            ) : (
+              <Button text={"Connect"} handleClick={connectWallet} />
+            )}
+          </div>
         </div>
       </nav>
     </header>

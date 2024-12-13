@@ -1,7 +1,7 @@
 import { AccountBalanceQuery, Client } from "@hashgraph/sdk";
 
 // Get Account Balance Function
-const tokenBalanceFcn = async (accountId) => {
+const accountBalance = async (accountId) => {
   try {
     // Initialize the Hedera client for testnet
     const client = Client.forTestnet();
@@ -26,4 +26,4 @@ const tokenBalanceFcn = async (accountId) => {
   }
 };
 
-export default tokenBalanceFcn;
+export default accountBalance;

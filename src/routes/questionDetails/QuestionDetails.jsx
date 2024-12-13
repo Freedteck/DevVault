@@ -4,11 +4,13 @@ import styles from "./QuestionDetails.module.css";
 import Button from "../../components/button/Button";
 import topicMessageFnc from "../../client/topicMessage";
 import { userWalletContext } from "../../context/userWalletContext";
+import tokenTransferFcn from "../../client/tokenTransfer";
 
 const QuestionDetails = () => {
   const { accountId: userAccountId, walletData } =
     useContext(userWalletContext);
   const answersTopicId = import.meta.env.VITE_ANSWERS_TOPIC_ID;
+  const tokenId = import.meta.env.VITE_TOKEN_ID;
   const { state } = useLocation();
   const { question } = state;
 
@@ -86,9 +88,17 @@ const QuestionDetails = () => {
     fetchComments();
   }, [shouldRefetch, answersTopicId, id]);
 
-  const handleTip = () => {
-    alert(`You tipped ${tipAmount} tokens to ${accountId}!`);
-    setTipAmount(0);
+  const handleTip = async () => {
+    const [status, txtId] = await tokenTransferFcn(
+      walletData,
+      userAccountId,
+      accountId,
+      tipAmount,
+      tokenId
+    );
+    if (status === "SUCCESS") {
+      console.log(status, txtId);
+    }
   };
 
   return (

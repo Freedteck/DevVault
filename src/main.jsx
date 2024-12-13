@@ -8,10 +8,10 @@ import Discussions from "./routes/discussions/Discussions";
 import AskAndBuild from "./routes/askAndBuild/AskAndBuild";
 import Updates from "./routes/updates/Updates";
 import Leaderboard from "./components/leaderboard/Leaderboard";
-import Profile from "./components/profile/Profile";
 import WalletContext from "./context/WalletContext";
 import QuestionDetails from "./routes/questionDetails/QuestionDetails";
 import UpdateDetails from "./routes/updateDetails/UpdateDetails";
+import Profile from "./routes/profile/Profile";
 
 const router = createBrowserRouter([
   {

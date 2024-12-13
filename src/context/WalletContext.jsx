@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { userWalletContext } from "./userWalletContext";
 import walletConnectFcn from "../client/walletConnect";
+import accountBalance from "../client/accountBalance";
 
 const WalletContext = ({ children }) => {
   const [walletData, setWalletData] = useState(null);
   const [accountId, setAccountId] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+  const [balance, setBalance] = useState(null);
 
   const connectWallet = async () => {
     if (!accountId) {
@@ -56,9 +58,19 @@ const WalletContext = ({ children }) => {
     getUserProfile();
   }, [accountId]);
 
+  useEffect(() => {
+    if (accountId) {
+      const getBalance = async () => {
+        const newBalance = await accountBalance(accountId);
+        setBalance(newBalance);
+      };
+      getBalance().catch(console.error);
+    }
+  }, [accountId]);
+
   return (
     <userWalletContext.Provider
-      value={{ walletData, accountId, connectWallet, userProfile }}
+      value={{ walletData, accountId, connectWallet, userProfile, balance }}
     >
       {children}
     </userWalletContext.Provider>

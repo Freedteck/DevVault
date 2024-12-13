@@ -30,3 +30,17 @@
   padding: 3px 0;
   color: var(--primary-color-1);
 }
+
+.right {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.balance {
+  padding: 5px 20px;
+  border: 1px solid var(--primary-color-1);
+  border-radius: 8px;
+  color: var(--primary-color-1);
+  font-weight: 600;
+}
