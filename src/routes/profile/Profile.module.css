@@ -12,7 +12,11 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 2rem;
-  padding: 2rem;
+  padding: 2rem 0;
+}
+
+.user svg {
+  color: var(--primary-color-1);
 }
 
 .card {
@@ -36,4 +40,21 @@
 
 .card span {
   color: var(--primary-color-1);
+}
+
+.contribution h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+.row {
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  background-color: var(--secondary-color-2);
+  padding: 2rem;
+  border-radius: 8px;
 }

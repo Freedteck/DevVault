@@ -7,7 +7,7 @@ import Home from "./routes/home/Home";
 import Discussions from "./routes/discussions/Discussions";
 import AskAndBuild from "./routes/askAndBuild/AskAndBuild";
 import Updates from "./routes/updates/Updates";
-import Leaderboard from "./components/leaderboard/Leaderboard";
+import Leaderboard from "./routes/leaderboard/Leaderboard";
 import WalletContext from "./context/WalletContext";
 import QuestionDetails from "./routes/questionDetails/QuestionDetails";
 import UpdateDetails from "./routes/updateDetails/UpdateDetails";

@@ -47,13 +47,7 @@ const Card = ({ data, type = "primary", showActions = false }) => {
 };
 
 Card.propTypes = {
-  data: PropTypes.shape({
-    icon: PropTypes.string,
-    title: PropTypes.string.isRequired,
-    description: PropTypes.string.isRequired,
-    accountId: PropTypes.string,
-    date: PropTypes.string,
-  }).isRequired,
+  data: PropTypes.object,
   type: PropTypes.string,
   showActions: PropTypes.bool,
 };

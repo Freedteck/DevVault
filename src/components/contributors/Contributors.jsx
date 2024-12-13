@@ -1,54 +1,58 @@
-import React from 'react'
-import styles from "./Contributors.module.css"
-import { User} from 'lucide-react';
-import ContributorCard from './ContributorCard';
+import { useEffect, useState } from "react";
+import styles from "./Contributors.module.css";
+import ContributorCard from "./ContributorCard";
 
 const Contributors = () => {
-    const contributors = [
-      {
-        username: "Alice",
-        tips: 150,
-        posts: 35,
-        icon: <User size={48} absoluteStrokeWidth />,
-      },
+  const topicId = import.meta.env.VITE_TOPIC_ID;
+  const [contribution, setContribution] = useState([]);
 
-      {
-        username: "Charity",
-        tips: 200,
-        posts: 45,
-        icon: <User size={48} absoluteStrokeWidth />,
-      },
+  useEffect(() => {
+    const fetchAllDiscussions = async () => {
+      try {
+        const response = await fetch(
+          `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages`
+        );
+        const data = await response.json();
 
-      {
-        username: "Diana",
-        tips: 250,
-        posts: 55,
-        icon: <User size={48} absoluteStrokeWidth />,
-      },
+        const messages = data.messages.map((message) => {
+          const decodedMessage = atob(message.message); // Decode base64
+          return JSON.parse(decodedMessage); // Parse JSON
+        });
 
-    //   {
-    //     username: "Eve",
-    //     tips: 300,
-    //     posts: 65,
-    //     icon: <UserCheck size={48} absoluteStrokeWidth />,
-    //   },
-    //   {
-    //     username: "Frank",
-    //     tips: 350,
-    //     posts: 75,
-    //     icon: <UserCheck size={48} absoluteStrokeWidth />,
-    //   },
-    ];
+        // Aggregate contributors
+        const contributorsMap = new Map();
+
+        messages.forEach((message) => {
+          const { accountId } = message;
+          if (accountId) {
+            if (!contributorsMap.has(accountId)) {
+              contributorsMap.set(accountId, { accountId, contributions: 0 });
+            }
+            contributorsMap.get(accountId).contributions += 1;
+          }
+        });
+
+        const contributors = Array.from(contributorsMap.values());
+
+        setContribution(contributors.slice(-3));
+      } catch (error) {
+        console.error("Error fetching discussions:", error);
+      }
+    };
+
+    fetchAllDiscussions();
+  }, [topicId]);
+
   return (
     <section className={styles.contributor}>
-        <h2>Top Contributors</h2>
-        <ul className={styles.row}>
-            {contributors.map((contribute,index) =>(
-            <ContributorCard key={index} data={contribute} />
-           ))}
-        </ul>
+      <h2>Top Contributors</h2>
+      <ul className={styles.row}>
+        {contribution.map((contribute, index) => (
+          <ContributorCard key={index} data={contribute} />
+        ))}
+      </ul>
     </section>
-  )
-}
+  );
+};
 
-export default Contributors
+export default Contributors;

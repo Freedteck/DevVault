@@ -1,26 +1,25 @@
-import React from 'react'
-import { Gift, LucideMessageCircleMore } from "lucide-react";
+import { Podcast, UserCircle2 } from "lucide-react";
+import PropTypes from "prop-types";
+import styles from "./ContributorCard.module.css";
 
-import './Contributor.css';
-
-const ContributorCard = ({ data}) => {
+const ContributorCard = ({ data }) => {
   return (
-    <li className="contributor-container">
-      <div className="icon">{data.icon}</div>
-      <h3 className="">{data.username}</h3>
-      <div className="tips">
-        <div className="tip">
-          <Gift size={24} absoluteStrokeWidth />
-          <p>{data.tips}</p>
-        </div>
-
-        <div className="tip">
-          <LucideMessageCircleMore size={24} absoluteStrokeWidth />
-          <p>{data.posts}</p>
-        </div>
+    <li className={styles.contributor}>
+      <div className={styles.icon}>
+        <UserCircle2 size={50} />
+      </div>
+      <div className={styles.details}>
+        <h3 className="">{data.accountId}</h3>
+        <p>
+          <Podcast size={20} /> {data.contributions} contributions
+        </p>
       </div>
     </li>
   );
 };
 
-export default ContributorCard
+ContributorCard.propTypes = {
+  data: PropTypes.object,
+};
+
+export default ContributorCard;
