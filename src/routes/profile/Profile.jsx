@@ -5,6 +5,7 @@ import { useContext, useEffect, useState } from "react";
 import { userWalletContext } from "../../context/userWalletContext";
 import tokenBalanceFcn from "../../client/tokenBalance";
 import Card from "../../components/card/Card";
+import SendModal from "../../components/modal/SendModal";
 
 const Profile = () => {
   const tokenId = import.meta.env.VITE_TOKEN_ID;
@@ -12,6 +13,7 @@ const Profile = () => {
   const { accountId, balance } = useContext(userWalletContext);
   const [tokenBalance, setTokenBalance] = useState(0);
   const [contribution, setContribution] = useState([]);
+  const [showSendModal, setShowSendModal] = useState(false);
 
   useEffect(() => {
     const fetchAllDiscussions = async () => {
@@ -52,6 +54,18 @@ const Profile = () => {
     }
   }, [accountId, tokenId]);
 
+  const handleShowSendModal = () => {
+    setShowSendModal(true);
+  };
+
+  if (!accountId) {
+    return (
+      <div className={styles.profile} style={{ textAlign: "center" }}>
+        Please connect to HashPack wallet
+      </div>
+    );
+  }
+
   return (
     <div className={styles.profile}>
       <div className={styles["profile-header"]}>
@@ -69,17 +83,25 @@ const Profile = () => {
         <div className={styles.card}>
           Account Balance:
           <p>{balance}</p>
-          <Button text="Transfer Hbar" />
+          <Button text="Transfer Hbar" handleClick={handleShowSendModal} />
         </div>
       </div>
       <div className={styles.contribution}>
         <h2>Contributions</h2>
-        <ul className={styles.row}>
-          {contribution.map((trend, index) => (
-            <Card key={index} data={trend} type="secondary" showActions />
-          ))}
-        </ul>
+        {contribution.length === 0 ? (
+          <p>No contributions yet</p>
+        ) : (
+          <ul className={styles.row}>
+            {contribution.map((trend, index) => (
+              <Card key={index} data={trend} type="secondary" showActions />
+            ))}
+          </ul>
+        )}
       </div>
+
+      {showSendModal && (
+        <SendModal handleClose={() => setShowSendModal(false)} />
+      )}
     </div>
   );
 };
