@@ -45,8 +45,8 @@ const Updates = () => {
       </div>
 
       <section className={styles.updateList}>
-        {updates.map((update) => (
-          <UpdateCard key={update.id} update={update} />
+        {updates.map((update, index) => (
+          <UpdateCard key={index} update={update} />
         ))}
       </section>
       {showForm && (

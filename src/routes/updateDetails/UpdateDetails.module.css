@@ -114,3 +114,22 @@
   border-radius: 4px;
   margin-top: 1rem;
 }
+
+.commentDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.commentDetails small {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.commentDetails span {
+  color: var(--primary-color-1);
+  cursor: pointer;
+}

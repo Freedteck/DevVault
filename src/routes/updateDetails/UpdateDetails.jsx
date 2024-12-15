@@ -5,6 +5,8 @@ import Button from "../../components/button/Button";
 import { userWalletContext } from "../../context/userWalletContext";
 import topicMessageFnc from "../../client/topicMessage";
 import tokenTransferFcn from "../../client/tokenTransfer";
+import TipModal from "../../components/modal/TipModal";
+import { Heart } from "lucide-react";
 
 const UpdateDetails = () => {
   const commentsTopicId = import.meta.env.VITE_COMMENTS_TOPIC_ID;
@@ -19,6 +21,8 @@ const UpdateDetails = () => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [shouldRefetch, setShouldRefetch] = useState(true);
+  const [showTipModal, setShowTipModal] = useState(false);
+  const [userId, setUserId] = useState("");
 
   const { title, description, accountId, date } = update;
 
@@ -101,6 +105,11 @@ const UpdateDetails = () => {
     fetchComments();
   }, [shouldRefetch, commentsTopicId, id]);
 
+  const handleShowTipModal = (userId) => {
+    setShowTipModal(true);
+    setUserId(userId);
+  };
+
   return (
     <div className={styles.updateDetails}>
       <header className={styles.header}>
@@ -160,7 +169,12 @@ const UpdateDetails = () => {
                 </div>
                 <div className={styles.commentDetails}>
                   <p>{comment.text}</p>
-                  <small>{new Date(comment.date).toLocaleDateString()}</small>
+                  <small>
+                    {new Date(comment.date).toLocaleDateString()}{" "}
+                    <span onClick={() => handleShowTipModal(comment.accountId)}>
+                      <Heart size={20} />
+                    </span>
+                  </small>
                 </div>
               </li>
             ))
@@ -177,6 +191,15 @@ const UpdateDetails = () => {
           <Button text="Submit Comment" handleClick={handleAddComment} />
         </div>
       </section>
+      {showTipModal && (
+        <TipModal
+          accountId={userAccountId}
+          tokenId={tokenId}
+          walletData={walletData}
+          userId={userId}
+          handleClose={() => setShowTipModal(false)}
+        />
+      )}
     </div>
   );
 };

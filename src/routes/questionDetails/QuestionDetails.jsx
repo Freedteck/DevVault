@@ -5,6 +5,8 @@ import Button from "../../components/button/Button";
 import topicMessageFnc from "../../client/topicMessage";
 import { userWalletContext } from "../../context/userWalletContext";
 import tokenTransferFcn from "../../client/tokenTransfer";
+import { Heart } from "lucide-react";
+import TipModal from "../../components/modal/TipModal";
 
 const QuestionDetails = () => {
   const { accountId: userAccountId, walletData } =
@@ -18,6 +20,8 @@ const QuestionDetails = () => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [shouldRefetch, setShouldRefetch] = useState(true);
+  const [showTipModal, setShowTipModal] = useState(false);
+  const [userId, setUserId] = useState("");
 
   const { title, description, accountId, date, icon } = question;
   const { id } = useParams();
@@ -101,6 +105,11 @@ const QuestionDetails = () => {
     }
   };
 
+  const handleShowTipModal = (userId) => {
+    setShowTipModal(true);
+    setUserId(userId);
+  };
+
   return (
     <div className={styles.questionDetails}>
       <header className={styles.header}>
@@ -151,7 +160,12 @@ const QuestionDetails = () => {
                 </div>
                 <div className={styles.commentDetails}>
                   <p>{comment.text}</p>
-                  <small>{new Date(comment.date).toLocaleDateString()}</small>
+                  <small>
+                    {new Date(comment.date).toLocaleDateString()}{" "}
+                    <span onClick={() => handleShowTipModal(comment.accountId)}>
+                      <Heart size={20} />
+                    </span>
+                  </small>
                 </div>
               </li>
             ))
@@ -168,6 +182,15 @@ const QuestionDetails = () => {
           <Button text="Submit Thought" handleClick={handleAddComment} />
         </div>
       </section>
+      {showTipModal && (
+        <TipModal
+          accountId={userAccountId}
+          tokenId={tokenId}
+          walletData={walletData}
+          userId={userId}
+          handleClose={() => setShowTipModal(false)}
+        />
+      )}
     </div>
   );
 };
