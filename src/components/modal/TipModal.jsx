@@ -34,7 +34,7 @@ const TipModal = ({ userId, walletData, tokenId, accountId, handleClose }) => {
       onClick={(e) => e.target.className.includes("bg") && handleClose()}
     >
       <div className={styles.modal}>
-        <h2>Send Tip to {accountId}</h2>
+        <h2>Send Tip to {userId}</h2>
         <label className={styles.label}>
           <input
             type="number"
