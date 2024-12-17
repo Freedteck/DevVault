@@ -35,5 +35,7 @@ Currently, two official plugins are available:
 
 # Technologies used
 Frontend: React, Node.js
+
 Development tools: Vite, HMR, ESLint.
+
 Hedera: Hedera smart contract.
