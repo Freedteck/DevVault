@@ -86,7 +86,7 @@ const Leaderboard = () => {
               <div className={style.rank}>{contributor.rank}</div>
               <h3>{contributor.accountId}</h3>
               <p>
-                {contributor.tokens} <span>VCT</span> Tokens
+                {contributor.tokens} <span>DVT</span> Tokens
               </p>
             </div>
           ))}
