@@ -1,0 +1,193 @@
+.dashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.header p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #535bf2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.metricCard {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.metricCard:hover {
+  transform: translateY(-2px);
+}
+
+.metricHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.metricIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--secondary-color-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color-1);
+}
+
+.trend {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.trend.green {
+  background: #d4edda;
+  color: #155724;
+}
+
+.trend.blue {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.trend.purple {
+  background: #e2d9f3;
+  color: #6f42c1;
+}
+
+.trend.orange {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.metricCard h3 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.metricCard p {
+  color: #666;
+  font-size: 1rem;
+}
+
+.chartsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.chartCard {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.chartCard h3 {
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.insightsCard {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 12px;
+}
+
+.insightsCard h3 {
+  margin-bottom: 1.5rem;
+  color: white;
+}
+
+.insightsCard ul {
+  list-style: none;
+  padding: 0;
+}
+
+.insightsCard li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.insightsCard li:before {
+  content: "💡";
+  position: absolute;
+  left: 0;
+}
+
+.insightsCard li:last-child {
+  border-bottom: none;
+}
+
+@media (max-width: 768px) {
+  .metricsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  
+  .chartsGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .metricCard {
+    padding: 1.5rem;
+  }
+  
+  .chartCard {
+    padding: 1.5rem;
+  }
+}

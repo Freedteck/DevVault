@@ -1,7 +1,18 @@
 import Button from "../button/Button";
 import styles from "./Banner.module.css";
+import { useNavigate } from "react-router-dom";
 
 const Banner = () => {
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate('/discussions');
+  };
+
+  const handleLearnMore = () => {
+    navigate('/gtm');
+  };
+
   return (
     <section className={styles.banner}>
       <div className={styles.heroTexts}>
@@ -15,14 +26,10 @@ const Banner = () => {
           sharing knowledge, and building their careers.
         </p>
         <div className={styles.heroBtns}>
-          <Button text="Get Started" />
-          <Button text="Learn More" btnClass="secondary" />
+          <Button text="Get Started" handleClick={handleGetStarted} />
+          <Button text="Learn More" btnClass="secondary" handleClick={handleLearnMore} />
         </div>
       </div>
-
-      {/* <div className={styles.heroImg}>
-        <img src="" alt="Hero" />
-      </div> */}
     </section>
   );
 };

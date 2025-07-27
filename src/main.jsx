@@ -12,6 +12,10 @@ import WalletContext from "./context/WalletContext";
 import QuestionDetails from "./routes/questionDetails/QuestionDetails";
 import UpdateDetails from "./routes/updateDetails/UpdateDetails";
 import Profile from "./routes/profile/Profile";
+import Analytics from "./routes/analytics/Analytics";
+import GTM from "./routes/gtm/GTM";
+import LLMTraining from "./routes/llmTraining/LLMTraining";
+import ToastProvider from "./components/toast/ToastProvider";
 
 const router = createBrowserRouter([
   {
@@ -44,15 +48,25 @@ const router = createBrowserRouter([
         path: "update/:id",
         element: <UpdateDetails />,
       },
-
       {
         path: "leaderboard",
         element: <Leaderboard />,
       },
-
       {
         path: "profile",
         element: <Profile />,
+      },
+      {
+        path: "analytics",
+        element: <Analytics />,
+      },
+      {
+        path: "gtm",
+        element: <GTM />,
+      },
+      {
+        path: "llm-training",
+        element: <LLMTraining />,
       },
     ],
   },
@@ -61,6 +75,7 @@ const router = createBrowserRouter([
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <WalletContext>
+      <ToastProvider />
       <RouterProvider router={router} />
     </WalletContext>
   </StrictMode>
