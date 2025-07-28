@@ -1,7 +1,5 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Link } from "react-router-dom";
-import { User } from "@/types";
-import { useAuth } from "@/context/auth-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,18 +10,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TOKEN_SYMBOL } from "@/lib/constants";
+import { userWalletContext } from "@/context/userWalletContext";
+import { useWalletInterface } from "@/hooks/useWalletInterface";
+import { Button } from "../ui/button";
 
 interface UserMenuProps {
-  user: User;
+  user: any;
 }
 
 export function UserMenu({ user }: UserMenuProps) {
-  const { logout } = useAuth();
+  const { disconnect } = useWalletInterface();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
+    disconnect();
     setIsOpen(false);
-    logout();
   };
 
   const getInitials = (name: string) => {
@@ -38,23 +39,24 @@ export function UserMenu({ user }: UserMenuProps) {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center space-x-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={user.avatarUrl} alt={user.displayName} />
-            <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-          </Avatar>
-          <span className="hidden text-sm font-medium md:inline-block">
-            {user.username}
-          </span>
-        </button>
+        <div className="flex items-center space-x-2">
+          {/* <Avatar className="h-8 w-8">
+            <AvatarImage src={user} alt={user} />
+            <AvatarFallback>{getInitials(user)}</AvatarFallback>
+          </Avatar> */}
+          <Button
+            variant="secondary"
+            className="hidden text-sm font-medium md:inline-block"
+          >
+            {user}
+          </Button>
+        </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col">
             <span>{user.displayName}</span>
-            <span className="text-xs text-muted-foreground">
-              @{user.username}
-            </span>
+            <span className="text-xs text-muted-foreground">@{user}</span>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -62,7 +64,7 @@ export function UserMenu({ user }: UserMenuProps) {
           <div className="flex justify-between">
             <span>Balance</span>
             <span className="font-medium">
-              {user.tokens} {TOKEN_SYMBOL}
+              {1000} {TOKEN_SYMBOL}
             </span>
           </div>
         </DropdownMenuItem>

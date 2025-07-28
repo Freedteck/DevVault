@@ -1,17 +1,33 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { NAV_LINKS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/context/auth-context";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { SearchBar } from "@/components/shared/search-bar";
 import { NotificationsMenu } from "@/components/shared/notifications-menu";
 import { UserMenu } from "@/components/shared/user-menu";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { userWalletContext } from "@/context/userWalletContext";
+import { useWalletInterface } from "@/hooks/useWalletInterface";
 
 export function MainLayout() {
-  const { isAuthenticated, user } = useAuth();
+  let { accountId } = useWalletInterface();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  if (accountId?.startsWith("0x")) {
+    accountId = accountId?.slice(0, 6) + "..." + accountId?.slice(-4);
+  }
+
+  const handleConnect = async () => {
+    navigate("/login");
+  };
+
+  useEffect(() => {
+    if (accountId) {
+      navigate("/");
+    }
+  }, [accountId]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -33,9 +49,7 @@ export function MainLayout() {
                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
                 <path d="M13 5v4h4"></path>
               </svg>
-              <span className="hidden font-bold sm:inline-block">
-                DevVault
-              </span>
+              <span className="hidden font-bold sm:inline-block">DevVault</span>
             </Link>
           </div>
 
@@ -56,7 +70,7 @@ export function MainLayout() {
             >
               AI Chat
             </Link>
-            {isAuthenticated && (
+            {accountId && (
               <Link
                 to="/messages"
                 className="text-sm font-medium transition-colors hover:text-primary"
@@ -86,21 +100,16 @@ export function MainLayout() {
 
           {/* User navigation */}
           <div className="flex items-center space-x-2">
-            {isAuthenticated ? (
+            {accountId ? (
               <>
                 <NotificationsMenu />
-                <UserMenu user={user!} />
+                <UserMenu user={accountId!} />
               </>
             ) : (
               <div className="flex items-center">
-                <Link to="/login">
-                  <Button variant="ghost" size="sm">
-                    Log in
-                  </Button>
-                </Link>
-                <Link to="/signup">
-                  <Button size="sm">Sign up</Button>
-                </Link>
+                <Button size="sm" onClick={handleConnect}>
+                  Connect Wallet
+                </Button>
               </div>
             )}
           </div>
@@ -170,7 +179,7 @@ export function MainLayout() {
               >
                 AI Chat
               </Link>
-              {isAuthenticated && (
+              {accountId && (
                 <Link
                   to="/messages"
                   className="text-sm font-medium transition-colors hover:text-primary"
@@ -187,7 +196,7 @@ export function MainLayout() {
                 About
               </Link>
               <Separator />
-              {!isAuthenticated && (
+              {!accountId && (
                 <>
                   <Link
                     to="/login"
@@ -205,7 +214,7 @@ export function MainLayout() {
                   </Link>
                 </>
               )}
-              {isAuthenticated && (
+              {accountId && (
                 <>
                   <Link
                     to="/dashboard"
@@ -238,16 +247,28 @@ export function MainLayout() {
             &copy; {new Date().getFullYear()} DevVault. All rights reserved.
           </p>
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
-            <Link to="/about" className="text-muted-foreground hover:text-foreground">
+            <Link
+              to="/about"
+              className="text-muted-foreground hover:text-foreground"
+            >
               About
             </Link>
-            <Link to="/about/dvt" className="text-muted-foreground hover:text-foreground">
+            <Link
+              to="/about/dvt"
+              className="text-muted-foreground hover:text-foreground"
+            >
               About DVT
             </Link>
-            <Link to="/terms" className="text-muted-foreground hover:text-foreground">
+            <Link
+              to="/terms"
+              className="text-muted-foreground hover:text-foreground"
+            >
               Terms
             </Link>
-            <Link to="/privacy" className="text-muted-foreground hover:text-foreground">
+            <Link
+              to="/privacy"
+              className="text-muted-foreground hover:text-foreground"
+            >
               Privacy
             </Link>
           </div>
