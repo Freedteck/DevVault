@@ -16,15 +16,12 @@ import { toast } from "sonner";
 import { APP_NAME } from "@/lib/constants";
 import MetamaskLogo from "../assets/metamask-logo.svg";
 import WalletConnectLogo from "../assets/walletconnect-logo.svg";
-import { useWalletInterface } from "@/hooks/useWalletInterface";
 import { userWalletContext } from "@/context/userWalletContext";
-import { UserMetamaskContext } from "@/context/userMetamaskContext";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { accountId } = useWalletInterface();
+  const { accountId } = useContext(userWalletContext);
   const { connectWallet } = useContext(userWalletContext);
-  const { connectMetamask } = useContext(UserMetamaskContext);
 
   useEffect(() => {
     const getWalletDetails = async () => {
@@ -56,10 +53,6 @@ export default function LoginPage() {
                 width={32}
               />
               WalletConnect
-            </Button>
-            <Button type="button" className="w-full" onClick={connectMetamask}>
-              <img src={MetamaskLogo} alt="metamask logo" width={32} />
-              Metamask
             </Button>
             {/* <div className="text-center text-sm">
               Don't have an account?{" "}

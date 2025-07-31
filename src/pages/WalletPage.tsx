@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Transaction } from "@/types";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TOKEN_NAME, TOKEN_SYMBOL } from "@/lib/constants";
 import apiService from "@/services/api-service";
-import hederaService from "@/services/hedera-service";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { userWalletContext } from "@/context/userWalletContext";
 
 export default function WalletPage() {
   const navigate = useNavigate();
@@ -19,21 +19,20 @@ export default function WalletPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [activeTab, setActiveTab] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
+  const { userProfile } = useContext(userWalletContext);
 
   useEffect(() => {
     if (user) {
       fetchTransactions();
-    } else {
-      navigate("/login", { state: { from: { pathname: "/wallet" } } });
     }
   }, [user, navigate]);
 
   const fetchTransactions = async () => {
     try {
       setIsLoading(true);
-      
+
       if (!user) return;
-      
+
       const userTransactions = await apiService.getUserTransactions(user.id);
       setTransactions(userTransactions);
     } catch (error) {
@@ -47,7 +46,7 @@ export default function WalletPage() {
   const handleConnectWallet = async () => {
     try {
       const success = await connectWallet();
-      
+
       if (success) {
         toast.success("Wallet connected successfully");
       } else {
@@ -59,13 +58,24 @@ export default function WalletPage() {
     }
   };
 
-  if (!user) {
+  if (!userProfile) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <p>Please log in to access your wallet</p>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-16">
+          <h2 className="text-xl font-medium mb-4">User not found</h2>
+          <p className="text-center text-muted-foreground mb-6">
+            This account must be a registered user to access this page.
+          </p>
+          <div className="flex item-center gap-4">
+            <Link to="/">
+              <Button>Go Home</Button>
+            </Link>
+            <Link to="/register">
+              <Button variant="outline">Register</Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -83,7 +93,7 @@ export default function WalletPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Wallet</h1>
-      
+
       {/* Wallet Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
@@ -120,14 +130,14 @@ export default function WalletPage() {
                   </div>
                 </div>
               </div>
-              
+
               <div>
                 <Button size="sm">Withdraw</Button>
               </div>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Hedera Wallet</CardTitle>
@@ -162,7 +172,7 @@ export default function WalletPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div>
                   <Button size="sm" variant="outline">
                     View on Explorer
@@ -180,7 +190,7 @@ export default function WalletPage() {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* Transactions */}
       <Card>
         <CardHeader className="pb-2">
@@ -199,7 +209,7 @@ export default function WalletPage() {
               <TabsTrigger value="sent">Sent</TabsTrigger>
             </TabsList>
           </Tabs>
-          
+
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -254,18 +264,21 @@ export default function WalletPage() {
                         </svg>
                       )}
                     </div>
-                    
+
                     <div>
                       <div className="font-medium">
                         {tx.toUserId === user.id ? "Received" : "Sent"}{" "}
                         {tx.type === "TIP" ? "Tip" : "Transfer"}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {format(new Date(tx.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                        {format(
+                          new Date(tx.createdAt),
+                          "MMM d, yyyy 'at' h:mm a"
+                        )}
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
                       <div
@@ -280,7 +293,9 @@ export default function WalletPage() {
                       </div>
                       <div className="text-xs text-muted-foreground">
                         <Badge
-                          variant={tx.status === "COMPLETED" ? "outline" : "secondary"}
+                          variant={
+                            tx.status === "COMPLETED" ? "outline" : "secondary"
+                          }
                           className="text-xs"
                         >
                           {tx.status}
@@ -293,7 +308,9 @@ export default function WalletPage() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-muted-foreground mb-2">No transactions found</p>
+              <p className="text-muted-foreground mb-2">
+                No transactions found
+              </p>
               <p className="text-sm text-muted-foreground">
                 {activeTab === "sent"
                   ? "You haven't sent any tokens yet"
@@ -305,7 +322,7 @@ export default function WalletPage() {
           )}
         </CardContent>
       </Card>
-      
+
       {/* How to Earn Tokens */}
       <Card>
         <CardHeader>
@@ -334,7 +351,7 @@ export default function WalletPage() {
                 Share valuable resources or answer questions to help others.
               </p>
             </div>
-            
+
             <div className="flex flex-col items-center text-center p-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -351,12 +368,14 @@ export default function WalletPage() {
                 <path d="M12 20h9" />
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
               </svg>
-              <h3 className="text-lg font-medium mb-2">Contribute Data for AI</h3>
+              <h3 className="text-lg font-medium mb-2">
+                Contribute Data for AI
+              </h3>
               <p className="text-muted-foreground text-sm">
                 Submit high-quality content for AI training and earn tokens.
               </p>
             </div>
-            
+
             <div className="flex flex-col items-center text-center p-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"

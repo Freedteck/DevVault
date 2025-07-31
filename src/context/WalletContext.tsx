@@ -1,105 +1,132 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { userWalletContext } from "./userWalletContext";
 import accountBalance from "../client/accountBalance";
 import walletConnectFcn from "../client/walletConnect";
+import { getProfile } from "@/lib/supabase";
+import { MirrorNodeClient } from "@/services/mirrorNodeClient";
 
 const WalletContext = ({ children }) => {
   const [walletData, setWalletData] = useState(null);
   const [accountId, setAccountId] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [balance, setBalance] = useState(null);
+  const [isLoading, setIsLoading] = useState(true); // Start with true for initial load
+
+  const getUserProfile = useCallback(async () => {
+    if (!accountId) {
+      setUserProfile(null);
+      return;
+    }
+
+    try {
+      const { success, data } = await getProfile(accountId.toString());
+      const { getTokenBalance } = await MirrorNodeClient();
+      const tokenBalance = await getTokenBalance(accountId);
+      if (success) {
+        setUserProfile({ ...data, tokenBalance });
+      } else {
+        setUserProfile(null);
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      setUserProfile(null);
+    }
+  }, [accountId]);
 
   const connectWallet = async () => {
-    const { dappConnector } = await walletConnectFcn();
-
-    await dappConnector.openModal();
-    const signer = dappConnector.signers[0];
-    if (signer) {
-      const userAccountId = signer.getAccountId().toString();
-      setAccountId(userAccountId);
-      setWalletData(dappConnector);
-      localStorage.setItem("walletConnected", "true"); // save flag
+    setIsLoading(true);
+    try {
+      const { dappConnector } = await walletConnectFcn();
+      await dappConnector.openModal();
+      const signer = dappConnector.signers[0];
+      if (signer) {
+        const userAccountId = signer.getAccountId().toString();
+        setAccountId(userAccountId);
+        setWalletData(dappConnector);
+        localStorage.setItem("walletConnected", "true");
+        console.log("Connected to wallet:", userAccountId);
+      }
+    } catch (error) {
+      console.error("Error connecting wallet:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const disconnectWallet = async () => {
-    if (walletData) {
-      await walletData.disconnectAll();
+    try {
+      if (walletData) {
+        await walletData.disconnectAll();
+      }
       setAccountId(null);
       setUserProfile(null);
       setBalance(null);
       setWalletData(null);
       localStorage.removeItem("walletConnected");
       console.log("Disconnected from wallet");
+    } catch (error) {
+      console.error("Error disconnecting wallet:", error);
     }
   };
 
+  // Handle wallet connection restoration on mount
   useEffect(() => {
-    const getUserProfile = async () => {
-      if (!accountId) return;
-
+    const restoreWalletConnection = async () => {
       try {
-        const request = await fetch(
-          "https://api.hashpack.app/user-profile/get",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ accountId: accountId, network: "testnet" }),
+        if (localStorage.getItem("walletConnected") === "true") {
+          const { dappConnector } = await walletConnectFcn();
+
+          if (dappConnector.signers.length > 0) {
+            const signer = dappConnector.signers[0];
+            const userAccountId = signer.getAccountId().toString();
+
+            setWalletData(dappConnector);
+            setAccountId(userAccountId);
+
+            // Get balance
+            const newBalance = await accountBalance(userAccountId);
+            setBalance(newBalance);
           }
-        );
-
-        if (!request.ok) {
-          console.error(`Failed to fetch user profile: ${request.statusText}`);
-          return;
         }
-
-        const response = await request.json();
-        setUserProfile(response);
       } catch (error) {
-        console.error("Error fetching user profile data:", error);
+        console.error("Error restoring wallet connection:", error);
+        // Clean up if restoration fails
+        localStorage.removeItem("walletConnected");
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    getUserProfile();
-  }, [accountId]);
+    restoreWalletConnection();
+  }, []); // Empty dependency array - only run on mount
 
+  // Handle user profile fetching when accountId changes
+  useEffect(() => {
+    getUserProfile();
+  }, [getUserProfile]);
+
+  // Handle balance updates when accountId changes
   useEffect(() => {
     if (accountId) {
       const getBalance = async () => {
-        const newBalance = await accountBalance(accountId);
-        setBalance(newBalance);
+        try {
+          const newBalance = await accountBalance(accountId);
+          setBalance(newBalance);
+        } catch (error) {
+          console.error("Error fetching balance:", error);
+        }
       };
-      getBalance().catch(console.error);
+      getBalance();
+    } else {
+      setBalance(null);
     }
   }, [accountId]);
-
-  useEffect(() => {
-    const restoreWalletConnection = async () => {
-      if (localStorage.getItem("walletConnected") === "true") {
-        const { dappConnector } = await walletConnectFcn();
-
-        if (dappConnector.signers.length > 0) {
-          const signer = dappConnector.signers[0];
-          const userAccountId = signer.getAccountId().toString();
-
-          setWalletData(dappConnector);
-          setAccountId(userAccountId);
-
-          const newBalance = await accountBalance(userAccountId);
-          setBalance(newBalance);
-        }
-      }
-    };
-
-    restoreWalletConnection().catch(console.error);
-  }, []);
 
   return (
     <userWalletContext.Provider
       value={{
+        isLoading,
         walletData,
         accountId,
         connectWallet,

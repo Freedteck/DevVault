@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
-import { Post, Tag } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,8 +13,8 @@ import { PostCard } from "@/components/posts/post-card";
 import { TagBadge } from "@/components/shared/tag-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { MIN_SEARCH_CHARS } from "@/lib/constants";
-import apiService from "@/services/api-service";
 import { toast } from "sonner";
+import { contentData } from "@/context/ContentData";
 
 const sortOptions = [
   { label: "Most Recent", value: "recent" },
@@ -25,81 +24,20 @@ const sortOptions = [
 ];
 
 export default function ResourcesPage() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [popularTags, setPopularTags] = useState<Tag[]>([]);
+  const [popularTags, setPopularTags] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("recent");
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchData();
-  }, [selectedTag, sortBy]);
-
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Fetch Resource posts
-      const fetchedPosts = await apiService.getPosts("RESOURCE", selectedTag || undefined);
-      
-      // Sort posts based on the selected sort option
-      const sortedPosts = [...fetchedPosts].sort((a, b) => {
-        switch (sortBy) {
-          case "votes":
-            return b.votes - a.votes;
-          case "views":
-            return b.viewCount - a.viewCount;
-          case "tips":
-            return b.tipAmount - a.tipAmount;
-          case "recent":
-          default:
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        }
-      });
-      
-      setPosts(sortedPosts);
-      
-      // Fetch popular tags
-      const fetchedTags = await apiService.getTags();
-      setPopularTags(fetchedTags.slice(0, 20)); // Top 20 tags
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error("Failed to load resources");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { isLoading, resources } = useContext(contentData);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (searchQuery.trim().length < MIN_SEARCH_CHARS) {
-      toast.error(`Search query must be at least ${MIN_SEARCH_CHARS} characters`);
-      return;
-    }
-    
-    searchPosts();
-  };
 
-  const searchPosts = async () => {
-    try {
-      setIsLoading(true);
-      
-      const fetchedPosts = await apiService.search(searchQuery);
-      // Filter for only Resource posts
-      const resourceResults = fetchedPosts.filter(post => post.category === "RESOURCE");
-      
-      setPosts(resourceResults);
-      
-      if (resourceResults.length === 0) {
-        toast.info("No resources found matching your search");
-      }
-    } catch (error) {
-      console.error("Error searching posts:", error);
-      toast.error("Search failed");
-    } finally {
-      setIsLoading(false);
+    if (searchQuery.trim().length < MIN_SEARCH_CHARS) {
+      toast.error(
+        `Search query must be at least ${MIN_SEARCH_CHARS} characters`
+      );
+      return;
     }
   };
 
@@ -112,7 +50,6 @@ export default function ResourcesPage() {
     setSelectedTag(null);
     setSearchQuery("");
     setSortBy("recent");
-    fetchData();
   };
 
   return (
@@ -123,7 +60,7 @@ export default function ResourcesPage() {
           <Button>Share Resource</Button>
         </Link>
       </div>
-      
+
       {/* Search and Filter Bar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <form onSubmit={handleSearch} className="relative md:col-span-2">
@@ -158,7 +95,7 @@ export default function ResourcesPage() {
             <span className="sr-only">Search</span>
           </Button>
         </form>
-        
+
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger>
             <SelectValue placeholder="Sort by" />
@@ -172,7 +109,7 @@ export default function ResourcesPage() {
           </SelectContent>
         </Select>
       </div>
-      
+
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium">Tags:</span>
@@ -191,7 +128,7 @@ export default function ResourcesPage() {
         ) : (
           <span className="text-sm text-muted-foreground">All</span>
         )}
-        
+
         {(selectedTag || searchQuery || sortBy !== "recent") && (
           <Button
             variant="ghost"
@@ -203,7 +140,7 @@ export default function ResourcesPage() {
           </Button>
         )}
       </div>
-      
+
       {/* Popular Tags */}
       <div className="flex flex-wrap gap-2 mb-4">
         {popularTags.map((tag) => (
@@ -219,13 +156,13 @@ export default function ResourcesPage() {
           </Button>
         ))}
       </div>
-      
+
       {/* Resource Posts */}
       <div className="space-y-6">
         {isLoading ? (
           <div className="text-center py-16">Loading resources...</div>
-        ) : posts.length > 0 ? (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
+        ) : resources.length > 0 ? (
+          resources.map((post) => <PostCard key={post.data.id} post={post} />)
         ) : (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">

@@ -8,19 +8,26 @@ import { UserMenu } from "@/components/shared/user-menu";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { userWalletContext } from "@/context/userWalletContext";
-import { useWalletInterface } from "@/hooks/useWalletInterface";
+import { WalletConnectClient } from "@/client/walletConnectClient";
 
 export function MainLayout() {
-  let { accountId } = useWalletInterface();
+  const { accountId, connectWallet, userProfile } =
+    useContext(userWalletContext);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  if (accountId?.startsWith("0x")) {
-    accountId = accountId?.slice(0, 6) + "..." + accountId?.slice(-4);
-  }
-
   const handleConnect = async () => {
-    navigate("/login");
+    connectWallet();
+  };
+
+  const createTopic = async () => {
+    if (accountId) {
+      const { createTopic } = await WalletConnectClient();
+      const topicId = await createTopic();
+      if (topicId) {
+        console.log("Topic created with ID:", topicId.toString());
+      }
+    }
   };
 
   useEffect(() => {
@@ -103,7 +110,10 @@ export function MainLayout() {
             {accountId ? (
               <>
                 <NotificationsMenu />
-                <UserMenu user={accountId!} />
+                <UserMenu user={userProfile!} />
+                {/* <Button size="sm" variant="outline" onClick={createTopic}>
+                  Create Topic
+                </Button> */}
               </>
             ) : (
               <div className="flex items-center">

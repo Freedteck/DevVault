@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/auth-context";
 import { CATEGORIES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,13 +15,15 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { TagInput } from "@/components/shared/tag-input";
 import { ContentCategory } from "@/types";
-import apiService from "@/services/api-service";
 import llmService from "@/services/llm-service";
 import { toast } from "sonner";
+import { userWalletContext } from "@/context/userWalletContext";
+import { contentData } from "@/context/ContentData";
+import { RichTextEditor } from "@/components/shared/rich-text-editor";
 
 export function CreatePostForm() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { userProfile } = useContext(userWalletContext);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState<ContentCategory>("QA");
@@ -30,13 +31,13 @@ export function CreatePostForm() {
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuggestingTags, setIsSuggestingTags] = useState(false);
+  const { uploadContent } = useContext(contentData);
 
   useEffect(() => {
-    if (!user) {
-      navigate("/login", { replace: true });
+    if (!userProfile) {
       toast.error("You must be logged in to create a post");
     }
-  }, [user, navigate]);
+  }, [userProfile]);
 
   const handleCategoryChange = (value: string) => {
     setCategory(value as ContentCategory);
@@ -52,16 +53,18 @@ export function CreatePostForm() {
       toast.error("Please add more content before suggesting tags");
       return;
     }
-    
+
     try {
       setIsSuggestingTags(true);
       const suggested = await llmService.suggestTags(content);
       setSuggestedTags(suggested);
-      
+
       if (suggested.length > 0) {
         toast.success("Tags suggested based on your content");
       } else {
-        toast.info("No tags could be suggested. Try adding more specific content.");
+        toast.info(
+          "No tags could be suggested. Try adding more specific content."
+        );
       }
     } catch (error) {
       console.error("Error suggesting tags:", error);
@@ -73,46 +76,54 @@ export function CreatePostForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user) {
+
+    if (!userProfile) {
       toast.error("You must be logged in to create a post");
       return;
     }
-    
+
     if (!title.trim()) {
       toast.error("Title is required");
       return;
     }
-    
+
     if (!content.trim()) {
       toast.error("Content is required");
       return;
     }
-    
+
     if (tags.length === 0) {
       toast.error("At least one tag is required");
       return;
     }
-    
+
+    const toastId = toast.loading("Creating post...");
     try {
       setIsSubmitting(true);
-      
-      const post = await apiService.createPost({
+      const post = {
+        id: Date.now().toString(), // Temporary ID,
         title,
         content,
         category,
         tags,
-        authorId: user.id,
-      });
-      
+        author: userProfile,
+        createdAt: new Date().toISOString(),
+      };
+
+      await uploadContent(post);
       // Submit for LLM analysis
-      await llmService.submitForLLMTraining(post.id);
-      
-      toast.success("Post created successfully");
-      navigate(`/post/${post.id}`);
+      // await llmService.submitForLLMTraining(post.id);
+
+      toast.success("Post created successfully", { id: toastId });
+      setTitle("");
+      if (category === "QA") {
+        navigate("/qa");
+      } else {
+        navigate(`resources}`);
+      }
     } catch (error) {
       console.error("Error creating post:", error);
-      toast.error("Failed to create post");
+      toast.error("Failed to create post", { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -121,7 +132,9 @@ export function CreatePostForm() {
   const applySuggestedTags = () => {
     if (suggestedTags.length > 0) {
       // Combine existing tags with suggested tags, remove duplicates, and limit to 5
-      const combinedTags = Array.from(new Set([...tags, ...suggestedTags])).slice(0, 5);
+      const combinedTags = Array.from(
+        new Set([...tags, ...suggestedTags])
+      ).slice(0, 5);
       setTags(combinedTags);
       setSuggestedTags([]);
     }
@@ -141,7 +154,7 @@ export function CreatePostForm() {
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
             <Select value={category} onValueChange={handleCategoryChange}>
@@ -157,23 +170,21 @@ export function CreatePostForm() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="content">Content</Label>
-            <Textarea
-              id="content"
+            <RichTextEditor
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={setContent}
               placeholder={
                 category === "QA"
                   ? "Describe your question in detail..."
                   : "Share your knowledge, tutorial, or resource..."
               }
-              className="min-h-[200px]"
-              required
+              minHeight="300px"
             />
           </div>
-          
+
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="tags">Tags (up to 5)</Label>
@@ -187,14 +198,14 @@ export function CreatePostForm() {
                 {isSuggestingTags ? "Suggesting..." : "Suggest Tags"}
               </Button>
             </div>
-            
+
             <TagInput
               value={tags}
               onChange={handleTagsChange}
               placeholder="Add tags..."
               maxTags={5}
             />
-            
+
             {suggestedTags.length > 0 && (
               <div className="mt-2">
                 <p className="text-sm text-muted-foreground mb-2">
@@ -227,7 +238,7 @@ export function CreatePostForm() {
               </div>
             )}
           </div>
-          
+
           <div className="flex justify-end space-x-2">
             <Button
               type="button"

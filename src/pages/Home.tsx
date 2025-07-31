@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useContext } from "react";
 import { Link } from "react-router-dom";
-import { Post, Tag, ContentCategory } from "@/types";
+import { ContentCategory } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,37 +13,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCard } from "@/components/posts/post-card";
 import { TagBadge } from "@/components/shared/tag-badge";
 import { POPULAR_TAGS, APP_DESCRIPTION } from "@/lib/constants";
-import apiService from "@/services/api-service";
-import { toast } from "sonner";
+import { contentData } from "@/context/ContentData";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ContentCategory>("QA");
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [popularTags, setPopularTags] = useState<Tag[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]);
-
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Fetch posts for the active tab
-      const fetchedPosts = await apiService.getPosts(activeTab);
-      setPosts(fetchedPosts);
-      
-      // Fetch popular tags
-      const fetchedTags = await apiService.getTags();
-      setPopularTags(fetchedTags.slice(0, 10)); // Top 10 tags
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error("Failed to load content");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { questions, resources, isLoading } = useContext(contentData);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -75,13 +49,13 @@ export default function Home() {
               </Button>
             </Link>
           </div>
-          
+
           <TabsContent value="QA" className="space-y-6 mt-0">
             {isLoading ? (
               <div className="text-center py-16">Loading Q&A posts...</div>
-            ) : posts.length > 0 ? (
-              posts.map((post) => (
-                <PostCard key={post.id} post={post} />
+            ) : questions.length > 0 ? (
+              questions.map((post) => (
+                <PostCard key={post.data.id} post={post} />
               ))
             ) : (
               <Card>
@@ -97,20 +71,21 @@ export default function Home() {
               </Card>
             )}
           </TabsContent>
-          
+
           <TabsContent value="RESOURCE" className="space-y-6 mt-0">
             {isLoading ? (
               <div className="text-center py-16">Loading resources...</div>
-            ) : posts.length > 0 ? (
-              posts.map((post) => (
-                <PostCard key={post.id} post={post} />
+            ) : resources.length > 0 ? (
+              resources.map((post) => (
+                <PostCard key={post.data.id} post={post} />
               ))
             ) : (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-16">
                   <h3 className="text-lg font-medium mb-2">No resources yet</h3>
                   <p className="text-center text-muted-foreground mb-4">
-                    Be the first to share a valuable resource with the community!
+                    Be the first to share a valuable resource with the
+                    community!
                   </p>
                   <Link to="/create">
                     <Button>Share a Resource</Button>
@@ -131,7 +106,9 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              DevVault is a next-generation developer platform designed to reward knowledge sharing and foster collaboration. Earn tokens by contributing to the community!
+              DevVault is a next-generation developer platform designed to
+              reward knowledge sharing and foster collaboration. Earn tokens by
+              contributing to the community!
             </p>
             <div className="flex flex-col space-y-2">
               <Link to="/about">
@@ -147,30 +124,22 @@ export default function Home() {
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Popular Tags */}
         <Card>
           <CardHeader>
             <CardTitle>Popular Tags</CardTitle>
-            <CardDescription>
-              Explore content by topic
-            </CardDescription>
+            <CardDescription>Explore content by topic</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {popularTags.length > 0 ? (
-                popularTags.map((tag) => (
-                  <TagBadge key={tag.id} tag={tag.name} count={tag.count} />
-                ))
-              ) : (
-                POPULAR_TAGS.map((tag) => (
-                  <TagBadge key={tag} tag={tag} />
-                ))
-              )}
+              {POPULAR_TAGS.map((tag) => (
+                <TagBadge key={tag} tag={tag} />
+              ))}
             </div>
           </CardContent>
         </Card>
-        
+
         {/* AI Features */}
         <Card>
           <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">

@@ -1,9 +1,8 @@
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User } from "@/types";
 
 interface UserAvatarProps {
-  user: User;
+  user: any;
   size?: "sm" | "md" | "lg";
   showName?: boolean;
   className?: string;
@@ -32,19 +31,26 @@ export function UserAvatar({
 
   return (
     <Link
-      to={`/profile/${user.id}`}
+      to={`/profile/${user.account_id || user?.author.account_id}`}
       className={`flex items-center space-x-2 ${className}`}
     >
       <Avatar className={sizeClasses[size]}>
-        <AvatarImage src={user.avatarUrl} alt={user.displayName} />
-        <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+        <AvatarImage
+          src={user?.profile_image_url || user?.author.profile_image_url}
+          alt={user.full_name || user?.author.full_name}
+        />
+        <AvatarFallback>
+          {getInitials(user.full_name || user?.author.full_name)}
+        </AvatarFallback>
       </Avatar>
       {showName && (
         <div className="flex flex-col">
           <span className="text-sm font-medium leading-none">
-            {user.displayName}
+            {user.full_name || user?.author.full_name}
           </span>
-          <span className="text-xs text-muted-foreground">@{user.username}</span>
+          <span className="text-xs text-muted-foreground">
+            @{user.account_id || user?.author.account_id}
+          </span>
         </div>
       )}
     </Link>

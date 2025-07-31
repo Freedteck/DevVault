@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
 import { Post, Tag } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,8 @@ import { PostCard } from "@/components/posts/post-card";
 import { TagBadge } from "@/components/shared/tag-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { MIN_SEARCH_CHARS } from "@/lib/constants";
-import apiService from "@/services/api-service";
 import { toast } from "sonner";
+import { contentData } from "@/context/ContentData";
 
 const sortOptions = [
   { label: "Most Recent", value: "recent" },
@@ -25,83 +25,23 @@ const sortOptions = [
 ];
 
 export default function QAPage() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [popularTags, setPopularTags] = useState<Tag[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("recent");
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchData();
-  }, [selectedTag, sortBy]);
-
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Fetch Q&A posts
-      const fetchedPosts = await apiService.getPosts("QA", selectedTag || undefined);
-      
-      // Sort posts based on the selected sort option
-      const sortedPosts = [...fetchedPosts].sort((a, b) => {
-        switch (sortBy) {
-          case "votes":
-            return b.votes - a.votes;
-          case "views":
-            return b.viewCount - a.viewCount;
-          case "tips":
-            return b.tipAmount - a.tipAmount;
-          case "recent":
-          default:
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        }
-      });
-      
-      setPosts(sortedPosts);
-      
-      // Fetch popular tags
-      const fetchedTags = await apiService.getTags();
-      setPopularTags(fetchedTags.slice(0, 20)); // Top 20 tags
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error("Failed to load Q&A posts");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { isLoading, questions } = useContext(contentData);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (searchQuery.trim().length < MIN_SEARCH_CHARS) {
-      toast.error(`Search query must be at least ${MIN_SEARCH_CHARS} characters`);
+      toast.error(
+        `Search query must be at least ${MIN_SEARCH_CHARS} characters`
+      );
       return;
     }
-    
-    searchPosts();
   };
 
-  const searchPosts = async () => {
-    try {
-      setIsLoading(true);
-      
-      const fetchedPosts = await apiService.search(searchQuery);
-      // Filter for only Q&A posts
-      const qaResults = fetchedPosts.filter(post => post.category === "QA");
-      
-      setPosts(qaResults);
-      
-      if (qaResults.length === 0) {
-        toast.info("No Q&A posts found matching your search");
-      }
-    } catch (error) {
-      console.error("Error searching posts:", error);
-      toast.error("Search failed");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const searchPosts = async () => {};
 
   const handleTagSelect = (tag: string | null) => {
     setSelectedTag(tag);
@@ -112,7 +52,6 @@ export default function QAPage() {
     setSelectedTag(null);
     setSearchQuery("");
     setSortBy("recent");
-    fetchData();
   };
 
   return (
@@ -123,7 +62,7 @@ export default function QAPage() {
           <Button>Ask a Question</Button>
         </Link>
       </div>
-      
+
       {/* Search and Filter Bar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <form onSubmit={handleSearch} className="relative md:col-span-2">
@@ -158,7 +97,7 @@ export default function QAPage() {
             <span className="sr-only">Search</span>
           </Button>
         </form>
-        
+
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger>
             <SelectValue placeholder="Sort by" />
@@ -172,7 +111,7 @@ export default function QAPage() {
           </SelectContent>
         </Select>
       </div>
-      
+
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium">Tags:</span>
@@ -191,7 +130,7 @@ export default function QAPage() {
         ) : (
           <span className="text-sm text-muted-foreground">All</span>
         )}
-        
+
         {(selectedTag || searchQuery || sortBy !== "recent") && (
           <Button
             variant="ghost"
@@ -203,9 +142,9 @@ export default function QAPage() {
           </Button>
         )}
       </div>
-      
+
       {/* Popular Tags */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      {/* <div className="flex flex-wrap gap-2 mb-4">
         {popularTags.map((tag) => (
           <Button
             key={tag.id}
@@ -218,14 +157,14 @@ export default function QAPage() {
             <span className="ml-1 text-xs">({tag.count})</span>
           </Button>
         ))}
-      </div>
-      
+      </div> */}
+
       {/* Q&A Posts */}
       <div className="space-y-6">
         {isLoading ? (
           <div className="text-center py-16">Loading Q&A posts...</div>
-        ) : posts.length > 0 ? (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
+        ) : questions.length > 0 ? (
+          questions.map((post) => <PostCard key={post.data.id} post={post} />)
         ) : (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">

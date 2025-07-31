@@ -1,79 +1,69 @@
-import { useState, useEffect } from "react";
-import { Comment, Post } from "@/types";
+import { useState, useEffect, useContext } from "react";
+import { Comment } from "@/types";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { TipDialog } from "@/components/shared/tip-dialog";
-import { useAuth } from "@/context/auth-context";
-import apiService from "@/services/api-service";
 import { format } from "date-fns";
 import { TOKEN_SYMBOL } from "@/lib/constants";
 import { toast } from "sonner";
+import { RichTextEditor } from "@/components/shared/rich-text-editor";
+import { RichTextContent } from "@/components/shared/rich-text-content";
+import { userWalletContext } from "@/context/userWalletContext";
+import { contentData } from "@/context/ContentData";
 
+const COMMENT_TOPIC_ID = import.meta.env.VITE_COMMENT_TOPIC_ID;
 interface CommentListProps {
-  post: Post;
+  post: any;
 }
 
 export function CommentList({ post }: CommentListProps) {
-  const { user } = useAuth();
-  const [comments, setComments] = useState<Comment[]>([]);
+  const { userProfile, isLoading } = useContext(userWalletContext);
+  const { uploadContent } = useContext(contentData);
   const [newComment, setNewComment] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tipDialogData, setTipDialogData] = useState<{
     isOpen: boolean;
-    comment?: Comment;
+    comment?: any;
   }>({
     isOpen: false,
   });
 
-  useEffect(() => {
-    fetchComments();
-  }, [post.id]);
-
-  const fetchComments = async () => {
-    try {
-      setIsLoading(true);
-      const postComments = await apiService.getComments(post.id);
-      setComments(postComments);
-    } catch (error) {
-      console.error("Error fetching comments:", error);
-      toast.error("Failed to load comments");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const comments = post.comments || [];
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user) {
+
+    if (!userProfile) {
       toast.error("You must be logged in to comment");
       return;
     }
-    
+
     if (!newComment.trim()) {
       toast.error("Comment cannot be empty");
       return;
     }
-    
+
+    const toastId = toast.loading("Posting comment...");
     try {
       setIsSubmitting(true);
-      
-      const comment = await apiService.addComment({
+
+      const comment = {
+        id: Date.now().toString(),
         content: newComment,
-        authorId: user.id,
-        postId: post.id,
-      });
-      
-      setComments([...comments, comment]);
+        author: userProfile,
+        postId: post.data.id,
+        createdAt: new Date().toISOString(),
+        contentId: post.data.id,
+      };
+
+      await uploadContent(comment, COMMENT_TOPIC_ID);
       setNewComment("");
-      toast.success("Comment posted successfully");
+      toast.success("Comment posted successfully", { id: toastId });
     } catch (error) {
       console.error("Error posting comment:", error);
-      toast.error("Failed to post comment");
+      toast.error("Failed to post comment", { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -88,51 +78,49 @@ export function CommentList({ post }: CommentListProps) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">
-        Comments ({post.commentCount})
-      </h2>
-      
-      {user && (
+      <h2 className="text-xl font-bold">Comments ({post.comments.length})</h2>
+
+      {userProfile && (
         <form onSubmit={handleCommentSubmit} className="space-y-4">
-          <Textarea
+          <RichTextEditor
             placeholder="Add your comment..."
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            className="min-h-[100px]"
+            onChange={setNewComment}
+            minHeight="150px"
           />
-          <Button
-            type="submit"
-            disabled={isSubmitting || !newComment.trim()}
-          >
+          <Button type="submit" disabled={isSubmitting || !newComment.trim()}>
             {isSubmitting ? "Posting..." : "Post Comment"}
           </Button>
         </form>
       )}
-      
-      {!user && (
+
+      {!userProfile && (
         <Card className="p-4 bg-muted/50 text-center">
           <p>You need to log in to post comments.</p>
         </Card>
       )}
-      
+
       <Separator className="my-6" />
-      
+
       {isLoading ? (
         <div className="text-center py-8">Loading comments...</div>
       ) : comments.length > 0 ? (
         <div className="space-y-6">
           {comments.map((comment) => (
-            <Card key={comment.id} className="p-4">
+            <Card key={comment.data.id} className="p-4">
               <div className="flex justify-between mb-2">
                 <div className="flex items-start space-x-2">
-                  <UserAvatar user={comment.author} showName />
+                  <UserAvatar user={comment.data.author} showName />
                   <span className="text-sm text-muted-foreground">
-                    {format(new Date(comment.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                    {format(
+                      new Date(comment.data.createdAt),
+                      "MMM d, yyyy 'at' h:mm a"
+                    )}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
-                  {comment.tipAmount > 0 && (
+                  {comment?.tipAmount > 0 && (
                     <div className="text-sm flex items-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -151,24 +139,28 @@ export function CommentList({ post }: CommentListProps) {
                         <path d="M12 18V6" />
                       </svg>
                       <span>
-                        {comment.tipAmount} {TOKEN_SYMBOL}
+                        {comment?.tipAmount} {TOKEN_SYMBOL}
                       </span>
                     </div>
                   )}
-                  
-                  {user && user.id !== comment.authorId && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openTipDialog(comment)}
-                    >
-                      Tip
-                    </Button>
-                  )}
+
+                  {userProfile &&
+                    userProfile.account_id !==
+                      comment.data.author.account_id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openTipDialog(comment)}
+                      >
+                        Tip
+                      </Button>
+                    )}
                 </div>
               </div>
-              
-              <div className="mt-2 whitespace-pre-line">{comment.content}</div>
+
+              <div className="mt-2">
+                <RichTextContent content={comment.data.content} />
+              </div>
             </Card>
           ))}
         </div>
@@ -177,14 +169,14 @@ export function CommentList({ post }: CommentListProps) {
           No comments yet. Be the first to comment!
         </div>
       )}
-      
+
       {tipDialogData.comment && (
         <TipDialog
           isOpen={tipDialogData.isOpen}
           onClose={() => setTipDialogData({ isOpen: false })}
-          recipient={tipDialogData.comment.author}
-          postId={post.id}
-          commentId={tipDialogData.comment.id}
+          recipient={tipDialogData.comment.data.author}
+          postId={post.data.id}
+          commentId={tipDialogData.comment.data.id}
         />
       )}
     </div>
