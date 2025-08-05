@@ -25,7 +25,7 @@ export const WalletConnectClient = async () => {
 
   const isTokenAssociated = async (
     accountIdToCheck: string,
-    tokenId: string
+    tokenId: string = TOKEN_ID,
   ): Promise<boolean> => {
     try {
       const url = `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountIdToCheck}/tokens?limit=100`;
@@ -215,5 +215,6 @@ export const WalletConnectClient = async () => {
     createProfileNftCollection,
     isTokenAssociated,
     ensureTokenAssociation,
+    
   };
 };
