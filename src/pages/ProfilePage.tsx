@@ -12,6 +12,7 @@ import { contentData } from "@/context/ContentData";
 import { getProfile } from "@/lib/supabase";
 import { MirrorNodeClient } from "@/services/mirrorNodeClient";
 import { AccountId } from "@hashgraph/sdk";
+import { TokenAssociationNotice } from "@/components/ui/token-association-notice";
 
 export default function ProfilePage() {
   const { userId } = useParams();
@@ -103,6 +104,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-8">
+      <TokenAssociationNotice/>
       {/* Profile Header */}
       <Card>
         <CardContent className="p-6">
