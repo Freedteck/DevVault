@@ -215,5 +215,6 @@ export const WalletConnectClient = async () => {
     createProfileNftCollection,
     isTokenAssociated,
     ensureTokenAssociation,
+    signer,
   };
 };
