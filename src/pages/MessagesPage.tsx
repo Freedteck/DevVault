@@ -251,12 +251,12 @@ const MessagesPage: React.FC = () => {
                           {message?.data?.sender?.account_id !== accountId && (
                             <Avatar className="h-8 w-8">
                               <AvatarFallback>
-                                {message?.data?.receiver?.full_name.charAt(0)}
+                                {message?.data?.sender?.full_name.charAt(0)}
                               </AvatarFallback>
-                              {message?.data?.receiver?.profile_image_url && (
+                              {message?.data?.sender?.profile_image_url && (
                                 <AvatarImage
                                   src={
-                                    message?.data?.receiver?.profile_image_url
+                                    message?.data?.sender?.profile_image_url
                                   }
                                 />
                               )}

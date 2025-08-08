@@ -14,6 +14,7 @@ import { UserAvatar } from "./user-avatar";
 import { toast } from "sonner";
 import { userWalletContext } from "@/context/userWalletContext";
 import { contentData } from "@/context/ContentData";
+import { WalletConnectClient } from "@/client/walletConnectClient";
 
 interface TipDialogProps {
   isOpen: boolean;
@@ -57,6 +58,18 @@ export function TipDialog({ isOpen, onClose, recipient }: TipDialogProps) {
       setIsSubmitting(true);
 
       // Call Hedera service to transfer tokens
+      const { isTokenAssociated } = await WalletConnectClient();
+      const isAssociated = await isTokenAssociated(recipient.account_id);
+      if (!isAssociated) {
+        toast.error(
+          `You need to associate ${TOKEN_SYMBOL} token with your account first.`,
+          { id: toastId }
+        );
+
+        return;
+      }
+
+     
       const result = await sendTip(recipient.account_id, tipAmount);
 
       if (result) {

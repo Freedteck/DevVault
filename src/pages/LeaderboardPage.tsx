@@ -50,8 +50,10 @@ export default function LeaderboardPage() {
         }
         uniqueUsers.get(user.data.author.account_id).contributions += 1;
       });
-
-      setUsers(uniqueUsers.size > 0 ? Array.from(uniqueUsers.values()) : []);
+      const sortedUniqueUsers = Array.from(uniqueUsers.values()).sort(
+        (a, b) => b.tokens - a.tokens
+      );
+      setUsers(sortedUniqueUsers.length > 0 ? sortedUniqueUsers : []);
     } catch (error) {
       console.error("Error fetching leaderboard:", error);
     } finally {

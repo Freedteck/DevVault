@@ -100,7 +100,7 @@ export const WalletConnectClient = async () => {
     tokenId: any = TOKEN_ID
   ) => {
     // Check and associate token for recipient if needed
-    await ensureTokenAssociation(toAddress.toString(), tokenId);
+    // await ensureTokenAssociation(toAddress.toString(), tokenId);
 
     const transferTokenTransaction = await new TransferTransaction()
       .addTokenTransfer(tokenId, accountId, -amount)
