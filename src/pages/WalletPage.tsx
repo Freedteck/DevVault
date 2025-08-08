@@ -10,38 +10,54 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TOKEN_NAME, TOKEN_SYMBOL } from "@/lib/constants";
 import apiService from "@/services/api-service";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import { userWalletContext } from "@/context/userWalletContext";
+import { MirrorNodeClient } from "@/services/mirrorNodeClient";
+import { s } from "node_modules/pinata/dist/gateway-tools-l9hk7kz4";
+
+export type MirrorNodeTransaction = {
+  consensus_timestamp: string;
+  name: string;
+  result: string;
+  token_transfers: {
+    account: string;
+    amount: number;
+    token_id: string;
+  }[];
+  transaction_id: string;
+  charged_tx_fee: number;
+  memo_base64: string;
+};
 
 export default function WalletPage() {
-  const navigate = useNavigate();
   const { user, connectWallet } = useAuth();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [activeTab, setActiveTab] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const { userProfile } = useContext(userWalletContext);
+  const [accountTransactions, setAccountTransactions] = useState([]);
 
   useEffect(() => {
-    if (user) {
+    const fetchTransactions = async () => {
+      if (!userProfile?.account_id) return;
+      setIsLoading(true);
+      try {
+        const { getAccountTransactions } = await MirrorNodeClient();
+        const transactions = await getAccountTransactions(
+          userProfile.account_id
+        );
+        setAccountTransactions(transactions);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+        toast.error("Failed to load transactions");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (userProfile?.account_id) {
       fetchTransactions();
     }
-  }, [user, navigate]);
-
-  const fetchTransactions = async () => {
-    try {
-      setIsLoading(true);
-
-      if (!user) return;
-
-      const userTransactions = await apiService.getUserTransactions(user.id);
-      setTransactions(userTransactions);
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-      toast.error("Failed to load wallet transactions");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [userProfile]);
 
   const handleConnectWallet = async () => {
     try {
@@ -79,16 +95,50 @@ export default function WalletPage() {
     );
   }
 
-  const filteredTransactions = transactions.filter((tx) => {
-    switch (activeTab) {
-      case "received":
-        return tx.toUserId === user.id;
-      case "sent":
-        return tx.fromUserId === user.id;
-      default:
-        return true;
-    }
-  });
+  const filteredTransactions = accountTransactions
+    .filter((tx) => {
+      // Filter based on active tab
+      switch (activeTab) {
+        case "received":
+          return tx.token_transfers.some(
+            (transfer) =>
+              transfer.account === userProfile?.account_id &&
+              transfer.amount > 0
+          );
+        case "sent":
+          return tx.token_transfers.some(
+            (transfer) =>
+              transfer.account === userProfile?.account_id &&
+              transfer.amount < 0
+          );
+        default:
+          return true;
+      }
+    })
+    .map((tx) => {
+      // Find the relevant transfer for the current user
+      const userTransfer = tx.token_transfers.find(
+        (transfer) => transfer.account === userProfile?.account_id
+      );
+      const otherTransfer = tx.token_transfers.find(
+        (transfer) => transfer.account !== userProfile?.account_id
+      );
+
+      return {
+        id: tx.transaction_id,
+        type: tx.name === "CRYPTOTRANSFER" ? "TRANSFER" : tx.name,
+        amount: Math.abs(userTransfer?.amount || 0),
+        status: tx.result === "SUCCESS" ? "COMPLETED" : "FAILED",
+        createdAt: new Date(
+          parseInt(tx.consensus_timestamp.split(".")[0]) * 1000
+        ),
+        toUserId: userTransfer?.amount > 0 ? user?.id : otherTransfer?.account,
+        fromUserId:
+          userTransfer?.amount < 0 ? user?.id : otherTransfer?.account,
+        fee: tx.charged_tx_fee,
+        memo: tx.memo_base64 ? atob(tx.memo_base64) : "",
+      };
+    });
 
   return (
     <div className="space-y-6">
@@ -123,7 +173,7 @@ export default function WalletPage() {
                 </div>
                 <div>
                   <div className="text-2xl font-bold">
-                    {user.tokens} {TOKEN_SYMBOL}
+                    {userProfile?.tokenBalance} {TOKEN_SYMBOL}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     Available balance
@@ -143,7 +193,7 @@ export default function WalletPage() {
             <CardTitle className="text-lg">Hedera Wallet</CardTitle>
           </CardHeader>
           <CardContent>
-            {user.walletAddress ? (
+            {userProfile?.account_id ? (
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="h-12 w-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white mr-4">
@@ -165,7 +215,7 @@ export default function WalletPage() {
                   </div>
                   <div>
                     <div className="text-md font-medium font-mono">
-                      {user.walletAddress}
+                      {userProfile?.account_id}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       Connected wallet
@@ -218,7 +268,7 @@ export default function WalletPage() {
               </div>
             </div>
           ) : filteredTransactions.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
               {filteredTransactions.map((tx) => (
                 <div
                   key={tx.id}
@@ -227,12 +277,12 @@ export default function WalletPage() {
                   <div className="flex items-center space-x-4">
                     <div
                       className={`p-2 rounded-full ${
-                        tx.toUserId === user.id
+                        tx.toUserId === user?.id
                           ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
                           : "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
                       }`}
                     >
-                      {tx.toUserId === user.id ? (
+                      {tx.toUserId === user?.id ? (
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="16"
@@ -267,15 +317,17 @@ export default function WalletPage() {
 
                     <div>
                       <div className="font-medium">
-                        {tx.toUserId === user.id ? "Received" : "Sent"}{" "}
-                        {tx.type === "TIP" ? "Tip" : "Transfer"}
+                        {tx.toUserId === user?.id ? "Received" : "Sent"}{" "}
+                        {tx.type}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {format(
-                          new Date(tx.createdAt),
-                          "MMM d, yyyy 'at' h:mm a"
-                        )}
+                        {format(tx.createdAt, "MMM d, yyyy 'at' h:mm a")}
                       </div>
+                      {tx.memo && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {tx.memo}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -283,12 +335,12 @@ export default function WalletPage() {
                     <div className="text-right">
                       <div
                         className={`font-medium ${
-                          tx.toUserId === user.id
+                          tx.toUserId === user?.id
                             ? "text-green-600 dark:text-green-400"
                             : "text-red-600 dark:text-red-400"
                         }`}
                       >
-                        {tx.toUserId === user.id ? "+" : "-"}
+                        {tx.toUserId === user?.id ? "+" : "-"}
                         {tx.amount} {TOKEN_SYMBOL}
                       </div>
                       <div className="text-xs text-muted-foreground">
@@ -300,6 +352,9 @@ export default function WalletPage() {
                         >
                           {tx.status}
                         </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Fee: {tx.fee} ℏ
                       </div>
                     </div>
                   </div>

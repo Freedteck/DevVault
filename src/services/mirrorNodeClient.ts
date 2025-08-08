@@ -140,11 +140,47 @@ export const MirrorNodeClient = async () => {
     return nftJson;
   };
 
+  async function getAccountTransactions(
+    accountId,
+    tokenId = TOKEN_ID,
+    startTimestamp = null,
+    endTimestamp = null
+  ) {
+    const url = "https://testnet.mirrornode.hedera.com";
+    let baseUrl = `${url}/api/v1/transactions?account.id=${accountId}&transactiontype=CRYPTOTRANSFER&limit=100`;
+    if (startTimestamp && endTimestamp) {
+      baseUrl += `&timestamp=gte:${startTimestamp}&timestamp=lt:${endTimestamp}`;
+    }
+
+    let transactions = [];
+    let nextLink = baseUrl;
+
+    while (nextLink) {
+      const response = await fetch(nextLink);
+      const data = await response.json();
+
+      // Filter for token transfers involving the specified tokenId
+      const relevantTxs = data.transactions.filter(
+        (tx) =>
+          tx.token_transfers &&
+          tx.token_transfers.some(
+            (t) => t.token_id === tokenId && t.account === accountId
+          )
+      );
+      transactions.push(...relevantTxs);
+
+      nextLink = data.links && data.links.next ? url + data.links.next : null;
+    }
+
+    return transactions;
+  }
+
   return {
     getAccountInfo,
     getTopicMessages,
     getTokenBalance,
     getNftBalance,
     getNftDetails,
+    getAccountTransactions,
   };
 };
