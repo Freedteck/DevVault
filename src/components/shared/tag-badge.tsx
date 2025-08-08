@@ -9,7 +9,7 @@ interface TagBadgeProps {
 
 export function TagBadge({ tag, count, className = "" }: TagBadgeProps) {
   return (
-    <Link to={`/tags/${tag}`}>
+    <Link to={"/qa"}>
       <Badge
         variant="secondary"
         className={`cursor-pointer hover:bg-secondary/80 ${className}`}
