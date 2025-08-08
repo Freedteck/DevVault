@@ -12,6 +12,7 @@ const WalletContext = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null);
   const [balance, setBalance] = useState(null);
   const [isLoading, setIsLoading] = useState(true); // Start with true for initial load
+  const [signer, setSigner] = useState(null);
 
   const getUserProfile = useCallback(async () => {
     if (!accountId) {
@@ -44,6 +45,7 @@ const WalletContext = ({ children }) => {
         const userAccountId = signer.getAccountId().toString();
         setAccountId(userAccountId);
         setWalletData(dappConnector);
+        setSigner(signer);
         localStorage.setItem("walletConnected", "true");
         console.log("Connected to wallet:", userAccountId);
       }
@@ -83,6 +85,7 @@ const WalletContext = ({ children }) => {
 
             setWalletData(dappConnector);
             setAccountId(userAccountId);
+            setSigner(signer);
 
             // Get balance
             const newBalance = await accountBalance(userAccountId);
@@ -133,6 +136,7 @@ const WalletContext = ({ children }) => {
         userProfile,
         balance,
         disconnectWallet,
+        signer,
       }}
     >
       {children}

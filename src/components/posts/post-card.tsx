@@ -108,7 +108,7 @@ export function PostCard({ post, showFullContent = false }) {
         </div>
 
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-1 text-sm">
+          <Link to={postUrl} className="flex items-center space-x-1 text-sm">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"
@@ -124,7 +124,7 @@ export function PostCard({ post, showFullContent = false }) {
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
             <span>{post?.comments?.length} comments</span>
-          </div>
+          </Link>
           <div className="flex items-center space-x-1 text-sm">
             <svg
               xmlns="http://www.w3.org/2000/svg"

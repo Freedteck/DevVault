@@ -16,8 +16,11 @@ import { TokenAssociationNotice } from "@/components/ui/token-association-notice
 
 export default function ProfilePage() {
   const { userId } = useParams();
-  const { userProfile: profile, isLoading: loading } =
-    useContext(userWalletContext);
+  const {
+    userProfile: profile,
+    isLoading: loading,
+    accountId,
+  } = useContext(userWalletContext);
   const { contents } = useContext(contentData);
   const [activeTab, setActiveTab] = useState("posts");
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -44,7 +47,7 @@ export default function ProfilePage() {
 
   // If no userId is provided, use the current logged-in user
   const profileId = userId || userProfile?.account_id;
-  const isOwnProfile = userProfile && profileId === userProfile.account_id;
+  const isOwnProfile = userProfile && profileId === accountId;
 
   const posts = contents.filter(
     (post) => post.data.author.account_id === profileId
@@ -78,7 +81,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (!profileId) {
+  if (!profileId || !userProfile) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-16">
@@ -101,7 +104,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-8">
-      <TokenAssociationNotice/>
+      {isOwnProfile && <TokenAssociationNotice />}
       {/* Profile Header */}
       <Card>
         <CardContent className="p-6">
@@ -141,7 +144,9 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {userProfile?.bio && <p className="text-sm">{userProfile.bio}</p>}
+              {userProfile?.bio && (
+                <p className="text-sm">{userProfile?.bio}</p>
+              )}
 
               <div className="flex items-center space-x-4 text-sm">
                 <div className="flex items-center">
@@ -184,7 +189,7 @@ export default function ProfilePage() {
                   </svg>
                   <span>
                     Joined{" "}
-                    {format(new Date(userProfile?.created_at), "MMM yyyy")}
+                    {format(new Date(userProfile?.created_at || 0), "MMM yyyy")}
                   </span>
                 </div>
 
