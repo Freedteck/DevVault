@@ -7,6 +7,7 @@ import {
   Route,
   Navigate,
   Outlet,
+  useLocation,
 } from "react-router-dom";
 import { MainLayout } from "./components/layout/main-layout";
 import { AuthProvider } from "./context/auth-context";
@@ -35,6 +36,7 @@ import { userWalletContext } from "./context/userWalletContext";
 import RegisterPage from "./pages/RegisterPage";
 
 import { Buffer } from "buffer";
+import { MessagingProvider } from "./context/MessagingContext";
 
 window.Buffer = window.Buffer || Buffer;
 
@@ -62,28 +64,105 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Profile check wrapper
-// const ProfileCheck = () => {
-//   const { userProfile, accountId, isLoading } = useContext(userWalletContext);
+// Inner App component that has access to useLocation
+const AppRoutes = () => {
+  const location = useLocation();
+  const isMessagesPage = location.pathname.includes("/messages");
 
-//   if (isLoading) {
-//     return (
-//       <div className="flex items-center justify-center min-h-[60vh]">
-//         <div className="text-center">
-//           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-current border-r-transparent mb-4"></div>
-//           <p>Loading... ;; ...</p>
-//         </div>
-//       </div>
-//     );
-//   }
+  return (
+    <MessagingProvider isActive={isMessagesPage}>
+      <Routes>
+        <Route element={<MainLayout />}>
+          {/* Public routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/qa" element={<QAPage />} />
+          <Route path="/resources" element={<ResourcesPage />} />
+          <Route path="/post/:postId" element={<PostDetail />} />
+          <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/profile/:userId" element={<ProfilePage />} />
+          <Route path="/ai-features" element={<AIFeaturesPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/about/dvt" element={<AboutDVTPage />} />
+          <Route path="/chat" element={<ChatPage />} />
 
-//   if (!isLoading && accountId && !userProfile) {
-//     return <Navigate to="/register" replace />;
-//   }
+          {/* Messages Routes */}
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <MessagesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages/:userId"
+            element={
+              <ProtectedRoute>
+                <MessagesPage />
+              </ProtectedRoute>
+            }
+          />
 
-//   return <Outlet />;
-// };
+          <Route
+            path="/register"
+            element={
+              <ProtectedRoute>
+                <RegisterPage />
+              </ProtectedRoute>
+            }
+          />
 
+          {/* Protected routes */}
+          <Route
+            path="/create"
+            element={
+              <ProtectedRoute>
+                <CreatePost />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/wallet"
+            element={
+              <ProtectedRoute>
+                <WalletPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 404 route */}
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+    </MessagingProvider>
+  );
+};
+
+// Main App component
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -92,97 +171,7 @@ const App = () => {
           <TooltipProvider>
             <Toaster position="top-center" />
             <BrowserRouter>
-              <Routes>
-                {/* Routes that don't need a profile */}
-
-                {/* Routes that need a profile */}
-                {/* <Route element={<ProfileCheck />}> */}
-                <Route element={<MainLayout />}>
-                  {/* Public routes */}
-                  <Route path="/" element={<Home />} />
-                  <Route path="/qa" element={<QAPage />} />
-                  <Route path="/resources" element={<ResourcesPage />} />
-                  <Route path="/post/:postId" element={<PostDetail />} />
-                  <Route path="/leaderboard" element={<LeaderboardPage />} />
-                  <Route path="/profile/:userId" element={<ProfilePage />} />
-                  <Route path="/ai-features" element={<AIFeaturesPage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/about/dvt" element={<AboutDVTPage />} />
-                  <Route path="/chat" element={<ChatPage />} />
-
-                  {/* Messages Routes */}
-                  <Route
-                    path="/messages"
-                    element={
-                      <ProtectedRoute>
-                        <MessagesPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/messages/:userId"
-                    element={
-                      <ProtectedRoute>
-                        <MessagesPage />
-                      </ProtectedRoute>
-                    }
-                  />
-
-                  <Route
-                    path="/register"
-                    element={
-                      <ProtectedRoute>
-                        <RegisterPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  {/* Protected routes */}
-                  <Route
-                    path="/create"
-                    element={
-                      <ProtectedRoute>
-                        <CreatePost />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/profile"
-                    element={
-                      <ProtectedRoute>
-                        <ProfilePage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/wallet"
-                    element={
-                      <ProtectedRoute>
-                        <WalletPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <DashboardPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/settings"
-                    element={
-                      <ProtectedRoute>
-                        <SettingsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-
-                  {/* 404 route */}
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-                {/* </Route> */}
-              </Routes>
+              <AppRoutes />
             </BrowserRouter>
           </TooltipProvider>
         </ThemeProvider>

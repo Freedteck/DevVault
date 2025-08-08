@@ -48,13 +48,12 @@ export async function getProfile(accountId) {
   }
 }
 
-export async function getAllProfiles(limit = 50, offset = 0) {
+export async function getAllProfiles() {
   try {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
 
@@ -263,4 +262,134 @@ export async function searchProfiles(query, limit = 20) {
   } catch (error) {
     return { success: false, error: error.message };
   }
+}
+
+export async function getExistingConversation(accountId1, accountId2) {
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("*")
+    .or(
+      `and(participant_1.eq.${accountId1},participant_2.eq.${accountId2}),and(participant_1.eq.${accountId2},participant_2.eq.${accountId1})`
+    )
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    console.error("Error checking conversation:", error);
+    return null;
+  }
+
+  return data;
+}
+
+// 2. Create new conversation
+export async function createConversation(
+  hederaTopicId,
+  accountId1,
+  accountId2
+) {
+  const { data, error } = await supabase
+    .from("conversations")
+    .insert({
+      hedera_topic_id: hederaTopicId,
+      participant_1: accountId1,
+      participant_2: accountId2,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating conversation:", error);
+    return null;
+  }
+
+  return data;
+}
+
+// 3. Get all conversations for a user
+export async function getUserConversations(accountId) {
+  const { data, error } = await supabase
+    .from("conversations")
+    .select(
+      `
+      conversation_id,
+      hedera_topic_id,
+      participant_1,
+      participant_2,
+      created_at
+    `
+    )
+    .or(`participant_1.eq.${accountId},participant_2.eq.${accountId}`)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching conversations:", error);
+    return [];
+  }
+
+  return data;
+}
+
+// 4. Get all conversations for a user with partner details
+export async function getUserConversationsWithPartners(accountId) {
+  const { data, error } = await supabase
+    .from("conversations")
+    .select(
+      `
+      conversation_id,
+      hedera_topic_id,
+      participant_1,
+      participant_2,
+      created_at,
+      participant_1_profile:profiles!conversations_participant_1_fkey(
+        account_id,
+        full_name,
+        profile_image_url
+      ),
+      participant_2_profile:profiles!conversations_participant_2_fkey(
+        account_id,
+        full_name,
+        profile_image_url
+      )
+    `
+    )
+    .or(`participant_1.eq.${accountId},participant_2.eq.${accountId}`)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching conversations with partners:", error);
+    return [];
+  }
+
+  // Transform data to include partner info
+  const conversations = data.map((conv) => {
+    const isParticipant1 = conv.participant_1 === accountId;
+    const partner = isParticipant1
+      ? conv.participant_2_profile
+      : conv.participant_1_profile;
+
+    return {
+      conversation_id: conv.conversation_id,
+      hedera_topic_id: conv.hedera_topic_id,
+      partner: partner,
+      created_at: conv.created_at,
+    };
+  });
+
+  return conversations;
+}
+
+// 5. Get conversation by Hedera topic ID
+export async function getConversationByTopicId(hederaTopicId) {
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("*")
+    .eq("hedera_topic_id", hederaTopicId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching conversation by topic:", error);
+    return null;
+  }
+
+  return data;
 }

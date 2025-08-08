@@ -104,7 +104,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-8">
-      <TokenAssociationNotice/>
+      {isOwnProfile && <TokenAssociationNotice />}
       {/* Profile Header */}
       <Card>
         <CardContent className="p-6">
