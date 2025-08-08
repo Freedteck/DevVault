@@ -119,7 +119,7 @@ export function CreatePostForm() {
       if (category === "QA") {
         navigate("/qa");
       } else {
-        navigate(`resources}`);
+        navigate("/resources");
       }
     } catch (error) {
       console.error("Error creating post:", error);
