@@ -18,7 +18,7 @@ export const MirrorNodeClient = async () => {
 
   const getTopicMessages = async (
     topicId = TOPIC_ID,
-    limit = 50,
+    limit = 100,
     nextUrl = null
   ) => {
     const fetchUrl = nextUrl
