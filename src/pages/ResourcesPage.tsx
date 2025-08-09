@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,12 +23,73 @@ const sortOptions = [
   { label: "Most Tips", value: "tips" },
 ];
 
+const ITEMS_PER_PAGE = 10;
+
 export default function ResourcesPage() {
   const [popularTags, setPopularTags] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("recent");
+  const [currentPage, setCurrentPage] = useState(1);
   const { isLoading, resources } = useContext(contentData);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedTag, sortBy]);
+
+  // Filtered and sorted resources
+  const processedResources = useMemo(() => {
+    let filtered = resources;
+
+    // Apply filters here based on searchQuery and selectedTag
+    // This is where you'd implement your actual filtering logic
+
+    return filtered;
+  }, [resources, searchQuery, selectedTag, sortBy]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(processedResources.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentResources = processedResources.slice(startIndex, endIndex);
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxPagesToShow = 5;
+
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(
+          1,
+          "...",
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages
+        );
+      } else {
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages
+        );
+      }
+    }
+
+    return pages;
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +111,12 @@ export default function ResourcesPage() {
     setSelectedTag(null);
     setSearchQuery("");
     setSortBy("recent");
+  };
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -157,12 +224,28 @@ export default function ResourcesPage() {
         ))}
       </div>
 
+      {/* Results Info */}
+      {!isLoading && processedResources.length > 0 && (
+        <div className="flex justify-between items-center text-sm text-muted-foreground">
+          <span>
+            Showing {startIndex + 1}-
+            {Math.min(endIndex, processedResources.length)} of{" "}
+            {processedResources.length} resources
+          </span>
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+        </div>
+      )}
+
       {/* Resource Posts */}
       <div className="space-y-6">
         {isLoading ? (
           <div className="text-center py-16">Loading resources...</div>
-        ) : resources.length > 0 ? (
-          resources.map((post) => <PostCard key={post.data.id} post={post} />)
+        ) : currentResources.length > 0 ? (
+          currentResources.map((post) => (
+            <PostCard key={post.data.id} post={post} />
+          ))
         ) : (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
@@ -188,6 +271,81 @@ export default function ResourcesPage() {
           </Card>
         )}
       </div>
+
+      {/* Pagination */}
+      {!isLoading && processedResources.length > ITEMS_PER_PAGE && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t">
+          {/* Previous Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="flex items-center gap-2"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+            Previous
+          </Button>
+
+          {/* Page Numbers */}
+          <div className="flex items-center gap-1">
+            {getPageNumbers().map((page, index) => (
+              <div key={index}>
+                {page === "..." ? (
+                  <span className="px-3 py-2 text-muted-foreground">...</span>
+                ) : (
+                  <Button
+                    variant={currentPage === page ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => goToPage(page as number)}
+                    className="min-w-[2.5rem]"
+                  >
+                    {page}
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Next Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-2"
+          >
+            Next
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

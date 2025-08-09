@@ -92,9 +92,6 @@ const ContentDataContext = ({ children }) => {
     if (status === "SUCCESS") {
       console.log("Content uploaded successfully:", status);
 
-    
-
-
       setTimeout(() => {
         fetchContents();
         fetchQuestions();

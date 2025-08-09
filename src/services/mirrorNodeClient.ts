@@ -18,77 +18,77 @@ export const MirrorNodeClient = async () => {
 
   const getTopicMessages = async (
     topicId = TOPIC_ID,
-    limit = 100,
-    nextUrl = null
+    limit = 100 // Use the max limit to reduce the number of requests
   ) => {
-    const fetchUrl = nextUrl
-      ? `${url}${nextUrl}`
-      : `${url}/api/v1/topics/${topicId}/messages?limit=${limit}`;
-
-    const response = await fetch(fetchUrl, { method: "GET" });
-    if (!response.ok) {
-      throw new Error(`Failed to fetch topic messages: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    // Simple approach: concatenate consecutive message chunks
+    let nextUrl = `/api/v1/topics/${topicId}/messages?limit=${limit}`;
     const messages = [];
-    let currentMessage = "";
-    let messageStart = null;
+    let urlPrefix = url; // Base URL for the mirror node
 
-    data.messages.forEach((message, index) => {
-      try {
-        const decodedMessage = atob(message.message);
-
-        // If this looks like the start of a JSON message
-        if (decodedMessage.trim().startsWith("{")) {
-          // Start new message
-          if (currentMessage && messageStart) {
-            // Try to parse previous accumulated message
-            try {
-              const parsedMessage = JSON.parse(currentMessage);
-              messages.push({
-                timestamp: messageStart,
-                data: parsedMessage,
-              });
-            } catch (err) {
-              console.warn(
-                "Failed to parse accumulated message:",
-                currentMessage
-              );
-            }
-          }
-          currentMessage = decodedMessage;
-          messageStart = message.consensus_timestamp;
-        } else {
-          // Continue accumulating current message
-          currentMessage += decodedMessage;
-        }
-      } catch (err) {
-        console.warn("Skipping malformed message:", err);
-      }
-    });
-
-    // Handle the last message
-    if (currentMessage && messageStart) {
-      try {
-        const parsedMessage = JSON.parse(currentMessage);
-        messages.push({
-          timestamp: messageStart,
-          data: parsedMessage,
-        });
-      } catch (err) {
-        console.warn(
-          "Failed to parse final accumulated message:",
-          currentMessage
+    while (nextUrl) {
+      const fetchUrl = nextUrl.startsWith("http")
+        ? nextUrl
+        : `${urlPrefix}${nextUrl}`;
+      const response = await fetch(fetchUrl, { method: "GET" });
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch topic messages: ${response.statusText}`
         );
       }
+      const data = await response.json();
+
+      // Process and accumulate messages as in your original function
+      let currentMessage = "";
+      let messageStart = null;
+
+      data.messages.forEach((message) => {
+        try {
+          const decodedMessage = atob(message.message);
+          if (decodedMessage.trim().startsWith("{")) {
+            if (currentMessage && messageStart) {
+              try {
+                const parsedMessage = JSON.parse(currentMessage);
+                messages.push({
+                  timestamp: messageStart,
+                  data: parsedMessage,
+                });
+              } catch (err) {
+                console.warn(
+                  "Failed to parse accumulated message:",
+                  currentMessage
+                );
+              }
+            }
+            currentMessage = decodedMessage;
+            messageStart = message.consensus_timestamp;
+          } else {
+            currentMessage += decodedMessage;
+          }
+        } catch (err) {
+          console.warn("Skipping malformed message:", err);
+        }
+      });
+
+      // Handle the last message in this page
+      if (currentMessage && messageStart) {
+        try {
+          const parsedMessage = JSON.parse(currentMessage);
+          messages.push({
+            timestamp: messageStart,
+            data: parsedMessage,
+          });
+        } catch (err) {
+          console.warn(
+            "Failed to parse final accumulated message:",
+            currentMessage
+          );
+        }
+      }
+
+      nextUrl = data.links.next;
     }
 
     return {
       messages: messages.reverse(), // Most recent first
-      next: data.links.next,
     };
   };
 

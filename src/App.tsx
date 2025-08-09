@@ -37,6 +37,7 @@ import RegisterPage from "./pages/RegisterPage";
 
 import { Buffer } from "buffer";
 import { MessagingProvider } from "./context/MessagingContext";
+import ScrollToTop from "./components/ui/scroll-to-top";
 
 window.Buffer = window.Buffer || Buffer;
 
@@ -171,6 +172,7 @@ const App = () => {
           <TooltipProvider>
             <Toaster position="top-center" />
             <BrowserRouter>
+              <ScrollToTop />
               <AppRoutes />
             </BrowserRouter>
           </TooltipProvider>

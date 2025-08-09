@@ -54,9 +54,9 @@ export default function Home() {
             {isLoading ? (
               <div className="text-center py-16">Loading Q&A posts...</div>
             ) : questions.length > 0 ? (
-              questions.map((post) => (
-                <PostCard key={post.data.id} post={post} />
-              ))
+              questions
+                .slice(0, 5)
+                .map((post) => <PostCard key={post.data.id} post={post} />)
             ) : (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-16">
@@ -76,9 +76,9 @@ export default function Home() {
             {isLoading ? (
               <div className="text-center py-16">Loading resources...</div>
             ) : resources.length > 0 ? (
-              resources.map((post) => (
-                <PostCard key={post.data.id} post={post} />
-              ))
+              resources
+                .slice(0, 5)
+                .map((post) => <PostCard key={post.data.id} post={post} />)
             ) : (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-16">

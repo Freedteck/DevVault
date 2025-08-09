@@ -1,6 +1,5 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Post, Tag } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,11 +23,72 @@ const sortOptions = [
   { label: "Most Tips", value: "tips" },
 ];
 
+const ITEMS_PER_PAGE = 10;
+
 export default function QAPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("recent");
+  const [currentPage, setCurrentPage] = useState(1);
   const { isLoading, questions } = useContext(contentData);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedTag, sortBy]);
+
+  // Filtered and sorted questions
+  const processedQuestions = useMemo(() => {
+    let filtered = questions;
+
+    // Apply filters here based on searchQuery and selectedTag
+    // This is where you'd implement your actual filtering logic
+
+    return filtered;
+  }, [questions, searchQuery, selectedTag, sortBy]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(processedQuestions.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentQuestions = processedQuestions.slice(startIndex, endIndex);
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxPagesToShow = 5;
+
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(
+          1,
+          "...",
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages
+        );
+      } else {
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages
+        );
+      }
+    }
+
+    return pages;
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +112,12 @@ export default function QAPage() {
     setSelectedTag(null);
     setSearchQuery("");
     setSortBy("recent");
+  };
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -143,28 +209,28 @@ export default function QAPage() {
         )}
       </div>
 
-      {/* Popular Tags */}
-      {/* <div className="flex flex-wrap gap-2 mb-4">
-        {popularTags.map((tag) => (
-          <Button
-            key={tag.id}
-            variant={selectedTag === tag.name ? "default" : "outline"}
-            size="sm"
-            className="rounded-full"
-            onClick={() => handleTagSelect(tag.name)}
-          >
-            {tag.name}
-            <span className="ml-1 text-xs">({tag.count})</span>
-          </Button>
-        ))}
-      </div> */}
+      {/* Results Info */}
+      {!isLoading && processedQuestions.length > 0 && (
+        <div className="flex justify-between items-center text-sm text-muted-foreground">
+          <span>
+            Showing {startIndex + 1}-
+            {Math.min(endIndex, processedQuestions.length)} of{" "}
+            {processedQuestions.length} questions
+          </span>
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+        </div>
+      )}
 
       {/* Q&A Posts */}
       <div className="space-y-6">
         {isLoading ? (
           <div className="text-center py-16">Loading Q&A posts...</div>
-        ) : questions.length > 0 ? (
-          questions.map((post) => <PostCard key={post.data.id} post={post} />)
+        ) : currentQuestions.length > 0 ? (
+          currentQuestions.map((post) => (
+            <PostCard key={post.data.id} post={post} />
+          ))
         ) : (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
@@ -190,6 +256,81 @@ export default function QAPage() {
           </Card>
         )}
       </div>
+
+      {/* Pagination */}
+      {!isLoading && processedQuestions.length > ITEMS_PER_PAGE && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t">
+          {/* Previous Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="flex items-center gap-2"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+            Previous
+          </Button>
+
+          {/* Page Numbers */}
+          <div className="flex items-center gap-1">
+            {getPageNumbers().map((page, index) => (
+              <div key={index}>
+                {page === "..." ? (
+                  <span className="px-3 py-2 text-muted-foreground">...</span>
+                ) : (
+                  <Button
+                    variant={currentPage === page ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => goToPage(page as number)}
+                    className="min-w-[2.5rem]"
+                  >
+                    {page}
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Next Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-2"
+          >
+            Next
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
