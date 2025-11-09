@@ -1,21 +1,21 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./index.css";
+import "./styles/globals.css";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Root from "./routes/root/Root";
-import Home from "./routes/home/Home";
-import Discussions from "./routes/discussions/Discussions";
-import AskAndBuild from "./routes/askAndBuild/AskAndBuild";
-import Updates from "./routes/updates/Updates";
-import Leaderboard from "./routes/leaderboard/Leaderboard";
+import Root from "./pages/Root";
+import Home from "./pages/Home";
+import Discussions from "./pages/Discussions";
+import Questions from "./pages/Questions";
+import Updates from "./pages/Updates";
+import QuestionDetails from "./pages/QuestionDetails";
+import UpdateDetails from "./pages/UpdateDetails";
+import Leaderboard from "./pages/Leaderboard";
+import Profile from "./pages/Profile";
 import WalletContext from "./context/WalletContext";
-import QuestionDetails from "./routes/questionDetails/QuestionDetails";
-import UpdateDetails from "./routes/updateDetails/UpdateDetails";
-import Profile from "./routes/profile/Profile";
 
 const router = createBrowserRouter([
   {
-    path: "",
+    path: "/",
     element: <Root />,
     children: [
       {
@@ -28,7 +28,7 @@ const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <AskAndBuild />,
+            element: <Questions />,
           },
           {
             path: "updates",
@@ -44,12 +44,10 @@ const router = createBrowserRouter([
         path: "update/:id",
         element: <UpdateDetails />,
       },
-
       {
         path: "leaderboard",
         element: <Leaderboard />,
       },
-
       {
         path: "profile",
         element: <Profile />,
