@@ -8,24 +8,23 @@ import {
   Heart,
   Send,
 } from "lucide-react";
-import { userWalletContext } from "../context/userWalletContext";
-import Button from "../components/ui/Button";
-import Card from "../components/ui/Card";
-import Badge from "../components/ui/Badge";
-import Input from "../components/ui/Input";
-import Textarea from "../components/ui/Textarea";
-import topicMessageFnc from "../client/topicMessage";
-import tokenTransferFcn from "../client/tokenTransfer";
-import styles from "./QuestionDetails.module.css";
+import { userWalletContext } from "../../context/userWalletContext";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import Input from "../../components/ui/Input";
+import Textarea from "../../components/ui/Textarea";
+import topicMessageFnc from "../../client/topicMessage";
+import tokenTransferFcn from "../../client/tokenTransfer";
+import styles from "../questionDetails/QuestionDetails.module.css";
 
-const QuestionDetails = () => {
+const UpdateDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { accountId: userAccountId, walletData } =
     useContext(userWalletContext);
 
-  const [question, setQuestion] = useState(location.state?.question || null);
+  const [update, setUpdate] = useState(location.state?.update || null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [tipAmount, setTipAmount] = useState("");
@@ -34,15 +33,15 @@ const QuestionDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const answersTopicId = import.meta.env.VITE_ANSWERS_TOPIC_ID;
+  const commentsTopicId = import.meta.env.VITE_COMMENTS_TOPIC_ID;
   const tokenId = import.meta.env.VITE_TOKEN_ID;
   const topicId = import.meta.env.VITE_TOPIC_ID;
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch question if not passed via state
-        if (!question) {
+        // Fetch update if not passed via state
+        if (!update) {
           const response = await fetch(
             `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages`
           );
@@ -57,17 +56,17 @@ const QuestionDetails = () => {
                 return null;
               }
             })
-            .filter((msg) => msg && msg.type === "question");
+            .filter((msg) => msg && msg.type === "update");
 
-          const foundQuestion = messages.find(
+          const foundUpdate = messages.find(
             (_, index) => index + 1 === parseInt(id)
           );
-          setQuestion(foundQuestion);
+          setUpdate(foundUpdate);
         }
 
         // Fetch comments
         const commentsResponse = await fetch(
-          `https://testnet.mirrornode.hedera.com/api/v1/topics/${answersTopicId}/messages`
+          `https://testnet.mirrornode.hedera.com/api/v1/topics/${commentsTopicId}/messages`
         );
         const commentsData = await commentsResponse.json();
 
@@ -92,7 +91,7 @@ const QuestionDetails = () => {
     };
 
     fetchData();
-  }, [id, question, answersTopicId, topicId]);
+  }, [id, update, commentsTopicId, topicId]);
 
   const handleAddComment = async (e) => {
     e.preventDefault();
@@ -116,7 +115,7 @@ const QuestionDetails = () => {
       await topicMessageFnc(
         walletData,
         userAccountId,
-        answersTopicId,
+        commentsTopicId,
         metaData
       );
 
@@ -165,18 +164,18 @@ const QuestionDetails = () => {
   if (isLoading) {
     return (
       <div className={styles.questionDetails}>
-        <div className={styles.loading}>Loading question...</div>
+        <div className={styles.loading}>Loading update...</div>
       </div>
     );
   }
 
-  if (!question) {
+  if (!update) {
     return (
       <div className={styles.questionDetails}>
         <div className={styles.notFound}>
-          <h2>Question not found</h2>
-          <Button onClick={() => navigate("/discussions")}>
-            Back to Questions
+          <h2>Update not found</h2>
+          <Button onClick={() => navigate("/discussions/updates")}>
+            Back to Updates
           </Button>
         </div>
       </div>
@@ -187,40 +186,33 @@ const QuestionDetails = () => {
     <div className={styles.questionDetails}>
       <Button
         variant="ghost"
-        onClick={() => navigate("/discussions")}
+        onClick={() => navigate("/discussions/updates")}
         className={styles.backButton}
         icon={<ArrowLeft size={20} />}
         iconPosition="left"
       >
-        Back to Questions
+        Back to Updates
       </Button>
 
       <Card className={styles.questionCard}>
         <div className={styles.questionHeader}>
-          <h1 className={styles.title}>{question.title}</h1>
-          <div className={styles.tags}>
-            {question.tags?.map((tag, index) => (
-              <Badge key={index} variant="secondary">
-                {tag}
-              </Badge>
-            ))}
-          </div>
+          <h1 className={styles.title}>{update.title}</h1>
         </div>
 
-        <p className={styles.description}>{question.description}</p>
+        <p className={styles.description}>{update.description}</p>
 
         <div className={styles.meta}>
           <div className={styles.metaItem}>
             <User size={16} />
-            <span>{question.accountId}</span>
+            <span>{update.accountId}</span>
           </div>
           <div className={styles.metaItem}>
             <Calendar size={16} />
-            <span>{new Date(question.date).toLocaleDateString()}</span>
+            <span>{new Date(update.date).toLocaleDateString()}</span>
           </div>
           <div className={styles.metaItem}>
             <MessageCircle size={16} />
-            <span>{comments.length} answers</span>
+            <span>{comments.length} comments</span>
           </div>
         </div>
 
@@ -228,7 +220,7 @@ const QuestionDetails = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => openTipModal(question.accountId)}
+            onClick={() => openTipModal(update.accountId)}
           >
             <Heart size={16} />
             Tip Author
@@ -238,7 +230,7 @@ const QuestionDetails = () => {
 
       <div className={styles.answersSection}>
         <h2 className={styles.answersTitle}>
-          {comments.length} {comments.length === 1 ? "Answer" : "Answers"}
+          {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
         </h2>
 
         {comments.length > 0 && (
@@ -270,11 +262,11 @@ const QuestionDetails = () => {
         )}
 
         <Card className={styles.addAnswerCard}>
-          <h3 className={styles.addAnswerTitle}>Your Answer</h3>
+          <h3 className={styles.addAnswerTitle}>Add a Comment</h3>
           <form onSubmit={handleAddComment} className={styles.addAnswerForm}>
             <Textarea
-              placeholder="Share your knowledge and help solve this problem..."
-              rows={6}
+              placeholder="Share your thoughts..."
+              rows={4}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               required
@@ -282,11 +274,11 @@ const QuestionDetails = () => {
             <div className={styles.formActions}>
               <Button type="submit" disabled={isSubmitting || !userAccountId}>
                 <Send size={20} />
-                {isSubmitting ? "Posting..." : "Post Answer"}
+                {isSubmitting ? "Posting..." : "Post Comment"}
               </Button>
               {!userAccountId && (
                 <p className={styles.connectPrompt}>
-                  Connect your wallet to post an answer
+                  Connect your wallet to post a comment
                 </p>
               )}
             </div>
@@ -347,4 +339,4 @@ const QuestionDetails = () => {
   );
 };
 
-export default QuestionDetails;
+export default UpdateDetails;

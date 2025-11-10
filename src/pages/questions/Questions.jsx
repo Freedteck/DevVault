@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
-import Button from "../components/ui/Button";
-import QuestionCard from "../components/features/QuestionCard";
-import CreateQuestionModal from "../components/features/CreateQuestionModal";
-import SearchBar from "../components/features/SearchBar";
+import Button from "../../components/ui/Button";
+import QuestionCard from "../../components/features/QuestionCard";
+import CreateQuestionModal from "../../components/features/CreateQuestionModal";
+import SearchBar from "../../components/features/SearchBar";
 import styles from "./Questions.module.css";
 
 const Questions = () => {
