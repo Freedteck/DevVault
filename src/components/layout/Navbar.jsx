@@ -14,7 +14,7 @@ const Navbar = () => {
     { name: "Home", path: "/" },
     { name: "Discussions", path: "/discussions" },
     { name: "Leaderboard", path: "/leaderboard" },
-    { name: "Profile", path: `/profile/${accountId}` },
+    ...(accountId ? [{ name: "Profile", path: `/profile/${accountId}` }] : []),
   ];
 
   const formatAccountId = (id) => {

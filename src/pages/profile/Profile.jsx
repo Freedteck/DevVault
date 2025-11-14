@@ -206,20 +206,22 @@ const Profile = () => {
           </div>
         </Card>
 
-        {/* Stats Grid */}
-        <div className={styles.stats}>
-          {stats.map((stat, index) => (
-            <Card key={index} padding="lg" hover>
-              <div className={styles.stat}>
-                <div className={styles.statIcon}>{stat.icon}</div>
-                <div className={styles.statContent}>
-                  <div className={styles.statLabel}>{stat.label}</div>
-                  <div className={styles.statValue}>{stat.value}</div>
+        {/* Stats Grid - Only show for connected user's own profile */}
+        {accountId === connectedAccountId && (
+          <div className={styles.stats}>
+            {stats.map((stat, index) => (
+              <Card key={index} padding="lg" hover>
+                <div className={styles.stat}>
+                  <div className={styles.statIcon}>{stat.icon}</div>
+                  <div className={styles.statContent}>
+                    <div className={styles.statLabel}>{stat.label}</div>
+                    <div className={styles.statValue}>{stat.value}</div>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Badges Section */}
         <Card padding="lg">
@@ -289,7 +291,7 @@ const Profile = () => {
         <Card padding="lg">
           <div className={styles.contributionsSection}>
             <div className={styles.contributionsHeader}>
-              <h2 className={styles.sectionTitle}>Your Contributions</h2>
+              <h2 className={styles.sectionTitle}>Top Contributions</h2>
               <div className={styles.filterGroup}>
                 <Filter size={16} />
                 <select

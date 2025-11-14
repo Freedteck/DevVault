@@ -1,4 +1,4 @@
-import { MessageCircle, Calendar, ArrowRight } from "lucide-react";
+import { Calendar, ArrowRight } from "lucide-react";
 import PropTypes from "prop-types";
 import Card from "../ui/Card";
 import Badge from "../ui/Badge";
@@ -42,10 +42,6 @@ const QuestionCard = ({ question, onClick }) => {
           <div className={styles.metaItem}>
             <Calendar size={14} />
             <span>{new Date(date).toLocaleDateString()}</span>
-          </div>
-          <div className={styles.metaItem}>
-            <MessageCircle size={14} />
-            <span>0</span>
           </div>
         </div>
         <div className={styles.readMore}>
