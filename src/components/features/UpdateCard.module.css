@@ -78,6 +78,13 @@
   margin-bottom: var(--space-5);
 }
 
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: var(--space-3);
+}
+
 .title {
   font-size: var(--text-xl);
   font-weight: var(--font-bold);

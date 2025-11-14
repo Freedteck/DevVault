@@ -25,6 +25,7 @@ Badge.propTypes = {
   variant: PropTypes.oneOf([
     "default",
     "primary",
+    "secondary",
     "success",
     "warning",
     "error",

@@ -1,36 +1,45 @@
 import { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { User, Wallet, MessageSquare, Award, Filter } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { User, Wallet, MessageSquare, Filter } from "lucide-react";
 import { userWalletContext } from "../../context/userWalletContext";
 import Card from "../../components/ui/Card";
 import QuestionCard from "../../components/features/QuestionCard";
 import UpdateCard from "../../components/features/UpdateCard";
+import BadgeSVG from "../../components/badges/BadgeSVG";
 import styles from "./Profile.module.css";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { accountId, balance } = useContext(userWalletContext);
+  const { id } = useParams();
+  const { accountId: connectedAccountId, balance } =
+    useContext(userWalletContext);
+
+  // Use URL param if provided, otherwise use connected wallet
+  const accountId = id || connectedAccountId;
   const [contributions, setContributions] = useState([]);
   const [filteredContributions, setFilteredContributions] = useState([]);
   const [filter, setFilter] = useState("all");
   const [dvtBalance, setDvtBalance] = useState(0);
+  const [acceptanceCount, setAcceptanceCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  const topicId = import.meta.env.VITE_TOPIC_ID;
+  const questionsTopicId = import.meta.env.VITE_QUESTIONS_TOPIC_ID;
+  const updatesTopicId = import.meta.env.VITE_UPDATES_TOPIC_ID;
   const tokenId = import.meta.env.VITE_TOKEN_ID;
+  const acceptancesTopicId = import.meta.env.VITE_ACCEPTANCES_TOPIC_ID;
 
   useEffect(() => {
     if (!accountId) return;
 
     const fetchProfileData = async () => {
       try {
-        // Fetch contributions
-        const response = await fetch(
-          `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages`
+        // Fetch questions by user
+        const questionsResponse = await fetch(
+          `https://testnet.mirrornode.hedera.com/api/v1/topics/${questionsTopicId}/messages`
         );
-        const data = await response.json();
+        const questionsData = await questionsResponse.json();
 
-        const userContributions = data.messages
+        const userQuestions = questionsData.messages
           .filter((msg) => {
             try {
               const decoded = JSON.parse(atob(msg.message));
@@ -43,12 +52,42 @@ const Profile = () => {
             const decoded = JSON.parse(atob(msg.message));
             return {
               ...decoded,
+              sequence_number: msg.sequence_number,
+              consensus_timestamp: msg.consensus_timestamp,
               date: new Date(
                 parseInt(msg.consensus_timestamp.split(".")[0]) * 1000
               ).toISOString(),
             };
           });
 
+        // Fetch updates by user
+        const updatesResponse = await fetch(
+          `https://testnet.mirrornode.hedera.com/api/v1/topics/${updatesTopicId}/messages`
+        );
+        const updatesData = await updatesResponse.json();
+
+        const userUpdates = updatesData.messages
+          .filter((msg) => {
+            try {
+              const decoded = JSON.parse(atob(msg.message));
+              return decoded.accountId === accountId;
+            } catch {
+              return false;
+            }
+          })
+          .map((msg) => {
+            const decoded = JSON.parse(atob(msg.message));
+            return {
+              ...decoded,
+              sequence_number: msg.sequence_number,
+              consensus_timestamp: msg.consensus_timestamp,
+              date: new Date(
+                parseInt(msg.consensus_timestamp.split(".")[0]) * 1000
+              ).toISOString(),
+            };
+          });
+
+        const userContributions = [...userQuestions, ...userUpdates];
         setContributions(userContributions);
         setFilteredContributions(userContributions);
 
@@ -60,6 +99,30 @@ const Profile = () => {
         if (tokenData.tokens && tokenData.tokens.length > 0) {
           setDvtBalance(tokenData.tokens[0].balance);
         }
+
+        // Fetch acceptance count
+        const acceptancesResponse = await fetch(
+          `https://testnet.mirrornode.hedera.com/api/v1/topics/${acceptancesTopicId}/messages`
+        );
+        const acceptancesData = await acceptancesResponse.json();
+
+        const userAcceptances = acceptancesData.messages
+          .map((msg) => {
+            try {
+              const decoded = JSON.parse(atob(msg.message));
+              return decoded;
+            } catch {
+              return null;
+            }
+          })
+          .filter(
+            (acceptance) =>
+              acceptance &&
+              acceptance.type === "acceptance" &&
+              acceptance.answerAuthor === accountId
+          );
+
+        setAcceptanceCount(userAcceptances.length);
       } catch (error) {
         console.error("Failed to fetch profile data:", error);
       } finally {
@@ -68,7 +131,13 @@ const Profile = () => {
     };
 
     fetchProfileData();
-  }, [accountId, topicId, tokenId]);
+  }, [
+    accountId,
+    questionsTopicId,
+    updatesTopicId,
+    tokenId,
+    acceptancesTopicId,
+  ]);
 
   useEffect(() => {
     if (filter === "all") {
@@ -102,7 +171,7 @@ const Profile = () => {
       value: contributions.length.toString(),
     },
     {
-      icon: <Award size={24} />,
+      icon: <Wallet size={24} />,
       label: "DVT Earned",
       value: dvtBalance.toString(),
     },
@@ -111,6 +180,14 @@ const Profile = () => {
       label: "HBAR Balance",
       value: balance || "0",
     },
+  ];
+
+  // Badge tiers
+  const badgeTiers = [
+    { name: "Helper", required: 25, color: "#cd7f32" }, // Bronze
+    { name: "Contributor", required: 100, color: "#71717a" }, // Darker Silver/Gray
+    { name: "Expert", required: 300, color: "#d97706" }, // Darker Gold/Amber
+    { name: "Legend", required: 1000, color: "#9333ea" }, // Purple/Violet for premium feel
   ];
 
   return (
@@ -143,6 +220,70 @@ const Profile = () => {
             </Card>
           ))}
         </div>
+
+        {/* Badges Section */}
+        <Card padding="lg">
+          <h2 className={styles.sectionTitle}>Achievement Badges</h2>
+          <p className={styles.badgesDescription}>
+            Earn badges by getting your answers accepted! Each badge tier
+            unlocks as you reach milestones.
+          </p>
+          <div className={styles.badgesGrid}>
+            {badgeTiers.map((badge, index) => {
+              const isEarned = acceptanceCount >= badge.required;
+
+              return (
+                <div
+                  key={index}
+                  className={`${styles.badge} ${
+                    isEarned ? styles.badgeEarned : styles.badgeLocked
+                  }`}
+                  style={{
+                    background: isEarned
+                      ? `linear-gradient(135deg, ${badge.color}20 0%, ${badge.color}10 50%, ${badge.color}05 100%)`
+                      : "var(--bg-primary)",
+                    borderColor: isEarned
+                      ? `${badge.color}50`
+                      : "var(--border)",
+                    color: isEarned ? badge.color : "inherit",
+                  }}
+                >
+                  {isEarned && <span className={styles.badgeSparkle}>✨</span>}
+                  <div className={styles.badgeSVG}>
+                    <BadgeSVG
+                      tier={badge.name}
+                      color={badge.color}
+                      earned={isEarned}
+                    />
+                  </div>
+                  <div className={styles.badgeInfo}>
+                    <h3 className={styles.badgeName}>{badge.name}</h3>
+                    <p className={styles.badgeRequirement}>
+                      {isEarned
+                        ? "Earned! ✨"
+                        : `${badge.required} accepted answers required`}
+                    </p>
+                    <div className={styles.badgeProgress}>
+                      <div
+                        className={styles.badgeProgressBar}
+                        style={{
+                          width: `${Math.min(
+                            (acceptanceCount / badge.required) * 100,
+                            100
+                          )}%`,
+                          background: badge.color,
+                        }}
+                      />
+                    </div>
+                    <p className={styles.badgeCount}>
+                      {acceptanceCount} / {badge.required}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
 
         {/* Contributions Section */}
         <Card padding="lg">
@@ -184,23 +325,23 @@ const Profile = () => {
               </div>
             ) : (
               <div className={styles.contributionsGrid}>
-                {filteredContributions.map((contribution, index) =>
+                {filteredContributions.map((contribution) =>
                   contribution.type === "question" ? (
                     <QuestionCard
-                      key={index}
+                      key={contribution.sequence_number}
                       question={contribution}
                       onClick={() =>
-                        navigate(`/question/${index}`, {
+                        navigate(`/question/${contribution.sequence_number}`, {
                           state: { question: contribution },
                         })
                       }
                     />
                   ) : (
                     <UpdateCard
-                      key={index}
+                      key={contribution.sequence_number}
                       update={contribution}
                       onClick={() =>
-                        navigate(`/update/${index}`, {
+                        navigate(`/update/${contribution.sequence_number}`, {
                           state: { update: contribution },
                         })
                       }

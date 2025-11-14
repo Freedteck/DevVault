@@ -1,20 +1,16 @@
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import {
-  ArrowLeft,
-  User,
-  Calendar,
-  MessageCircle,
-  Heart,
-  Send,
-} from "lucide-react";
+import { ArrowLeft, Calendar, MessageCircle, Heart, Send } from "lucide-react";
 import { userWalletContext } from "../../context/userWalletContext";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
+import Badge from "../../components/ui/Badge";
 import Input from "../../components/ui/Input";
 import Textarea from "../../components/ui/Textarea";
+import UserWithBadge from "../../components/ui/UserWithBadge";
 import topicMessageFnc from "../../client/topicMessage";
 import tokenTransferFcn from "../../client/tokenTransfer";
+import { useUpdateComments } from "../../hooks/useHCSData";
 import styles from "../questionDetails/QuestionDetails.module.css";
 
 const UpdateDetails = () => {
@@ -25,7 +21,7 @@ const UpdateDetails = () => {
     useContext(userWalletContext);
 
   const [update, setUpdate] = useState(location.state?.update || null);
-  const [comments, setComments] = useState([]);
+  const { data: comments, refetch: refetchComments } = useUpdateComments(id);
   const [newComment, setNewComment] = useState("");
   const [tipAmount, setTipAmount] = useState("");
   const [showTipModal, setShowTipModal] = useState(false);
@@ -33,65 +29,40 @@ const UpdateDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const commentsTopicId = import.meta.env.VITE_COMMENTS_TOPIC_ID;
   const tokenId = import.meta.env.VITE_TOKEN_ID;
-  const topicId = import.meta.env.VITE_TOPIC_ID;
+  const topicId = import.meta.env.VITE_UPDATES_TOPIC_ID;
+  const commentsTopicId = import.meta.env.VITE_COMMENTS_TOPIC_ID;
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch update if not passed via state
-        if (!update) {
+    const fetchUpdate = async () => {
+      // Fetch update if not passed via state
+      if (!update) {
+        try {
           const response = await fetch(
-            `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages`
+            `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages/${id}`
           );
           const data = await response.json();
 
-          const messages = data.messages
-            .map((message) => {
-              try {
-                const decodedMessage = atob(message.message);
-                return JSON.parse(decodedMessage);
-              } catch {
-                return null;
-              }
-            })
-            .filter((msg) => msg && msg.type === "update");
-
-          const foundUpdate = messages.find(
-            (_, index) => index + 1 === parseInt(id)
-          );
-          setUpdate(foundUpdate);
+          try {
+            const decodedMessage = atob(data.message);
+            const parsedUpdate = JSON.parse(decodedMessage);
+            setUpdate({
+              ...parsedUpdate,
+              sequence_number: data.sequence_number,
+              consensus_timestamp: data.consensus_timestamp,
+            });
+          } catch (error) {
+            console.error("Failed to parse update:", error);
+          }
+        } catch (error) {
+          console.error("Failed to fetch update:", error);
         }
-
-        // Fetch comments
-        const commentsResponse = await fetch(
-          `https://testnet.mirrornode.hedera.com/api/v1/topics/${commentsTopicId}/messages`
-        );
-        const commentsData = await commentsResponse.json();
-
-        const allComments = commentsData.messages
-          .map((message) => {
-            try {
-              const decodedMessage = atob(message.message);
-              return JSON.parse(decodedMessage);
-            } catch {
-              return null;
-            }
-          })
-          .filter((msg) => msg && msg.commentsId === id)
-          .reverse();
-
-        setComments(allComments);
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      } finally {
-        setIsLoading(false);
       }
+      setIsLoading(false);
     };
 
-    fetchData();
-  }, [id, update, commentsTopicId, topicId]);
+    fetchUpdate();
+  }, [id, update, topicId]);
 
   const handleAddComment = async (e) => {
     e.preventDefault();
@@ -105,7 +76,7 @@ const UpdateDetails = () => {
 
     try {
       const metaData = {
-        commentsId: id,
+        commentsId: id, // This is now sequence_number from URL
         text: newComment,
         icon: "https://cryptologos.cc/logos/hedera-hbar-logo.png",
         date: new Date().toISOString(),
@@ -119,8 +90,10 @@ const UpdateDetails = () => {
         metaData
       );
 
-      setComments((prev) => [metaData, ...prev]);
       setNewComment("");
+
+      // Refetch comments to get fresh data from HCS
+      await refetchComments();
     } catch (error) {
       console.error("Failed to submit comment:", error);
       alert("Failed to submit comment. Please try again.");
@@ -197,15 +170,21 @@ const UpdateDetails = () => {
       <Card className={styles.questionCard}>
         <div className={styles.questionHeader}>
           <h1 className={styles.title}>{update.title}</h1>
+          {update.tags && update.tags.length > 0 && (
+            <div className={styles.tags}>
+              {update.tags.map((tag, index) => (
+                <Badge key={index} variant="secondary">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
 
         <p className={styles.description}>{update.description}</p>
 
         <div className={styles.meta}>
-          <div className={styles.metaItem}>
-            <User size={16} />
-            <span>{update.accountId}</span>
-          </div>
+          <UserWithBadge accountId={update.accountId} size="sm" />
           <div className={styles.metaItem}>
             <Calendar size={16} />
             <span>{new Date(update.date).toLocaleDateString()}</span>
@@ -235,13 +214,10 @@ const UpdateDetails = () => {
 
         {comments.length > 0 && (
           <div className={styles.answersList}>
-            {comments.map((comment, index) => (
-              <Card key={index} className={styles.answerCard}>
+            {comments.map((comment) => (
+              <Card key={comment.sequence_number} className={styles.answerCard}>
                 <div className={styles.answerHeader}>
-                  <div className={styles.answerMeta}>
-                    <User size={16} />
-                    <span>{comment.accountId}</span>
-                  </div>
+                  <UserWithBadge accountId={comment.accountId} size="sm" />
                   <div className={styles.answerActions}>
                     <span className={styles.answerDate}>
                       {new Date(comment.date).toLocaleDateString()}

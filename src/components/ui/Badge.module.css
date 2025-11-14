@@ -34,6 +34,12 @@
   color: var(--primary-700);
 }
 
+.secondary {
+  background: var(--primary-50);
+  color: var(--primary-600);
+  border: 1px solid var(--primary-200);
+}
+
 .success {
   background: #d1fae5;
   color: #065f46;

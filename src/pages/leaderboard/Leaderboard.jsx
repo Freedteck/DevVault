@@ -1,45 +1,63 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Trophy, Award, Medal, TrendingUp } from "lucide-react";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
+import UserWithBadge from "../../components/ui/UserWithBadge";
 import styles from "./Leaderboard.module.css";
 
 const Leaderboard = () => {
+  const navigate = useNavigate();
   const [contributors, setContributors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const topicId = import.meta.env.VITE_TOPIC_ID;
+  const acceptancesTopicId = import.meta.env.VITE_ACCEPTANCES_TOPIC_ID;
   const tokenId = import.meta.env.VITE_TOKEN_ID;
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
+        // Fetch acceptances to get contributors with accepted answers
         const response = await fetch(
-          `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages`
+          `https://testnet.mirrornode.hedera.com/api/v1/topics/${acceptancesTopicId}/messages`
         );
         const data = await response.json();
 
-        // Get unique contributors
-        const uniqueContributors = {};
+        // Count accepted answers per answerer
+        const answerersCount = {};
         data.messages.forEach((msg) => {
-          const payer = msg.payer_account_id;
-          if (!uniqueContributors[payer]) {
-            uniqueContributors[payer] = {
-              accountId: payer,
-              contributions: 0,
-              tokens: 0,
-            };
+          try {
+            const decoded = JSON.parse(atob(msg.message));
+            console.log("Decoded acceptance:", decoded);
+            const answerer = decoded.answerAuthor; // Changed from answererId to answerAuthor
+            if (answerer) {
+              if (!answerersCount[answerer]) {
+                answerersCount[answerer] = {
+                  accountId: answerer,
+                  acceptedAnswers: 0,
+                  tokens: 0,
+                };
+              }
+              answerersCount[answerer].acceptedAnswers++;
+            }
+          } catch (error) {
+            console.error("Error parsing acceptance:", error);
           }
-          uniqueContributors[payer].contributions++;
         });
 
         // Fetch token balances
-        const contributorsArray = Object.values(uniqueContributors);
+        const contributorsArray = Object.values(answerersCount);
+        console.log(
+          "Contributors array before balance fetch:",
+          contributorsArray
+        );
+
         const balancePromises = contributorsArray.map(async (contributor) => {
           try {
             const balanceResponse = await fetch(
               `https://testnet.mirrornode.hedera.com/api/v1/accounts/${contributor.accountId}/tokens?token.id=${tokenId}`
             );
             const balanceData = await balanceResponse.json();
+            console.log(`Balance for ${contributor.accountId}:`, balanceData);
             if (balanceData.tokens && balanceData.tokens.length > 0) {
               contributor.tokens = balanceData.tokens[0].balance;
             }
@@ -50,7 +68,14 @@ const Leaderboard = () => {
         });
 
         const contributorsWithBalances = await Promise.all(balancePromises);
-        contributorsWithBalances.sort((a, b) => b.tokens - a.tokens);
+
+        // Sort by accepted answers, then by tokens
+        contributorsWithBalances.sort((a, b) => {
+          if (b.acceptedAnswers !== a.acceptedAnswers) {
+            return b.acceptedAnswers - a.acceptedAnswers;
+          }
+          return b.tokens - a.tokens;
+        });
 
         setContributors(contributorsWithBalances);
       } catch (error) {
@@ -61,7 +86,7 @@ const Leaderboard = () => {
     };
 
     fetchLeaderboard();
-  }, [topicId, tokenId]);
+  }, [acceptancesTopicId, tokenId]);
 
   const getRankIcon = (rank) => {
     switch (rank) {
@@ -87,7 +112,7 @@ const Leaderboard = () => {
           <div className={styles.headerContent}>
             <h1 className={styles.title}>Leaderboard</h1>
             <p className={styles.subtitle}>
-              Top contributors ranked by DVT tokens earned
+              Top contributors ranked by accepted answers and DVT tokens earned
             </p>
           </div>
         </div>
@@ -107,23 +132,70 @@ const Leaderboard = () => {
         ) : (
           <>
             {/* Top 3 */}
-            {contributors.length >= 3 && (
+            {contributors.length > 0 && contributors.length <= 3 && (
               <div className={styles.topThree}>
-                {contributors.slice(0, 3).map((contributor, index) => (
-                  <Card key={index} padding="lg" className={styles.topCard}>
+                {contributors.map((contributor, index) => (
+                  <Card
+                    key={index}
+                    padding="lg"
+                    className={styles.topCard}
+                    onClick={() =>
+                      navigate(`/profile/${contributor.accountId}`)
+                    }
+                    hover
+                  >
                     <div className={styles.topRank}>
                       {getRankIcon(index)}
                       <div className={styles.rankNumber}>#{index + 1}</div>
                     </div>
-                    <div className={styles.accountId}>
-                      {contributor.accountId}
+                    <div className={styles.topContributor}>
+                      <UserWithBadge accountId={contributor.accountId} />
                     </div>
                     <div className={styles.stats}>
                       <div className={styles.statItem}>
                         <div className={styles.statValue}>
-                          {contributor.contributions}
+                          {contributor.acceptedAnswers}
                         </div>
-                        <div className={styles.statLabel}>Posts</div>
+                        <div className={styles.statLabel}>Accepted</div>
+                      </div>
+                      <div className={styles.statItem}>
+                        <div className={styles.statValue}>
+                          {contributor.tokens}
+                        </div>
+                        <div className={styles.statLabel}>DVT</div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Top 3 for more than 3 contributors */}
+            {contributors.length > 3 && (
+              <div className={styles.topThree}>
+                {contributors.slice(0, 3).map((contributor, index) => (
+                  <Card
+                    key={index}
+                    padding="lg"
+                    className={styles.topCard}
+                    onClick={() =>
+                      navigate(`/profile/${contributor.accountId}`)
+                    }
+                    hover
+                  >
+                    <div className={styles.topRank}>
+                      {getRankIcon(index)}
+                      <div className={styles.rankNumber}>#{index + 1}</div>
+                    </div>
+                    <div className={styles.topContributor}>
+                      <UserWithBadge accountId={contributor.accountId} />
+                    </div>
+                    <div className={styles.stats}>
+                      <div className={styles.statItem}>
+                        <div className={styles.statValue}>
+                          {contributor.acceptedAnswers}
+                        </div>
+                        <div className={styles.statLabel}>Accepted</div>
                       </div>
                       <div className={styles.statItem}>
                         <div className={styles.statValue}>
@@ -144,19 +216,25 @@ const Leaderboard = () => {
                   <div className={styles.tableHeader}>
                     <div className={styles.rank}>Rank</div>
                     <div className={styles.contributor}>Contributor</div>
-                    <div className={styles.contributions}>Contributions</div>
+                    <div className={styles.contributions}>Accepted Answers</div>
                     <div className={styles.tokens}>DVT Tokens</div>
                   </div>
                   {contributors.slice(3).map((contributor, index) => (
-                    <div key={index} className={styles.row}>
+                    <div
+                      key={index}
+                      className={styles.row}
+                      onClick={() =>
+                        navigate(`/profile/${contributor.accountId}`)
+                      }
+                    >
                       <div className={styles.rank}>
                         <Badge variant="default">#{index + 4}</Badge>
                       </div>
                       <div className={styles.contributor}>
-                        {contributor.accountId}
+                        <UserWithBadge accountId={contributor.accountId} />
                       </div>
                       <div className={styles.contributions}>
-                        {contributor.contributions}
+                        {contributor.acceptedAnswers}
                       </div>
                       <div className={styles.tokens}>
                         {contributor.tokens} DVT

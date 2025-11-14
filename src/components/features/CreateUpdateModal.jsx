@@ -10,11 +10,12 @@ import styles from "./CreateQuestionModal.module.css";
 
 const CreateUpdateModal = ({ onClose, onSuccess }) => {
   const { accountId, walletData } = useContext(userWalletContext);
-  const topicId = import.meta.env.VITE_TOPIC_ID;
+  const topicId = import.meta.env.VITE_UPDATES_TOPIC_ID;
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    tags: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -34,9 +35,16 @@ const CreateUpdateModal = ({ onClose, onSuccess }) => {
     setIsSubmitting(true);
 
     try {
+      const tagsArray = formData.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .slice(0, 3); // Limit to 3 tags
+
       const metaData = {
         title: formData.title,
         description: formData.description,
+        tags: tagsArray,
         date: new Date().toISOString(),
         accountId,
         type: "update",
@@ -87,6 +95,20 @@ const CreateUpdateModal = ({ onClose, onSuccess }) => {
               onChange={handleChange}
               required
             />
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor="tags">Tags (comma separated, max 3)</label>
+            <Input
+              id="tags"
+              name="tags"
+              placeholder="e.g. AI, Blockchain, Web3"
+              value={formData.tags}
+              onChange={handleChange}
+            />
+            <small className={styles.fieldHint}>
+              Add up to 3 tags to categorize your update
+            </small>
           </div>
 
           <div className={styles.actions}>

@@ -1,21 +1,19 @@
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import {
-  ArrowLeft,
-  User,
-  Calendar,
-  MessageCircle,
-  Heart,
-  Send,
-} from "lucide-react";
+import { ArrowLeft, Calendar, MessageCircle, Heart, Send } from "lucide-react";
 import { userWalletContext } from "../../context/userWalletContext";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import Input from "../../components/ui/Input";
 import Textarea from "../../components/ui/Textarea";
+import UserWithBadge from "../../components/ui/UserWithBadge";
+import AcceptAnswerButton from "../../components/acceptButton/AcceptAnswerButton";
 import topicMessageFnc from "../../client/topicMessage";
 import tokenTransferFcn from "../../client/tokenTransfer";
+import acceptAnswer from "../../client/acceptAnswer";
+import hbarTransferFnc from "../../client/hbarTransfer";
+import { useAnswers, useAcceptances } from "../../hooks/useHCSData";
 import styles from "./QuestionDetails.module.css";
 
 const QuestionDetails = () => {
@@ -26,7 +24,8 @@ const QuestionDetails = () => {
     useContext(userWalletContext);
 
   const [question, setQuestion] = useState(location.state?.question || null);
-  const [comments, setComments] = useState([]);
+  const { data: comments, refetch: refetchAnswers } = useAnswers(id);
+  const { data: acceptances, refetch: refetchAcceptances } = useAcceptances(id);
   const [newComment, setNewComment] = useState("");
   const [tipAmount, setTipAmount] = useState("");
   const [showTipModal, setShowTipModal] = useState(false);
@@ -34,65 +33,41 @@ const QuestionDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const answersTopicId = import.meta.env.VITE_ANSWERS_TOPIC_ID;
   const tokenId = import.meta.env.VITE_TOKEN_ID;
-  const topicId = import.meta.env.VITE_TOPIC_ID;
+  const topicId = import.meta.env.VITE_QUESTIONS_TOPIC_ID;
+  const answersTopicId = import.meta.env.VITE_ANSWERS_TOPIC_ID;
+  const acceptancesTopicId = import.meta.env.VITE_ACCEPTANCES_TOPIC_ID;
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch question if not passed via state
-        if (!question) {
+    const fetchQuestion = async () => {
+      // Fetch question if not passed via state
+      if (!question) {
+        try {
           const response = await fetch(
-            `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages`
+            `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages/${id}`
           );
           const data = await response.json();
 
-          const messages = data.messages
-            .map((message) => {
-              try {
-                const decodedMessage = atob(message.message);
-                return JSON.parse(decodedMessage);
-              } catch {
-                return null;
-              }
-            })
-            .filter((msg) => msg && msg.type === "question");
-
-          const foundQuestion = messages.find(
-            (_, index) => index + 1 === parseInt(id)
-          );
-          setQuestion(foundQuestion);
+          try {
+            const decodedMessage = atob(data.message);
+            const parsedQuestion = JSON.parse(decodedMessage);
+            setQuestion({
+              ...parsedQuestion,
+              sequence_number: data.sequence_number,
+              consensus_timestamp: data.consensus_timestamp,
+            });
+          } catch (error) {
+            console.error("Failed to parse question:", error);
+          }
+        } catch (error) {
+          console.error("Failed to fetch question:", error);
         }
-
-        // Fetch comments
-        const commentsResponse = await fetch(
-          `https://testnet.mirrornode.hedera.com/api/v1/topics/${answersTopicId}/messages`
-        );
-        const commentsData = await commentsResponse.json();
-
-        const allComments = commentsData.messages
-          .map((message) => {
-            try {
-              const decodedMessage = atob(message.message);
-              return JSON.parse(decodedMessage);
-            } catch {
-              return null;
-            }
-          })
-          .filter((msg) => msg && msg.commentsId === id)
-          .reverse();
-
-        setComments(allComments);
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      } finally {
-        setIsLoading(false);
       }
+      setIsLoading(false);
     };
 
-    fetchData();
-  }, [id, question, answersTopicId, topicId]);
+    fetchQuestion();
+  }, [id, question, topicId]);
 
   const handleAddComment = async (e) => {
     e.preventDefault();
@@ -106,7 +81,7 @@ const QuestionDetails = () => {
 
     try {
       const metaData = {
-        commentsId: id,
+        commentsId: id, // This is now sequence_number from URL
         text: newComment,
         icon: "https://cryptologos.cc/logos/hedera-hbar-logo.png",
         date: new Date().toISOString(),
@@ -120,8 +95,10 @@ const QuestionDetails = () => {
         metaData
       );
 
-      setComments((prev) => [metaData, ...prev]);
       setNewComment("");
+
+      // Refetch answers to get fresh data from HCS
+      await refetchAnswers();
     } catch (error) {
       console.error("Failed to submit comment:", error);
       alert("Failed to submit comment. Please try again.");
@@ -160,6 +137,74 @@ const QuestionDetails = () => {
   const openTipModal = (accountId) => {
     setTipTarget(accountId);
     setShowTipModal(true);
+  };
+
+  const handleAcceptAnswer = async (answerId) => {
+    if (!userAccountId) {
+      alert("Please connect your wallet to accept answers");
+      return;
+    }
+
+    // Check if this answer is already accepted
+    const isAlreadyAccepted = acceptances.some(
+      (acceptance) => acceptance.answerId === answerId
+    );
+
+    if (isAlreadyAccepted) {
+      alert("This answer has already been accepted");
+      return;
+    }
+
+    // Find the answer by sequence_number
+    const answer = comments.find(
+      (comment) => comment.sequence_number === answerId
+    );
+    if (!answer) {
+      alert("Answer not found");
+      return;
+    }
+
+    // Check if user is trying to accept their own answer
+    if (answer.accountId === userAccountId) {
+      alert("You cannot accept your own answer");
+      return;
+    }
+
+    try {
+      // Transfer bounty to answer author if bounty exists
+      if (question.bounty && question.bounty > 0) {
+        await hbarTransferFnc(
+          walletData,
+          userAccountId,
+          answer.accountId,
+          question.bounty.toString()
+        );
+      }
+
+      const acceptanceData = {
+        type: "acceptance",
+        questionId: id, // This is the question's sequence_number
+        answerId: answerId, // This is the answer's sequence_number
+        answerAuthor: answer.accountId,
+        acceptedBy: userAccountId,
+        timestamp: Date.now(),
+      };
+
+      await acceptAnswer(
+        walletData,
+        userAccountId,
+        acceptancesTopicId,
+        acceptanceData
+      );
+
+      // Refetch acceptances to get fresh data from HCS
+      await refetchAcceptances();
+    } catch (error) {
+      console.error("Failed to accept answer:", error);
+      console.error("Error details:", error.message);
+      console.error("Error stack:", error.stack);
+      alert(`Failed to accept answer: ${error.message || "Please try again."}`);
+    }
   };
 
   if (isLoading) {
@@ -204,16 +249,18 @@ const QuestionDetails = () => {
                 {tag}
               </Badge>
             ))}
+            {question.bounty > 0 && (
+              <Badge variant="success" className={styles.bountyBadge}>
+                {question.bounty} HBAR Bounty
+              </Badge>
+            )}
           </div>
         </div>
 
         <p className={styles.description}>{question.description}</p>
 
         <div className={styles.meta}>
-          <div className={styles.metaItem}>
-            <User size={16} />
-            <span>{question.accountId}</span>
-          </div>
+          <UserWithBadge accountId={question.accountId} size="sm" />
           <div className={styles.metaItem}>
             <Calendar size={16} />
             <span>{new Date(question.date).toLocaleDateString()}</span>
@@ -240,35 +287,51 @@ const QuestionDetails = () => {
         <h2 className={styles.answersTitle}>
           {comments.length} {comments.length === 1 ? "Answer" : "Answers"}
         </h2>
-
         {comments.length > 0 && (
           <div className={styles.answersList}>
-            {comments.map((comment, index) => (
-              <Card key={index} className={styles.answerCard}>
-                <div className={styles.answerHeader}>
-                  <div className={styles.answerMeta}>
-                    <User size={16} />
-                    <span>{comment.accountId}</span>
-                  </div>
-                  <div className={styles.answerActions}>
-                    <span className={styles.answerDate}>
-                      {new Date(comment.date).toLocaleDateString()}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openTipModal(comment.accountId)}
-                    >
-                      <Heart size={16} />
-                    </Button>
-                  </div>
-                </div>
-                <p className={styles.answerText}>{comment.text}</p>
-              </Card>
-            ))}
-          </div>
-        )}
+            {comments.map((comment) => {
+              const answerId = comment.sequence_number;
+              const isAccepted = acceptances.some(
+                (acceptance) => acceptance.answerId === answerId
+              );
 
+              return (
+                <Card
+                  key={comment.sequence_number}
+                  className={styles.answerCard}
+                >
+                  <div className={styles.answerHeader}>
+                    <UserWithBadge accountId={comment.accountId} size="sm" />
+                    <div className={styles.answerActions}>
+                      <span className={styles.answerDate}>
+                        {new Date(comment.date).toLocaleDateString()}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openTipModal(comment.accountId)}
+                      >
+                        <Heart size={16} />
+                      </Button>
+                    </div>
+                  </div>
+                  <p className={styles.answerText}>{comment.text}</p>
+
+                  {/* Accept Answer Button */}
+                  <div className={styles.acceptSection}>
+                    <AcceptAnswerButton
+                      answerId={answerId}
+                      answerAuthorId={comment.accountId}
+                      isAccepted={isAccepted}
+                      currentUserId={userAccountId}
+                      onAccept={handleAcceptAnswer}
+                    />
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}{" "}
         <Card className={styles.addAnswerCard}>
           <h3 className={styles.addAnswerTitle}>Your Answer</h3>
           <form onSubmit={handleAddComment} className={styles.addAnswerForm}>
