@@ -36,7 +36,9 @@ export async function associateToken(walletData, accountId, tokenId) {
       .freezeWithSigner(signer);
 
     // Submit the transaction
-    const tokenAssociateSubmit = await associateUserTx.executeWithSigner(signer);
+    const tokenAssociateSubmit = await associateUserTx.executeWithSigner(
+      signer
+    );
 
     const tokenAssociateRx = await provider.getTransactionReceipt(
       tokenAssociateSubmit.transactionId
