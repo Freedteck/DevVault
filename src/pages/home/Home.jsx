@@ -15,9 +15,12 @@ import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import EscrowDeployer from "../../components/features/EscrowDeployer";
+import { useAnalytics } from "../../hooks/useAnalytics";
 import styles from "./Home.module.css";
 
 const Home = () => {
+  const { totalAnswers, totalTips, activeUsers, isLoading } = useAnalytics();
+
   const features = [
     {
       icon: <MessageSquare size={24} />,
@@ -46,9 +49,9 @@ const Home = () => {
   ];
 
   const stats = [
-    { label: "Active Developers", value: "1,000+" },
-    { label: "Questions Answered", value: "5,000+" },
-    { label: "DVT Distributed", value: "50,000+" },
+    { label: "Active Developers", value: isLoading ? "..." : activeUsers.toString() },
+    { label: "Questions Answered", value: isLoading ? "..." : totalAnswers.toString() },
+    { label: "DVT Distributed", value: isLoading ? "..." : totalTips.toString() },
   ];
 
   const benefits = [

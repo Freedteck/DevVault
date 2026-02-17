@@ -1,47 +1,202 @@
 # DevVault
 
-This is a developer platform designed to reward knowledge sharing and foster collaboration among developers. It combines the functionality of questions and answers with a content sharing hub for updates and best practices.
+A decentralized developer platform built on Hedera that rewards knowledge sharing and fosters collaboration. DevVault combines Q&A functionality with content sharing, powered by blockchain-based incentives and secure data storage.
 
-# Overview
+## Overview
 
-This dapp consists of features in which developers can ask questions, share resources and receive tips in a decentralized and transparent way. Creating a condusive ecosystem where contributions are recognized and incentivized.
+DevVault is a decentralized application (dApp) that enables developers to ask questions, share technical updates, and receive token-based rewards for valuable contributions. Built on Hedera's high-performance distributed ledger, it creates a transparent and incentivized ecosystem for developer collaboration.
 
-# Core features
+## Core Features
 
-1. Contribution category
-   This comprises of Q&A sessions by developers with best responses highlighted. It also includes a space for developers to share updates and other information like frameeworks and industry trends.
-2. Tipping system
-   Users can tip developers for valuable posts, answers, or comments, allowing contributors to earn rewards directly. Tipping is available for both the original content and any associated comments or answers.
-3. Comments & Discussions
-   Each post (whether a question or an update) supports comments, enabling discussions and additional insights.
-4. Leaderboard & Recognition
-   A leaderboard highlights top contributors based on the tokens received, encouraging active participation and quality contributions
-5. Data Retrieval & Transparency
-   Users can access all Q&A threads and shared resources, they can view all associated comments to get the complete context of discussions.
+### 1. Dual Content System
 
-# Value Proposition
+- **Q&A Platform**: Developers can ask technical questions and provide answers with best responses highlighted through acceptance system
+- **Updates & Resources**: Share technical updates, best practices, frameworks, tools, and industry insights
 
-For Developers: Gain recognition and earn rewards for sharing knowledge, solving problems, and contributing to the community.  
- For Teams & Organizations: A hub to identify top contributors and stay updated on industry trends and best practices.  
-For the Community: Build a vibrant and incentivized ecosystem where collaboration and innovation thrive.
+### 2. Token-Based Tipping System
 
-# Vision
+- Tip developers for valuable posts, answers, or comments using DVT tokens or HBAR
+- Tipping available for original content and associated comments/answers
+- Direct peer-to-peer rewards through Hedera Token Service
 
-DevVault aims to become the go-to platform for developers to share, learn, and grow together, creating a sustainable environment where contributions are valued and rewarded.
+### 3. Comments & Discussions
 
-# React + Vite
+- Threaded discussions on all posts (questions and updates)
+- Enable deeper technical conversations and additional insights
+- Comments can also receive tips for engagement
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+### 4. Leaderboard & Recognition
 
-Currently, two official plugins are available:
+- Contributor rankings based on accepted answers and tokens earned
+- NFT achievement badges for milestones
+- Transparent recognition system
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 5. Decentralized Data Storage
 
-# Technologies used
+- All content stored on Hedera Consensus Service (HCS) topics
+- Immutable, timestamped records of all interactions
+- Transparent access to complete discussion threads
 
-Frontend: React, Node.js
+### 6. Advanced Blockchain Features
 
-Development tools: Vite, HMR, ESLint.
+- **Escrow System**: Smart contract-based bounty management for questions
+- **Wallet Integration**: HashPack wallet connection with user profiles
+- **Multi-Topic Architecture**: Separate HCS topics for questions, answers, updates, acceptances, and token transfers
 
-Hedera: Hedera smart contract.
+## Technical Architecture
+
+### Frontend
+
+- **React 18** with modern hooks and context patterns
+- **Vite** for fast development and optimized builds
+- **React Router** for client-side navigation
+- **CSS Modules** for component-scoped styling
+- **React Hot Toast** for notifications
+
+### Blockchain Integration
+
+- **Hedera Consensus Service (HCS)**: Decentralized data storage across multiple topics
+- **Hedera Token Service**: DVT token creation, minting, and transfers
+- **Smart Contracts**: Escrow functionality for bounty management
+- **HashPack Wallet**: User authentication and transaction signing
+
+### Data Structure
+
+- **Questions Topic**: Stores question posts with metadata
+- **Answers Topic**: Stores responses and comments
+- **Updates Topic**: Stores technical updates and resources
+- **Acceptances Topic**: Tracks accepted answers for leaderboard
+- **Token Transfers Topic**: Records all tipping transactions
+
+## Value Proposition
+
+**For Developers:**
+
+- Earn DVT tokens and HBAR for sharing knowledge and helping peers
+- Build reputation through leaderboard rankings and NFT badges
+- Access transparent, immutable record of contributions
+
+**For Teams & Organizations:**
+
+- Identify top technical contributors for hiring
+- Stay updated on industry trends and best practices
+- Leverage decentralized expertise network
+
+**For the Community:**
+
+- Sustainable incentivized ecosystem for technical collaboration
+- Transparent reward system encouraging quality contributions
+- Cross-organizational knowledge sharing
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- HashPack wallet for Hedera testnet
+- HBAR for gas fees and initial DVT tokens
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/Freedteck/DevVault.git
+cd DevVault
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Configure environment variables:
+   Create a `.env` file with the following variables:
+
+```env
+VITE_TOKEN_ID=your_dvt_token_id
+VITE_ESCROW_CONTRACT_ID=your_escrow_contract_id
+VITE_QUESTIONS_TOPIC_ID=your_questions_topic_id
+VITE_ANSWERS_TOPIC_ID=your_answers_topic_id
+VITE_UPDATES_TOPIC_ID=your_updates_topic_id
+VITE_ACCEPTANCES_TOPIC_ID=your_acceptances_topic_id
+```
+
+4. Start the development server:
+
+```bash
+npm run dev
+```
+
+5. Open [http://localhost:5173](http://localhost:5173) in your browser
+
+### Deployment
+
+Build for production:
+
+```bash
+npm run build
+```
+
+Preview the production build:
+
+```bash
+npm run preview
+```
+
+## Usage
+
+1. **Connect Wallet**: Link your HashPack wallet to access the platform
+2. **Ask Questions**: Post technical questions with optional HBAR bounties
+3. **Share Updates**: Publish technical insights, tutorials, or industry news
+4. **Provide Answers**: Help fellow developers and earn tips
+5. **Tip Contributions**: Reward valuable content with DVT tokens
+6. **Accept Answers**: Mark helpful responses to build contributor reputation
+
+## Technologies Used
+
+### Frontend
+
+- React 18.3.1
+- Vite 5.4.1
+- React Router DOM 6.26.1
+- Lucide React (icons)
+- React Hot Toast 2.6.0
+
+### Blockchain
+
+- @hashgraph/sdk 2.14.2
+- hashconnect 0.1.7
+- solc 0.8.30 (Solidity compiler)
+
+### Development Tools
+
+- ESLint 9.9.0
+- Vitest 2.0.5
+- @testing-library/react 16.0.0
+
+## Hedera Integration Details
+
+DevVault leverages multiple Hedera services:
+
+- **Consensus Service**: Timestamped, immutable data storage
+- **Token Service**: Custom DVT token for rewards and tipping
+- **Smart Contracts**: Escrow functionality for bounty management
+- **Mirror Node API**: Query historical data and transactions
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Vision
+
+DevVault aims to become the premier decentralized platform for developer collaboration, creating a sustainable ecosystem where technical knowledge is valued, shared, and rewarded through blockchain-based incentives.

@@ -1,7 +1,7 @@
-import PropTypes from 'prop-types';
-import styles from './DevVaultLogo.module.css';
+import PropTypes from "prop-types";
+import styles from "./DevVaultLogo.module.css";
 
-const DevVaultLogo = ({ size = 'medium', showText = true, className = '' }) => {
+const DevVaultLogo = ({ size = "medium", showText = true, className = "" }) => {
   const sizeClass = styles[size];
 
   return (
@@ -17,7 +17,13 @@ const DevVaultLogo = ({ size = 'medium', showText = true, className = '' }) => {
             <stop offset="50%" stopColor="#1d4ed8" />
             <stop offset="100%" stopColor="#1e40af" />
           </linearGradient>
-          <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient
+            id="accentGradient"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="100%"
+          >
             <stop offset="0%" stopColor="#60a5fa" />
             <stop offset="100%" stopColor="#3b82f6" />
           </linearGradient>
@@ -43,18 +49,34 @@ const DevVaultLogo = ({ size = 'medium', showText = true, className = '' }) => {
         {/* Code brackets */}
         <g fill="white" fontFamily="monospace" fontSize="14" fontWeight="bold">
           {/* Left bracket */}
-          <text x="35" y="59" textAnchor="middle">{"{"}</text>
+          <text x="35" y="59" textAnchor="middle">
+            {"{"}
+          </text>
           {/* Right bracket */}
-          <text x="85" y="59" textAnchor="middle">{"}"}</text>
+          <text x="85" y="59" textAnchor="middle">
+            {"}"}
+          </text>
         </g>
 
         {/* Central element - stylized 'D' and 'V' */}
-        <g fill="white" fontFamily="Arial, sans-serif" fontSize="16" fontWeight="bold">
-          <text x="60" y="60" textAnchor="middle" letterSpacing="1px">DV</text>
+        <g
+          fill="white"
+          fontFamily="Arial, sans-serif"
+          fontSize="16"
+          fontWeight="bold"
+        >
+          <text x="60" y="60" textAnchor="middle" letterSpacing="1px">
+            DV
+          </text>
         </g>
 
         {/* Circuit-like decorative elements */}
-        <g stroke="url(#accentGradient)" strokeWidth="1.5" fill="none" opacity="0.8">
+        <g
+          stroke="url(#accentGradient)"
+          strokeWidth="1.5"
+          fill="none"
+          opacity="0.8"
+        >
           {/* Top circuit */}
           <path d="M45 20 Q60 15 75 20" />
           {/* Bottom circuit */}
@@ -67,10 +89,34 @@ const DevVaultLogo = ({ size = 'medium', showText = true, className = '' }) => {
         </g>
 
         {/* Small accent dots */}
-        <circle cx="50" cy="30" r="1.5" fill="url(#accentGradient)" opacity="0.7" />
-        <circle cx="70" cy="30" r="1.5" fill="url(#accentGradient)" opacity="0.7" />
-        <circle cx="50" cy="70" r="1.5" fill="url(#accentGradient)" opacity="0.7" />
-        <circle cx="70" cy="70" r="1.5" fill="url(#accentGradient)" opacity="0.7" />
+        <circle
+          cx="50"
+          cy="30"
+          r="1.5"
+          fill="url(#accentGradient)"
+          opacity="0.7"
+        />
+        <circle
+          cx="70"
+          cy="30"
+          r="1.5"
+          fill="url(#accentGradient)"
+          opacity="0.7"
+        />
+        <circle
+          cx="50"
+          cy="70"
+          r="1.5"
+          fill="url(#accentGradient)"
+          opacity="0.7"
+        />
+        <circle
+          cx="70"
+          cy="70"
+          r="1.5"
+          fill="url(#accentGradient)"
+          opacity="0.7"
+        />
       </svg>
 
       {showText && (
@@ -84,7 +130,7 @@ const DevVaultLogo = ({ size = 'medium', showText = true, className = '' }) => {
 };
 
 DevVaultLogo.propTypes = {
-  size: PropTypes.oneOf(['small', 'medium', 'large']),
+  size: PropTypes.oneOf(["small", "medium", "large"]),
   showText: PropTypes.bool,
   className: PropTypes.string,
 };
