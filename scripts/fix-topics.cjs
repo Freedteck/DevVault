@@ -38,7 +38,9 @@ async function fixTopics() {
 
   try {
     console.log("🔧 Fixing DevVault Topics - Removing Submit Key Requirements");
-    console.log("=============================================================\n");
+    console.log(
+      "=============================================================\n"
+    );
 
     // Create new Questions Topic (without submit key for public access)
     console.log("1. Creating new Questions Topic (public access)...");
@@ -67,10 +69,18 @@ async function fixTopics() {
     console.log(`VITE_QUESTIONS_TOPIC_ID=${newQuestionsTopicId}`);
     console.log(`VITE_ANSWERS_TOPIC_ID=${newAnswersTopicId}`);
     console.log("\n❌ OLD TOPIC IDs (with submit key restrictions):");
-    console.log(`OLD VITE_QUESTIONS_TOPIC_ID=${process.env.VITE_QUESTIONS_TOPIC_ID}`);
-    console.log(`OLD VITE_ANSWERS_TOPIC_ID=${process.env.VITE_ANSWERS_TOPIC_ID}`);
-    console.log("\n⚠️  IMPORTANT: After updating .env.local, restart your dev server!");
-    console.log("🚀 Users will now be able to ask questions and submit answers without signature errors.\n");
+    console.log(
+      `OLD VITE_QUESTIONS_TOPIC_ID=${process.env.VITE_QUESTIONS_TOPIC_ID}`
+    );
+    console.log(
+      `OLD VITE_ANSWERS_TOPIC_ID=${process.env.VITE_ANSWERS_TOPIC_ID}`
+    );
+    console.log(
+      "\n⚠️  IMPORTANT: After updating .env.local, restart your dev server!"
+    );
+    console.log(
+      "🚀 Users will now be able to ask questions and submit answers without signature errors.\n"
+    );
 
     client.close();
   } catch (error) {
