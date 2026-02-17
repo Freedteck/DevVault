@@ -1,10 +1,10 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Wallet, MessageSquare, Award, Filter } from "lucide-react";
-import { userWalletContext } from "../context/userWalletContext";
-import Card from "../components/ui/Card";
-import QuestionCard from "../components/features/QuestionCard";
-import UpdateCard from "../components/features/UpdateCard";
+import { userWalletContext } from "../../context/userWalletContext";
+import Card from "../../components/ui/Card";
+import QuestionCard from "../../components/features/QuestionCard";
+import UpdateCard from "../../components/features/UpdateCard";
 import styles from "./Profile.module.css";
 
 const Profile = () => {
