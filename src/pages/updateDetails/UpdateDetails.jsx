@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Calendar, MessageCircle, Heart, Send } from "lucide-react";
+import { ArrowLeft, Calendar, MessageCircle, Send } from "lucide-react";
 import toast from "react-hot-toast";
 import { userWalletContext } from "../../context/userWalletContext";
 import Button from "../../components/ui/Button";
@@ -9,6 +9,7 @@ import Badge from "../../components/ui/Badge";
 import Input from "../../components/ui/Input";
 import Textarea from "../../components/ui/Textarea";
 import UserWithBadge from "../../components/ui/UserWithBadge";
+import TipButton from "../../components/ui/TipButton";
 import topicMessageFnc from "../../client/topicMessage";
 import tokenTransferFcn from "../../client/tokenTransfer";
 import { useUpdateComments } from "../../hooks/useHCSData";
@@ -198,14 +199,10 @@ const UpdateDetails = () => {
         </div>
 
         <div className={styles.tipSection}>
-          <Button
-            variant="outline"
-            size="sm"
+          <TipButton
+            accountId={update.accountId}
             onClick={() => openTipModal(update.accountId)}
-          >
-            <Heart size={16} />
-            Tip Author
-          </Button>
+          />
         </div>
       </Card>
 
@@ -224,13 +221,10 @@ const UpdateDetails = () => {
                     <span className={styles.answerDate}>
                       {new Date(comment.date).toLocaleDateString()}
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    <TipButton
+                      accountId={comment.accountId}
                       onClick={() => openTipModal(comment.accountId)}
-                    >
-                      <Heart size={16} />
-                    </Button>
+                    />
                   </div>
                 </div>
                 <p className={styles.answerText}>{comment.text}</p>

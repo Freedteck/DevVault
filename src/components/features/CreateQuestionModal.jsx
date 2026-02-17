@@ -53,7 +53,11 @@ const CreateQuestionModal = ({ onClose, onSuccess }) => {
 
       if (numericBalance < requiredAmount) {
         toast.error(
-          `Insufficient balance. You need ${requiredAmount.toFixed(2)} HBAR (including gas fees), but only have ${numericBalance.toFixed(2)} HBAR.`
+          `Insufficient balance. You need ${requiredAmount.toFixed(
+            2
+          )} HBAR (including gas fees), but only have ${numericBalance.toFixed(
+            2
+          )} HBAR.`
         );
         return;
       }
@@ -181,8 +185,7 @@ const CreateQuestionModal = ({ onClose, onSuccess }) => {
             <small className={styles.fieldHint}>
               {balance
                 ? `Your balance: ${balance} | Reserve ~1 HBAR for gas fees. Add HBAR bounty to incentivize quality answers.`
-                : "Add HBAR bounty to incentivize quality answers. The bounty will be sent to whoever gets their answer accepted."
-              }
+                : "Add HBAR bounty to incentivize quality answers. The bounty will be sent to whoever gets their answer accepted."}
             </small>
           </div>
 

@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Calendar, MessageCircle, Heart, Send } from "lucide-react";
+import { ArrowLeft, Calendar, MessageCircle, Send } from "lucide-react";
 import toast from "react-hot-toast";
 import { userWalletContext } from "../../context/userWalletContext";
 import Button from "../../components/ui/Button";
@@ -9,6 +9,7 @@ import Badge from "../../components/ui/Badge";
 import Input from "../../components/ui/Input";
 import Textarea from "../../components/ui/Textarea";
 import UserWithBadge from "../../components/ui/UserWithBadge";
+import TipButton from "../../components/ui/TipButton";
 import AcceptAnswerButton from "../../components/acceptButton/AcceptAnswerButton";
 import topicMessageFnc from "../../client/topicMessage";
 import tokenTransferFcn from "../../client/tokenTransfer";
@@ -233,6 +234,11 @@ const QuestionDetails = () => {
     }
   };
 
+  const sortedComments = comments.sort((a, b) => {
+    const timeA = parseFloat(a.consensus_timestamp);
+    const timeB = parseFloat(b.consensus_timestamp);
+    return timeA - timeB;
+  });
   if (isLoading) {
     return (
       <div className={styles.questionDetails}>
@@ -306,24 +312,21 @@ const QuestionDetails = () => {
         </div>
 
         <div className={styles.tipSection}>
-          <Button
-            variant="outline"
-            size="sm"
+          <TipButton
+            accountId={question.accountId}
             onClick={() => openTipModal(question.accountId)}
-          >
-            <Heart size={16} />
-            Tip Author
-          </Button>
+          />
         </div>
       </Card>
 
       <div className={styles.answersSection}>
         <h2 className={styles.answersTitle}>
-          {comments.length} {comments.length === 1 ? "Answer" : "Answers"}
+          {sortedComments.length}{" "}
+          {sortedComments.length === 1 ? "Answer" : "Answers"}
         </h2>
-        {comments.length > 0 && (
+        {sortedComments.length > 0 && (
           <div className={styles.answersList}>
-            {comments.map((comment) => {
+            {sortedComments.map((comment) => {
               const answerId = comment.sequence_number;
 
               // Check if THIS specific answer has been accepted
@@ -357,13 +360,10 @@ const QuestionDetails = () => {
                       <span className={styles.answerDate}>
                         {new Date(comment.date).toLocaleDateString()}
                       </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <TipButton
+                        accountId={comment.accountId}
                         onClick={() => openTipModal(comment.accountId)}
-                      >
-                        <Heart size={16} />
-                      </Button>
+                      />
                     </div>
                   </div>
                   <p className={styles.answerText}>{comment.text}</p>
