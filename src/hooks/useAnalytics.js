@@ -33,7 +33,7 @@ export const useAnalytics = () => {
   }, []);
 
   const fetchAnalytics = useCallback(async () => {
-    setAnalytics(prev => ({ ...prev, isLoading: true, error: null }));
+    setAnalytics((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const questionsTopicId = import.meta.env.VITE_QUESTIONS_TOPIC_ID;
@@ -41,11 +41,12 @@ export const useAnalytics = () => {
       const acceptancesTopicId = import.meta.env.VITE_ACCEPTANCES_TOPIC_ID;
 
       // Fetch counts from all topics
-      const [questionsCount, answersCount, acceptancesCount] = await Promise.all([
-        fetchTopicCount(questionsTopicId),
-        fetchTopicCount(answersTopicId),
-        fetchTopicCount(acceptancesTopicId),
-      ]);
+      const [questionsCount, answersCount, acceptancesCount] =
+        await Promise.all([
+          fetchTopicCount(questionsTopicId),
+          fetchTopicCount(answersTopicId),
+          fetchTopicCount(acceptancesTopicId),
+        ]);
 
       // Calculate unique users from acceptances (contributors who have received accepted answers)
       const uniqueUsers = new Set();
@@ -57,7 +58,7 @@ export const useAnalytics = () => {
           );
           if (response.ok) {
             const data = await response.json();
-            data.messages?.forEach(message => {
+            data.messages?.forEach((message) => {
               try {
                 const decoded = JSON.parse(atob(message.message));
                 if (decoded.answerAuthor) {
@@ -87,7 +88,7 @@ export const useAnalytics = () => {
       });
     } catch (error) {
       console.error("Error fetching analytics:", error);
-      setAnalytics(prev => ({
+      setAnalytics((prev) => ({
         ...prev,
         isLoading: false,
         error: "Failed to load analytics data",

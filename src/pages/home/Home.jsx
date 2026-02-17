@@ -49,9 +49,18 @@ const Home = () => {
   ];
 
   const stats = [
-    { label: "Active Developers", value: isLoading ? "..." : activeUsers.toString() },
-    { label: "Questions Answered", value: isLoading ? "..." : totalAnswers.toString() },
-    { label: "DVT Distributed", value: isLoading ? "..." : totalTips.toString() },
+    {
+      label: "Active Developers",
+      value: isLoading ? "..." : activeUsers.toString(),
+    },
+    {
+      label: "Questions Answered",
+      value: isLoading ? "..." : totalAnswers.toString(),
+    },
+    {
+      label: "DVT Distributed",
+      value: isLoading ? "..." : totalTips.toString(),
+    },
   ];
 
   const benefits = [
