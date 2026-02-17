@@ -52,10 +52,7 @@ const UserWithBadge = ({ accountId, size = "sm" }) => {
       </div>
       <span className={styles.accountId}>{accountId}</span>
       {badge && (
-        <span 
-          title={`Verified ${badge.name}`}
-          className={styles.badgeIcon}
-        >
+        <span title={`Verified ${badge.name}`} className={styles.badgeIcon}>
           <BadgeSVG tier={badge.name} color={badge.color} earned={true} />
         </span>
       )}

@@ -13,7 +13,7 @@ function loadEnv() {
   const envPath = path.join(__dirname, "..", ".env.local");
   const envContent = fs.readFileSync(envPath, "utf8");
   const env = {};
-  
+
   envContent.split("\n").forEach((line) => {
     const [key, ...valueParts] = line.split("=");
     if (key && valueParts.length > 0 && !key.startsWith("#")) {
@@ -28,7 +28,7 @@ function loadEnv() {
       }
     }
   });
-  
+
   return env;
 }
 
@@ -56,12 +56,12 @@ async function testMintBadge() {
     const metadata = Buffer.from(
       JSON.stringify({
         tier: "Helper",
-        acc: 1
+        acc: 1,
       })
     );
-    
+
     console.log(`✅ Metadata created (${metadata.length} bytes)`);
-    
+
     if (metadata.length > 100) {
       throw new Error(`Metadata too large: ${metadata.length} bytes (max 100)`);
     }
@@ -85,7 +85,9 @@ async function testMintBadge() {
     console.log("=======================================");
     console.log(`Serial Number: ${mintRx.serials[0]}`);
     console.log(`Transaction ID: ${mintSubmit.transactionId}`);
-    console.log(`View on HashScan: https://hashscan.io/testnet/transaction/${mintSubmit.transactionId}`);
+    console.log(
+      `View on HashScan: https://hashscan.io/testnet/transaction/${mintSubmit.transactionId}`
+    );
     console.log("\nNOTE: Badge is now in treasury. To complete the flow:");
     console.log("1. User associates token via wallet");
     console.log("2. Transfer NFT from treasury to user");

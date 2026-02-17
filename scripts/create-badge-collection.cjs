@@ -14,7 +14,7 @@ function loadEnv() {
   const envPath = path.join(__dirname, "..", ".env.local");
   const envContent = fs.readFileSync(envPath, "utf8");
   const env = {};
-  
+
   envContent.split("\n").forEach((line) => {
     const [key, ...valueParts] = line.split("=");
     if (key && valueParts.length > 0) {
@@ -24,7 +24,7 @@ function loadEnv() {
       }
     }
   });
-  
+
   return env;
 }
 

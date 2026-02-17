@@ -32,11 +32,17 @@ async function mintNFTBadge(walletData, accountId, nftCollectionId, badgeData) {
   try {
     const hashconnect = walletData[0];
     const saveData = walletData[1];
-    const provider = hashconnect.getProvider("testnet", saveData.topic, accountId);
+    const provider = hashconnect.getProvider(
+      "testnet",
+      saveData.topic,
+      accountId
+    );
     const signer = hashconnect.getSigner(provider);
 
     const treasuryAccountId = import.meta.env.VITE_MY_ACCOUNT_ID;
-    const supplyKey = PrivateKey.fromStringECDSA(import.meta.env.VITE_MY_PRIVATE_KEY);
+    const supplyKey = PrivateKey.fromStringECDSA(
+      import.meta.env.VITE_MY_PRIVATE_KEY
+    );
 
     const treasuryClient = Client.forTestnet().setOperator(
       AccountId.fromString(treasuryAccountId),
@@ -49,7 +55,7 @@ async function mintNFTBadge(walletData, accountId, nftCollectionId, badgeData) {
     // Step 1: Check and associate token if needed
     console.log("\n1. Checking token association...");
     const isAssociated = await isTokenAssociated(accountId, nftCollectionId);
-    
+
     if (!isAssociated) {
       console.log("Token not associated. Associating now...");
       try {
@@ -60,10 +66,15 @@ async function mintNFTBadge(walletData, accountId, nftCollectionId, badgeData) {
 
         const associateResponse = await associateTx.executeWithSigner(signer);
         const associateTxId = associateResponse.transactionId;
-        console.log("Association transaction submitted:", associateTxId.toString());
-        
+        console.log(
+          "Association transaction submitted:",
+          associateTxId.toString()
+        );
+
         // Wait for receipt using provider
-        const associateReceipt = await provider.getTransactionReceipt(associateTxId);
+        const associateReceipt = await provider.getTransactionReceipt(
+          associateTxId
+        );
         console.log("Token associated:", associateReceipt.status.toString());
       } catch (error) {
         console.error("Association failed:", error);
@@ -103,14 +114,18 @@ async function mintNFTBadge(walletData, accountId, nftCollectionId, badgeData) {
     const nftId = new NftId(TokenId.fromString(nftCollectionId), serialNumber);
 
     const transferTx = await new TransferTransaction()
-      .addNftTransfer(nftId, AccountId.fromString(treasuryAccountId), AccountId.fromString(accountId))
+      .addNftTransfer(
+        nftId,
+        AccountId.fromString(treasuryAccountId),
+        AccountId.fromString(accountId)
+      )
       .freezeWithSigner(signer);
 
     const transferTxSigned = await transferTx.sign(supplyKey);
     const transferResponse = await transferTxSigned.executeWithSigner(signer);
     const transferTxId = transferResponse.transactionId;
     console.log("Transfer transaction submitted:", transferTxId.toString());
-    
+
     // Wait for receipt using provider
     const transferReceipt = await provider.getTransactionReceipt(transferTxId);
     console.log("Badge transferred:", transferReceipt.status.toString());
@@ -132,7 +147,12 @@ async function mintNFTBadge(walletData, accountId, nftCollectionId, badgeData) {
 
     console.log("\n=======DONE========");
     console.log("Serial:", serialNumber.toString());
-    console.log("View: https://hashscan.io/testnet/token/" + nftCollectionId + "/" + serialNumber);
+    console.log(
+      "View: https://hashscan.io/testnet/token/" +
+        nftCollectionId +
+        "/" +
+        serialNumber
+    );
 
     return {
       success: true,

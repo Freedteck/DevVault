@@ -14,8 +14,11 @@ import styles from "./Profile.module.css";
 const Profile = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { accountId: connectedAccountId, balance, walletData } =
-    useContext(userWalletContext);
+  const {
+    accountId: connectedAccountId,
+    balance,
+    walletData,
+  } = useContext(userWalletContext);
 
   // Use URL param if provided, otherwise use connected wallet
   const accountId = id || connectedAccountId;
@@ -136,14 +139,14 @@ const Profile = () => {
             `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}/nfts?token.id=${nftCollectionId}`
           );
           const nftData = await nftResponse.json();
-          
+
           // Extract badge tiers from owned NFTs metadata
           if (nftData.nfts && nftData.nfts.length > 0) {
             const badgePromises = nftData.nfts.map(async (nft) => {
               try {
                 const metadataBytes = atob(nft.metadata);
                 const metadata = JSON.parse(metadataBytes);
-                
+
                 // Handle both old format (attributes) and new format (t: tier)
                 if (metadata.t) {
                   return metadata.t; // New minimal format
@@ -190,13 +193,13 @@ const Profile = () => {
         `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}/nfts?token.id=${nftCollectionId}`
       );
       const nftData = await nftResponse.json();
-      
+
       if (nftData.nfts && nftData.nfts.length > 0) {
         const badgePromises = nftData.nfts.map(async (nft) => {
           try {
             const metadataBytes = atob(nft.metadata);
             const metadata = JSON.parse(metadataBytes);
-            
+
             // Handle both old format (attributes) and new format (t: tier)
             if (metadata.t) {
               return metadata.t;
@@ -238,7 +241,7 @@ const Profile = () => {
 
     try {
       const loadingToast = toast.loading(`Minting ${badge.name} badge...`);
-      
+
       const result = await mintNFTBadge(
         walletData,
         connectedAccountId,
@@ -260,7 +263,7 @@ const Profile = () => {
       setTimeout(async () => {
         await refetchBadgeOwnership();
       }, 3000); // 3 second delay for Mirror Node
-      
+
       // Optimistically update UI immediately
       setOwnedBadges([...ownedBadges, badge.name]);
     } catch (error) {
@@ -269,10 +272,10 @@ const Profile = () => {
         message: error.message,
         status: error.status,
         name: error.name,
-        stack: error.stack
+        stack: error.stack,
       });
       toast.dismiss();
-      
+
       const errorMessage = error.message || error.toString() || "Unknown error";
       toast.error(`Failed to mint badge: ${errorMessage}`);
     } finally {
@@ -428,7 +431,7 @@ const Profile = () => {
                   {isOwned && (
                     <span className={styles.badgeOwned}>✨ Claimed</span>
                   )}
-                  
+
                   <div className={styles.badgeSVG}>
                     <BadgeSVG
                       tier={badge.name}
