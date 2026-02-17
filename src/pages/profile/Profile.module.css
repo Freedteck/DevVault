@@ -89,6 +89,174 @@
   color: var(--text-primary);
 }
 
+/* Badges Section */
+.badgesDescription {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.badgesGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  background: var(--bg-primary);
+  border: 2px solid var(--border);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.badge::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.badge::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--border);
+  transition: all var(--transition-base);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+.badge:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.badgeEarned::after {
+  height: 5px;
+  background: currentColor;
+  box-shadow: 0 -2px 8px currentColor;
+}
+
+.badgeEarned {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-width: 2px;
+}
+
+.badgeEarned::before {
+  background: radial-gradient(
+    circle at top right,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 60%
+  );
+}
+
+.badgeEarned:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.badgeLocked {
+  opacity: 0.5;
+  filter: grayscale(0.5);
+}
+
+.badgeSparkle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: var(--text-xl);
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2) rotate(20deg);
+    opacity: 0.8;
+  }
+}
+
+.badgeSVG {
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badgeInfo {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+@media (max-width: 1024px) {
+  .badgesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .badgesGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.badgeName {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
+.badgeRequirement {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+}
+
+.badgeProgress {
+  width: 100%;
+  height: 10px;
+  background: var(--gray-200);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.badgeProgressBar {
+  height: 100%;
+  transition: width var(--transition-base);
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.badgeCount {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  font-weight: var(--font-semibold);
+}
+
 /* Section */
 .section {
   display: flex;

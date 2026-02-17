@@ -114,6 +114,48 @@
   font-weight: var(--font-semibold);
 }
 
+/* Wallet Dropdown */
+.walletMenuContainer {
+  position: relative;
+}
+
+.walletDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 180px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.dropdownItem:hover {
+  background: var(--gray-50);
+}
+
+.dropdownItem:active {
+  background: var(--gray-100);
+}
+
 /* Mobile Menu Button */
 .mobileMenuButton {
   display: none;
@@ -176,6 +218,19 @@
   padding: var(--space-3);
   background: var(--gray-50);
   border-radius: var(--radius-lg);
+}
+
+.mobileAccountId {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
 }
 
 /* Responsive */

@@ -50,6 +50,13 @@
   border: 2px dashed var(--gray-300);
 }
 
+.loadMore {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  padding: 1rem 0;
+}
+
 @media (max-width: 768px) {
   .header {
     flex-direction: column;

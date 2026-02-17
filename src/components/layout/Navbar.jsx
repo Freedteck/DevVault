@@ -14,12 +14,12 @@ const Navbar = () => {
     { name: "Home", path: "/" },
     { name: "Discussions", path: "/discussions" },
     { name: "Leaderboard", path: "/leaderboard" },
-    { name: "Profile", path: "/profile" },
+    { name: "Profile", path: `/profile/${accountId}` },
   ];
 
   const formatAccountId = (id) => {
     if (!id) return "";
-    return `${id.slice(0, 4)}...${id.slice(-4)}`;
+    return id;
   };
 
   return (
