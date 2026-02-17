@@ -6,6 +6,24 @@ A decentralized developer platform built on Hedera that rewards knowledge sharin
 
 DevVault is a decentralized application (dApp) that enables developers to ask questions, share technical updates, and receive token-based rewards for valuable contributions. Built on Hedera's high-performance distributed ledger, it creates a transparent and incentivized ecosystem for developer collaboration.
 
+## Legacy Track: What's New in Ascension?
+
+This project is a **Legacy Builder** submission, representing a complete re-architecture and reinvention of the initial DevVault concept submitted in a previous hackathon.
+
+| Feature | Version 1 (Previous) | Ascension Version (Current) |
+| :--- | :--- | :--- |
+| **Architecture** | Generic "Decentralized" Concept | **Hedera-Native**: Full HCS, HTS, and Smart Contract integration |
+| **Data Storage** | Single Topic (Inefficient) | **Multi-Topic HCS**: 5 distinct topics for scalable data organization |
+| **Trust Model** | Trust-based Tipping | **Trustless Escrow**: `BountyEscrow.sol` smart contract locks funds |
+| **Reputation** | Simple Counter | **Soulbound NFTs**: Non-transferable badges minted on-chain based on merit |
+| **Economy** | Basic Token Transfer | **Full Token Economy**: DVT Token + HBAR Tipping + Escrow Bounties |
+| **Business** | None | **Complete GTM**: Business Model Canvas & Go-To-Market Strategy included |
+
+**Key Improvements:**
+*   **Smart Contract Escrow:** Solves the "trust" problem by locking bounty funds until an answer is accepted.
+*   **Soulbound Reputation:** Implements "Proof of Expertise" using frozen NFTs that cannot be bought or transferred.
+*   **Scalable Pagination:** Replaced basic fetching with robust Mirror Node pagination for infinite scrolling.
+
 ## Core Features
 
 ### 1. Dual Content System
