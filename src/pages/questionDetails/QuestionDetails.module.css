@@ -146,6 +146,14 @@
   line-height: 1.6;
   color: var(--gray-700);
   white-space: pre-wrap;
+  margin-bottom: 1rem;
+}
+
+.acceptSection {
+  padding-top: 1rem;
+  border-top: 1px solid var(--gray-100);
+  display: flex;
+  justify-content: flex-end;
 }
 
 .addAnswerCard {

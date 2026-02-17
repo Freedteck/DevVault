@@ -1,52 +1,24 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
-import Button from "../components/ui/Button";
-import UpdateCard from "../components/features/UpdateCard";
-import CreateUpdateModal from "../components/features/CreateUpdateModal";
-import SearchBar from "../components/features/SearchBar";
+import Button from "../../components/ui/Button";
+import UpdateCard from "../../components/features/UpdateCard";
+import CreateUpdateModal from "../../components/features/CreateUpdateModal";
+import SearchBar from "../../components/features/SearchBar";
+import { useUpdates } from "../../hooks/useHCSData";
 import styles from "./Updates.module.css";
 
 const Updates = () => {
   const navigate = useNavigate();
-  const [updates, setUpdates] = useState([]);
+  const { data: updates, isLoading, refetch, hasMore, loadMore } = useUpdates();
   const [filteredUpdates, setFilteredUpdates] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const topicId = import.meta.env.VITE_TOPIC_ID;
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
-    const fetchUpdates = async () => {
-      try {
-        const response = await fetch(
-          `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages`
-        );
-        const data = await response.json();
-
-        const messages = data.messages
-          .map((message) => {
-            try {
-              const decodedMessage = atob(message.message);
-              return JSON.parse(decodedMessage);
-            } catch {
-              return null;
-            }
-          })
-          .filter((msg) => msg && msg.type === "update")
-          .reverse();
-
-        setUpdates(messages);
-        setFilteredUpdates(messages);
-      } catch (error) {
-        console.error("Failed to fetch updates:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUpdates();
-  }, [topicId]);
+    setFilteredUpdates(updates);
+  }, [updates]);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
@@ -61,12 +33,12 @@ const Updates = () => {
     }
   }, [searchQuery, updates]);
 
-  const handleUpdateClick = (update, index) => {
-    navigate(`/update/${index + 1}`, { state: { update } });
+  const handleUpdateClick = (update) => {
+    navigate(`/update/${update.sequence_number}`, { state: { update } });
   };
 
-  const handleSuccess = (newUpdate) => {
-    setUpdates((prev) => [newUpdate, ...prev]);
+  const handleSuccess = async () => {
+    await refetch();
   };
 
   if (isLoading) {
@@ -109,15 +81,32 @@ const Updates = () => {
           </p>
         </div>
       ) : (
-        <div className={styles.grid}>
-          {filteredUpdates.map((update, index) => (
-            <UpdateCard
-              key={index}
-              update={update}
-              onClick={() => handleUpdateClick(update, index)}
-            />
-          ))}
-        </div>
+        <>
+          <div className={styles.grid}>
+            {filteredUpdates.map((update) => (
+              <UpdateCard
+                key={update.sequence_number}
+                update={update}
+                onClick={() => handleUpdateClick(update)}
+              />
+            ))}
+          </div>
+          {hasMore && !searchQuery && (
+            <div className={styles.loadMore}>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  setIsLoadingMore(true);
+                  await loadMore();
+                  setIsLoadingMore(false);
+                }}
+                disabled={isLoadingMore}
+              >
+                {isLoadingMore ? "Loading..." : "Load More"}
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {showModal && (

@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { Buffer } from "buffer";
-import Navbar from "../components/layout/Navbar";
+import Navbar from "../../components/layout/Navbar";
 import styles from "./Root.module.css";
 
 window.Buffer = window.Buffer || Buffer;

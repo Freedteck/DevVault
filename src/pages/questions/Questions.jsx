@@ -1,52 +1,30 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
-import Button from "../components/ui/Button";
-import QuestionCard from "../components/features/QuestionCard";
-import CreateQuestionModal from "../components/features/CreateQuestionModal";
-import SearchBar from "../components/features/SearchBar";
+import Button from "../../components/ui/Button";
+import QuestionCard from "../../components/features/QuestionCard";
+import CreateQuestionModal from "../../components/features/CreateQuestionModal";
+import SearchBar from "../../components/features/SearchBar";
+import { useQuestions } from "../../hooks/useHCSData";
 import styles from "./Questions.module.css";
 
 const Questions = () => {
   const navigate = useNavigate();
-  const [questions, setQuestions] = useState([]);
+  const {
+    data: questions,
+    isLoading,
+    refetch,
+    hasMore,
+    loadMore,
+  } = useQuestions();
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const topicId = import.meta.env.VITE_TOPIC_ID;
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        const response = await fetch(
-          `https://testnet.mirrornode.hedera.com/api/v1/topics/${topicId}/messages`
-        );
-        const data = await response.json();
-
-        const messages = data.messages
-          .map((message) => {
-            try {
-              const decodedMessage = atob(message.message);
-              return JSON.parse(decodedMessage);
-            } catch {
-              return null;
-            }
-          })
-          .filter((msg) => msg && msg.type === "question")
-          .reverse();
-
-        setQuestions(messages);
-        setFilteredQuestions(messages);
-      } catch (error) {
-        console.error("Failed to fetch questions:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchQuestions();
-  }, [topicId]);
+    setFilteredQuestions(questions);
+  }, [questions]);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
@@ -64,12 +42,12 @@ const Questions = () => {
     }
   }, [searchQuery, questions]);
 
-  const handleQuestionClick = (question, index) => {
-    navigate(`/question/${index + 1}`, { state: { question } });
+  const handleQuestionClick = (question) => {
+    navigate(`/question/${question.sequence_number}`, { state: { question } });
   };
 
-  const handleSuccess = (newQuestion) => {
-    setQuestions((prev) => [newQuestion, ...prev]);
+  const handleSuccess = async () => {
+    await refetch();
   };
 
   if (isLoading) {
@@ -112,15 +90,32 @@ const Questions = () => {
           </p>
         </div>
       ) : (
-        <div className={styles.grid}>
-          {filteredQuestions.map((question, index) => (
-            <QuestionCard
-              key={index}
-              question={question}
-              onClick={() => handleQuestionClick(question, index)}
-            />
-          ))}
-        </div>
+        <>
+          <div className={styles.grid}>
+            {filteredQuestions.map((question) => (
+              <QuestionCard
+                key={question.sequence_number}
+                question={question}
+                onClick={() => handleQuestionClick(question)}
+              />
+            ))}
+          </div>
+          {hasMore && !searchQuery && (
+            <div className={styles.loadMore}>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  setIsLoadingMore(true);
+                  await loadMore();
+                  setIsLoadingMore(false);
+                }}
+                disabled={isLoadingMore}
+              >
+                {isLoadingMore ? "Loading..." : "Load More"}
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {showModal && (
