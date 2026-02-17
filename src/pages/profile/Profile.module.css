@@ -186,6 +186,30 @@
   animation: sparkle 2s ease-in-out infinite;
 }
 
+.claimButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.badgeOwned {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: rgba(147, 51, 234, 0.1);
+  color: var(--purple-600);
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 10;
+}
+
 @keyframes sparkle {
   0%,
   100% {
@@ -341,6 +365,19 @@
 
 .empty p {
   color: var(--text-secondary);
+}
+
+.buttonIcon {
+  margin-right: 8px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.badgeOwned {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 /* Responsive */

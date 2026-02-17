@@ -1,6 +1,7 @@
 import { useState, useContext } from "react";
 import PropTypes from "prop-types";
 import { X } from "lucide-react";
+import toast from "react-hot-toast";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import Textarea from "../ui/Textarea";
@@ -28,7 +29,7 @@ const CreateUpdateModal = ({ onClose, onSuccess }) => {
     e.preventDefault();
 
     if (!accountId) {
-      alert("Please connect your wallet first");
+      toast.error("Please connect your wallet first");
       return;
     }
 
@@ -47,15 +48,15 @@ const CreateUpdateModal = ({ onClose, onSuccess }) => {
         tags: tagsArray,
         date: new Date().toISOString(),
         accountId,
-        type: "update",
       };
 
       await topicMessageFnc(walletData, accountId, topicId, metaData);
+      toast.success("Update posted successfully!");
       onSuccess?.(metaData);
       onClose();
     } catch (error) {
       console.error("Failed to submit update:", error);
-      alert("Failed to submit update. Please try again.");
+      toast.error("Failed to submit update. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

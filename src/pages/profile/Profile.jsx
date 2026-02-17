@@ -1,17 +1,20 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { User, Wallet, MessageSquare, Filter } from "lucide-react";
+import { User, Wallet, MessageSquare, Filter, Award } from "lucide-react";
+import toast from "react-hot-toast";
 import { userWalletContext } from "../../context/userWalletContext";
 import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
 import QuestionCard from "../../components/features/QuestionCard";
 import UpdateCard from "../../components/features/UpdateCard";
 import BadgeSVG from "../../components/badges/BadgeSVG";
+import { mintNFTBadge } from "../../client/mintNFTBadge";
 import styles from "./Profile.module.css";
 
 const Profile = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { accountId: connectedAccountId, balance } =
+  const { accountId: connectedAccountId, balance, walletData } =
     useContext(userWalletContext);
 
   // Use URL param if provided, otherwise use connected wallet
@@ -22,11 +25,14 @@ const Profile = () => {
   const [dvtBalance, setDvtBalance] = useState(0);
   const [acceptanceCount, setAcceptanceCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [ownedBadges, setOwnedBadges] = useState([]);
+  const [mintingBadge, setMintingBadge] = useState(null);
 
   const questionsTopicId = import.meta.env.VITE_QUESTIONS_TOPIC_ID;
   const updatesTopicId = import.meta.env.VITE_UPDATES_TOPIC_ID;
   const tokenId = import.meta.env.VITE_TOKEN_ID;
   const acceptancesTopicId = import.meta.env.VITE_ACCEPTANCES_TOPIC_ID;
+  const nftCollectionId = import.meta.env.VITE_NFT_BADGE_COLLECTION_ID;
 
   useEffect(() => {
     if (!accountId) return;
@@ -123,6 +129,41 @@ const Profile = () => {
           );
 
         setAcceptanceCount(userAcceptances.length);
+
+        // Fetch user's badge NFTs to check what they already own
+        if (nftCollectionId) {
+          const nftResponse = await fetch(
+            `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}/nfts?token.id=${nftCollectionId}`
+          );
+          const nftData = await nftResponse.json();
+          
+          // Extract badge tiers from owned NFTs metadata
+          if (nftData.nfts && nftData.nfts.length > 0) {
+            const badgePromises = nftData.nfts.map(async (nft) => {
+              try {
+                const metadataBytes = atob(nft.metadata);
+                const metadata = JSON.parse(metadataBytes);
+                
+                // Handle both old format (attributes) and new format (t: tier)
+                if (metadata.t) {
+                  return metadata.t; // New minimal format
+                } else if (metadata.attributes) {
+                  // Old format
+                  const tierAttr = metadata.attributes.find(
+                    (attr) => attr.trait_type === "Tier"
+                  );
+                  return tierAttr?.value;
+                }
+                return null;
+              } catch (err) {
+                console.warn("Failed to parse NFT metadata:", err);
+                return null;
+              }
+            });
+            const badges = await Promise.all(badgePromises);
+            setOwnedBadges(badges.filter((b) => b !== null));
+          }
+        }
       } catch (error) {
         console.error("Failed to fetch profile data:", error);
       } finally {
@@ -137,7 +178,107 @@ const Profile = () => {
     updatesTopicId,
     tokenId,
     acceptancesTopicId,
+    nftCollectionId,
   ]);
+
+  // Function to refetch badge ownership
+  const refetchBadgeOwnership = async () => {
+    if (!nftCollectionId || !accountId) return;
+
+    try {
+      const nftResponse = await fetch(
+        `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}/nfts?token.id=${nftCollectionId}`
+      );
+      const nftData = await nftResponse.json();
+      
+      if (nftData.nfts && nftData.nfts.length > 0) {
+        const badgePromises = nftData.nfts.map(async (nft) => {
+          try {
+            const metadataBytes = atob(nft.metadata);
+            const metadata = JSON.parse(metadataBytes);
+            
+            // Handle both old format (attributes) and new format (t: tier)
+            if (metadata.t) {
+              return metadata.t;
+            } else if (metadata.attributes) {
+              const tierAttr = metadata.attributes.find(
+                (attr) => attr.trait_type === "Tier"
+              );
+              return tierAttr?.value;
+            }
+            return null;
+          } catch (err) {
+            console.warn("Failed to parse NFT metadata:", err);
+            return null;
+          }
+        });
+        const badges = await Promise.all(badgePromises);
+        setOwnedBadges(badges.filter((b) => b !== null));
+      } else {
+        setOwnedBadges([]);
+      }
+    } catch (error) {
+      console.error("Failed to refetch badge ownership:", error);
+    }
+  };
+
+  // Handle badge claiming
+  const handleClaimBadge = async (badge) => {
+    if (!walletData || !connectedAccountId) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    if (!nftCollectionId) {
+      toast.error("Badge collection not configured");
+      return;
+    }
+
+    setMintingBadge(badge.name);
+
+    try {
+      const loadingToast = toast.loading(`Minting ${badge.name} badge...`);
+      
+      const result = await mintNFTBadge(
+        walletData,
+        connectedAccountId,
+        nftCollectionId,
+        {
+          tier: badge.name,
+          color: badge.color,
+          required: badge.required,
+          earned: acceptanceCount,
+        }
+      );
+
+      toast.dismiss(loadingToast);
+      toast.success(
+        `🎉 ${badge.name} badge minted! Serial #${result.serialNumber}`
+      );
+
+      // Wait a bit for Mirror Node to update, then refetch badge ownership
+      setTimeout(async () => {
+        await refetchBadgeOwnership();
+      }, 3000); // 3 second delay for Mirror Node
+      
+      // Optimistically update UI immediately
+      setOwnedBadges([...ownedBadges, badge.name]);
+    } catch (error) {
+      console.error("Failed to mint badge:", error);
+      console.error("Error details:", {
+        message: error.message,
+        status: error.status,
+        name: error.name,
+        stack: error.stack
+      });
+      toast.dismiss();
+      
+      const errorMessage = error.message || error.toString() || "Unknown error";
+      toast.error(`Failed to mint badge: ${errorMessage}`);
+    } finally {
+      setMintingBadge(null);
+    }
+  };
 
   useEffect(() => {
     if (filter === "all") {
@@ -182,12 +323,12 @@ const Profile = () => {
     },
   ];
 
-  // Badge tiers
+  // Badge tiers (Reduced for testing/demo)
   const badgeTiers = [
-    { name: "Helper", required: 25, color: "#cd7f32" }, // Bronze
-    { name: "Contributor", required: 100, color: "#71717a" }, // Darker Silver/Gray
-    { name: "Expert", required: 300, color: "#d97706" }, // Darker Gold/Amber
-    { name: "Legend", required: 1000, color: "#9333ea" }, // Purple/Violet for premium feel
+    { name: "Helper", required: 1, color: "#cd7f32" }, // Bronze - 1 acceptance
+    { name: "Contributor", required: 3, color: "#71717a" }, // Silver - 3 acceptances
+    { name: "Expert", required: 5, color: "#d97706" }, // Gold - 5 acceptances
+    { name: "Legend", required: 10, color: "#9333ea" }, // Purple - 10 acceptances
   ];
 
   return (
@@ -233,6 +374,13 @@ const Profile = () => {
           <div className={styles.badgesGrid}>
             {badgeTiers.map((badge, index) => {
               const isEarned = acceptanceCount >= badge.required;
+              const isOwned = ownedBadges.includes(badge.name);
+              const canClaim =
+                isEarned &&
+                !isOwned &&
+                accountId === connectedAccountId &&
+                walletData;
+              const isMinting = mintingBadge === badge.name;
 
               return (
                 <div
@@ -250,7 +398,37 @@ const Profile = () => {
                     color: isEarned ? badge.color : "inherit",
                   }}
                 >
-                  {isEarned && <span className={styles.badgeSparkle}>✨</span>}
+                  {/* Claim Badge Button - Absolute positioned */}
+                  {canClaim && (
+                    <Button
+                      onClick={() => handleClaimBadge(badge)}
+                      disabled={isMinting}
+                      variant="primary"
+                      size="sm"
+                      className={styles.claimButton}
+                      style={{
+                        background: badge.color,
+                        borderColor: badge.color,
+                      }}
+                    >
+                      {isMinting ? (
+                        <>
+                          <Award size={14} className={styles.buttonIcon} />
+                          Minting...
+                        </>
+                      ) : (
+                        <>
+                          <Award size={14} className={styles.buttonIcon} />
+                          Claim
+                        </>
+                      )}
+                    </Button>
+                  )}
+
+                  {isOwned && (
+                    <span className={styles.badgeOwned}>✨ Claimed</span>
+                  )}
+                  
                   <div className={styles.badgeSVG}>
                     <BadgeSVG
                       tier={badge.name}
@@ -261,8 +439,10 @@ const Profile = () => {
                   <div className={styles.badgeInfo}>
                     <h3 className={styles.badgeName}>{badge.name}</h3>
                     <p className={styles.badgeRequirement}>
-                      {isEarned
-                        ? "Earned! ✨"
+                      {isOwned
+                        ? "Badge Owned"
+                        : isEarned
+                        ? "Eligible to Claim!"
                         : `${badge.required} accepted answers required`}
                     </p>
                     <div className={styles.badgeProgress}>

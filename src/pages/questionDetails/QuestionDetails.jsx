@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Calendar, MessageCircle, Heart, Send } from "lucide-react";
+import toast from "react-hot-toast";
 import { userWalletContext } from "../../context/userWalletContext";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
@@ -13,6 +14,7 @@ import topicMessageFnc from "../../client/topicMessage";
 import tokenTransferFcn from "../../client/tokenTransfer";
 import acceptAnswer from "../../client/acceptAnswer";
 import hbarTransferFnc from "../../client/hbarTransfer";
+import { releaseFromEscrow } from "../../client/escrowContract";
 import { useAnswers, useAcceptances } from "../../hooks/useHCSData";
 import styles from "./QuestionDetails.module.css";
 
@@ -73,7 +75,7 @@ const QuestionDetails = () => {
     e.preventDefault();
 
     if (!newComment.trim() || !userAccountId) {
-      alert("Please connect your wallet and enter a comment");
+      toast.error("Please connect your wallet and enter a comment");
       return;
     }
 
@@ -97,11 +99,12 @@ const QuestionDetails = () => {
 
       setNewComment("");
 
+      toast.success("Comment added successfully!");
       // Refetch answers to get fresh data from HCS
       await refetchAnswers();
     } catch (error) {
       console.error("Failed to submit comment:", error);
-      alert("Failed to submit comment. Please try again.");
+      toast.error("Failed to submit comment. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -109,7 +112,7 @@ const QuestionDetails = () => {
 
   const handleTip = async () => {
     if (!tipAmount || !userAccountId || !tipTarget) {
-      alert("Please enter a tip amount");
+      toast.error("Please enter a tip amount");
       return;
     }
 
@@ -123,14 +126,14 @@ const QuestionDetails = () => {
       );
 
       if (status === "SUCCESS") {
-        alert(`Successfully tipped ${tipAmount} DVT tokens!`);
+        toast.success(`Successfully tipped ${tipAmount} DVT tokens!`);
         setShowTipModal(false);
         setTipAmount("");
         setTipTarget(null);
       }
     } catch (error) {
       console.error("Failed to send tip:", error);
-      alert("Failed to send tip. Please try again.");
+      toast.error("Failed to send tip. Please try again.");
     }
   };
 
@@ -141,7 +144,7 @@ const QuestionDetails = () => {
 
   const handleAcceptAnswer = async (answerId) => {
     if (!userAccountId) {
-      alert("Please connect your wallet to accept answers");
+      toast.error("Please connect your wallet to accept answers");
       return;
     }
 
@@ -151,7 +154,7 @@ const QuestionDetails = () => {
     );
 
     if (isAlreadyAccepted) {
-      alert("This answer has already been accepted");
+      toast.error("This answer has already been accepted");
       return;
     }
 
@@ -160,25 +163,45 @@ const QuestionDetails = () => {
       (comment) => comment.sequence_number === answerId
     );
     if (!answer) {
-      alert("Answer not found");
+      toast.error("Answer not found");
       return;
     }
 
     // Check if user is trying to accept their own answer
     if (answer.accountId === userAccountId) {
-      alert("You cannot accept your own answer");
+      toast.error("You cannot accept your own answer");
       return;
     }
 
     try {
-      // Transfer bounty to answer author if bounty exists
+      // Release bounty from escrow to answer author if bounty exists
       if (question.bounty && question.bounty > 0) {
-        await hbarTransferFnc(
-          walletData,
-          userAccountId,
-          answer.accountId,
-          question.bounty.toString()
-        );
+        if (question.escrowId) {
+          // Use escrow system
+          const escrowContractId = import.meta.env.VITE_ESCROW_CONTRACT_ID;
+          if (!escrowContractId) {
+            toast.error(
+              "Escrow contract not configured. Cannot release bounty."
+            );
+            return;
+          }
+
+          await releaseFromEscrow(
+            walletData,
+            userAccountId,
+            escrowContractId,
+            question.escrowId,
+            answer.accountId
+          );
+        } else {
+          // Fallback to direct transfer for old questions
+          await hbarTransferFnc(
+            walletData,
+            userAccountId,
+            answer.accountId,
+            question.bounty.toString()
+          );
+        }
       }
 
       const acceptanceData = {
@@ -199,11 +222,14 @@ const QuestionDetails = () => {
 
       // Refetch acceptances to get fresh data from HCS
       await refetchAcceptances();
+      toast.success("Answer accepted successfully!");
     } catch (error) {
       console.error("Failed to accept answer:", error);
       console.error("Error details:", error.message);
       console.error("Error stack:", error.stack);
-      alert(`Failed to accept answer: ${error.message || "Please try again."}`);
+      toast.error(
+        `Failed to accept answer: ${error.message || "Please try again."}`
+      );
     }
   };
 

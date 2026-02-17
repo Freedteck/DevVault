@@ -1,11 +1,13 @@
 import { useState, useContext } from "react";
 import PropTypes from "prop-types";
 import { X } from "lucide-react";
+import toast from "react-hot-toast";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import Textarea from "../ui/Textarea";
 import { userWalletContext } from "../../context/userWalletContext";
 import topicMessageFnc from "../../client/topicMessage";
+import { depositToEscrow } from "../../client/escrowContract";
 import styles from "./CreateQuestionModal.module.css";
 
 const CreateQuestionModal = ({ onClose, onSuccess }) => {
@@ -29,7 +31,7 @@ const CreateQuestionModal = ({ onClose, onSuccess }) => {
     e.preventDefault();
 
     if (!accountId) {
-      alert("Please connect your wallet first");
+      toast.error("Please connect your wallet first");
       return;
     }
 
@@ -46,27 +48,49 @@ const CreateQuestionModal = ({ onClose, onSuccess }) => {
         .filter(Boolean)
         .slice(0, 3); // Limit to 3 tags
 
+      // Generate escrow ID using timestamp + accountId hash
+      const escrowId =
+        bountyAmount > 0
+          ? BigInt(Date.now() + accountId.replace(/\./g, "")) %
+            BigInt("0xFFFFFFFFFFFFFFFF") // Keep within uint64
+          : null;
+
       const metaData = {
         title: formData.title,
         description: formData.description,
         tags: tagsArray,
-        icon: "https://cryptologos.cc/logos/hedera-hbar-logo.png",
         date: new Date().toISOString(),
         accountId,
-        type: "question",
       };
 
-      // Only add bounty if it's greater than 0
+      // Deposit bounty into escrow before submitting question
       if (bountyAmount > 0) {
+        const escrowContractId = import.meta.env.VITE_ESCROW_CONTRACT_ID;
+        if (!escrowContractId) {
+          toast.error(
+            "Escrow contract not configured. Please contact administrator."
+          );
+          return;
+        }
+
+        await depositToEscrow(
+          walletData,
+          accountId,
+          escrowContractId,
+          escrowId.toString(),
+          bountyAmount.toString()
+        );
         metaData.bounty = bountyAmount;
+        metaData.escrowId = escrowId.toString();
       }
 
       await topicMessageFnc(walletData, accountId, topicId, metaData);
+      toast.success("Question created successfully!");
       onSuccess?.(metaData);
       onClose();
     } catch (error) {
       console.error("Failed to submit question:", error);
-      alert("Failed to submit question. Please try again.");
+      toast.error("Failed to submit question. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

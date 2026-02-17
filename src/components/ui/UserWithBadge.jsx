@@ -1,14 +1,15 @@
 import PropTypes from "prop-types";
-import { User, UserCheck, CheckCircle } from "lucide-react";
+import { User, UserCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserAcceptanceCount } from "../../hooks/useHCSData";
+import BadgeSVG from "../badges/BadgeSVG";
 import styles from "./UserWithBadge.module.css";
 
 const BADGE_TIERS = {
-  HELPER: { min: 25, name: "Helper", color: "#CD7F32" }, // Bronze
-  CONTRIBUTOR: { min: 100, name: "Contributor", color: "#71717a" }, // Darker Silver/Gray
-  EXPERT: { min: 300, name: "Expert", color: "#d97706" }, // Darker Gold/Amber
-  LEGEND: { min: 1000, name: "Legend", color: "#9333ea" }, // Purple
+  HELPER: { min: 1, name: "Helper", color: "#CD7F32" }, // Bronze
+  CONTRIBUTOR: { min: 3, name: "Contributor", color: "#71717a" }, // Silver/Gray
+  EXPERT: { min: 5, name: "Expert", color: "#d97706" }, // Gold/Amber
+  LEGEND: { min: 10, name: "Legend", color: "#9333ea" }, // Purple
 };
 
 const getBadgeTier = (acceptanceCount) => {
@@ -51,12 +52,11 @@ const UserWithBadge = ({ accountId, size = "sm" }) => {
       </div>
       <span className={styles.accountId}>{accountId}</span>
       {badge && (
-        <span title={badge ? `Verified ${badge.name}` : "Unverified"}>
-          <CheckCircle
-            size={16}
-            className={styles.verifiedBadge}
-            style={{ color: badge.color }}
-          />
+        <span 
+          title={`Verified ${badge.name}`}
+          className={styles.badgeIcon}
+        >
+          <BadgeSVG tier={badge.name} color={badge.color} earned={true} />
         </span>
       )}
     </div>

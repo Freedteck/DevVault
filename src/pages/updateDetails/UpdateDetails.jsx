@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Calendar, MessageCircle, Heart, Send } from "lucide-react";
+import toast from "react-hot-toast";
 import { userWalletContext } from "../../context/userWalletContext";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
@@ -68,7 +69,7 @@ const UpdateDetails = () => {
     e.preventDefault();
 
     if (!newComment.trim() || !userAccountId) {
-      alert("Please connect your wallet and enter a comment");
+      toast.error("Please connect your wallet and enter a comment");
       return;
     }
 
@@ -94,9 +95,10 @@ const UpdateDetails = () => {
 
       // Refetch comments to get fresh data from HCS
       await refetchComments();
+      toast.success("Comment added successfully!");
     } catch (error) {
       console.error("Failed to submit comment:", error);
-      alert("Failed to submit comment. Please try again.");
+      toast.error("Failed to submit comment. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -104,7 +106,7 @@ const UpdateDetails = () => {
 
   const handleTip = async () => {
     if (!tipAmount || !userAccountId || !tipTarget) {
-      alert("Please enter a tip amount");
+      toast.error("Please enter a tip amount");
       return;
     }
 
@@ -118,14 +120,14 @@ const UpdateDetails = () => {
       );
 
       if (status === "SUCCESS") {
-        alert(`Successfully tipped ${tipAmount} DVT tokens!`);
+        toast.success(`Successfully tipped ${tipAmount} DVT tokens!`);
         setShowTipModal(false);
         setTipAmount("");
         setTipTarget(null);
       }
     } catch (error) {
       console.error("Failed to send tip:", error);
-      alert("Failed to send tip. Please try again.");
+      toast.error("Failed to send tip. Please try again.");
     }
   };
 

@@ -14,6 +14,7 @@ import {
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
+import EscrowDeployer from "../../components/features/EscrowDeployer";
 import styles from "./Home.module.css";
 
 const Home = () => {
@@ -143,6 +144,15 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* Escrow Deployment Section - Only show if escrow not configured */}
+      {!import.meta.env.VITE_ESCROW_CONTRACT_ID && (
+        <section className={styles.escrow}>
+          <div className={styles.container}>
+            <EscrowDeployer />
+          </div>
+        </section>
+      )}
 
       {/* Features Section */}
       <section className={styles.features}>

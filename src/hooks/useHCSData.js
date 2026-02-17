@@ -1,14 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 
-/**
- * Custom hook for fetching and managing Hedera HCS (Hashgraph Consensus Service) data
- * @param {string} topicId - The HCS topic ID to fetch from
- * @param {Object} options - Configuration options
- * @param {function} options.filter - Filter function for messages
- * @param {boolean} options.autoFetch - Whether to fetch on mount (default: true)
- * @param {number} options.limit - Number of items per page (default: 10)
- * @param {Array} options.dependencies - Additional dependencies for refetching
- */
 export const useHCSData = (topicId, options = {}) => {
   const {
     filter = () => true,
@@ -47,10 +38,67 @@ export const useHCSData = (topicId, options = {}) => {
 
         const responseData = await response.json();
 
-        const messages = (responseData.messages || [])
+        const rawMessages = responseData.messages || [];
+
+        // Group messages by transaction ID and reassemble chunks
+        const messageGroups = {};
+        rawMessages.forEach((message) => {
+          const txId =
+            message.chunk_info.initial_transaction_id.transaction_valid_start;
+          if (!messageGroups[txId]) {
+            messageGroups[txId] = [];
+          }
+          messageGroups[txId].push(message);
+        });
+
+        // Sort chunks and reassemble complete messages
+        const reassembledMessages = Object.values(messageGroups).map(
+          (chunks) => {
+            // Sort by chunk number
+            chunks.sort((a, b) => a.chunk_info.number - b.chunk_info.number);
+
+            // Decode each chunk individually and concatenate the decoded content
+            const decodedChunks = chunks.map((chunk) => {
+              try {
+                return atob(chunk.message.replace(/\s/g, ""));
+              } catch (error) {
+                console.error("Failed to decode chunk:", error);
+                console.error("Chunk data:", chunk);
+                return "";
+              }
+            });
+
+            // Concatenate all decoded chunks
+            const fullDecodedContent = decodedChunks.join("");
+
+            // Re-encode to base64 for consistent handling
+            const fullBase64 = btoa(fullDecodedContent);
+
+            // Use metadata from the first chunk
+            const firstChunk = chunks[0];
+
+            return {
+              ...firstChunk,
+              message: fullBase64, // Replace with reassembled base64
+            };
+          }
+        );
+
+        // Parse the reassembled messages
+        const messages = reassembledMessages
           .map((message) => {
             try {
               const decodedMessage = atob(message.message);
+
+              // Skip non-JSON messages (like initialization messages)
+              if (!decodedMessage.trim().startsWith("{")) {
+                console.log(
+                  "Skipping non-JSON message:",
+                  decodedMessage.substring(0, 50) + "..."
+                );
+                return null;
+              }
+
               const parsedData = JSON.parse(decodedMessage);
               // Include sequence_number and consensus_timestamp as unique identifiers
               return {
@@ -58,7 +106,9 @@ export const useHCSData = (topicId, options = {}) => {
                 sequence_number: message.sequence_number,
                 consensus_timestamp: message.consensus_timestamp,
               };
-            } catch {
+            } catch (error) {
+              console.error("Failed to parse message:", error);
+              console.error("Raw message data:", message);
               return null;
             }
           })
