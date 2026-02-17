@@ -11,7 +11,7 @@ import { depositToEscrow } from "../../client/escrowContract";
 import styles from "./CreateQuestionModal.module.css";
 
 const CreateQuestionModal = ({ onClose, onSuccess }) => {
-  const { accountId, walletData } = useContext(userWalletContext);
+  const { accountId, walletData, balance } = useContext(userWalletContext);
   const topicId = import.meta.env.VITE_QUESTIONS_TOPIC_ID;
 
   const [formData, setFormData] = useState({
@@ -35,13 +35,33 @@ const CreateQuestionModal = ({ onClose, onSuccess }) => {
       return;
     }
 
+    const bountyAmount = formData.bountyAmount
+      ? parseFloat(formData.bountyAmount)
+      : 0;
+
+    // Validate bounty amount against user balance
+    if (bountyAmount > 0) {
+      if (!balance) {
+        toast.error("Unable to check your balance. Please try again.");
+        return;
+      }
+
+      // Extract numeric balance from "X.XX HBAR" format
+      const numericBalance = parseFloat(balance.replace(" HBAR", ""));
+      const gasFeeBuffer = 1; // Reserve ~1 HBAR for gas fees
+      const requiredAmount = bountyAmount + gasFeeBuffer;
+
+      if (numericBalance < requiredAmount) {
+        toast.error(
+          `Insufficient balance. You need ${requiredAmount.toFixed(2)} HBAR (including gas fees), but only have ${numericBalance.toFixed(2)} HBAR.`
+        );
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
-      const bountyAmount = formData.bountyAmount
-        ? parseFloat(formData.bountyAmount)
-        : 0;
-
       const tagsArray = formData.tags
         .split(",")
         .map((tag) => tag.trim())
@@ -159,8 +179,10 @@ const CreateQuestionModal = ({ onClose, onSuccess }) => {
               onChange={handleChange}
             />
             <small className={styles.fieldHint}>
-              Add HBAR bounty to incentivize quality answers. The bounty will be
-              sent to whoever gets their answer accepted.
+              {balance
+                ? `Your balance: ${balance} | Reserve ~1 HBAR for gas fees. Add HBAR bounty to incentivize quality answers.`
+                : "Add HBAR bounty to incentivize quality answers. The bounty will be sent to whoever gets their answer accepted."
+              }
             </small>
           </div>
 
