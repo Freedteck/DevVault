@@ -22,33 +22,13 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
   text-decoration: none;
   color: var(--text-primary);
-  font-weight: var(--font-bold);
-  font-size: var(--text-xl);
   transition: opacity var(--transition-fast);
 }
 
 .logo:hover {
   opacity: 0.8;
-}
-
-.logoIcon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: var(--font-bold);
-  font-size: var(--text-sm);
-}
-
-.logoText {
-  color: var(--text-primary);
 }
 
 /* Desktop Navigation */

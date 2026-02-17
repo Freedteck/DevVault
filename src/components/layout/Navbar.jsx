@@ -4,6 +4,7 @@ import { Wallet, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { userWalletContext } from "../../context/userWalletContext";
 import Button from "../ui/Button";
+import DevVaultLogo from "../ui/DevVaultLogo";
 import styles from "./Navbar.module.css";
 
 const Navbar = () => {
@@ -27,8 +28,7 @@ const Navbar = () => {
       <div className={styles.container}>
         {/* Logo */}
         <Link to="/" className={styles.logo}>
-          <div className={styles.logoIcon}>DV</div>
-          <span className={styles.logoText}>DevVault</span>
+          <DevVaultLogo size="medium" showText={true} />
         </Link>
 
         {/* Desktop Navigation */}
