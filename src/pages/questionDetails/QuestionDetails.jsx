@@ -250,9 +250,17 @@ const QuestionDetails = () => {
               </Badge>
             ))}
             {question.bounty > 0 && (
-              <Badge variant="success" className={styles.bountyBadge}>
-                {question.bounty} HBAR Bounty
-              </Badge>
+              <>
+                {acceptances.length > 0 ? (
+                  <Badge variant="default" className={styles.bountyBadge}>
+                    {question.bounty} HBAR Bounty - Claimed ✓
+                  </Badge>
+                ) : (
+                  <Badge variant="success" className={styles.bountyBadge}>
+                    {question.bounty} HBAR Bounty
+                  </Badge>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -291,9 +299,26 @@ const QuestionDetails = () => {
           <div className={styles.answersList}>
             {comments.map((comment) => {
               const answerId = comment.sequence_number;
-              const isAccepted = acceptances.some(
+
+              // Check if THIS specific answer has been accepted
+              const isThisAnswerAccepted = acceptances.some(
                 (acceptance) => acceptance.answerId === answerId
               );
+
+              // Check if current user has already accepted ANY answer in this question
+              const hasCurrentUserAcceptedAnyAnswer = acceptances.some(
+                (acceptance) => acceptance.acceptedBy === userAccountId
+              );
+
+              // Show accept button if:
+              // 1. User is not the answer author
+              // 2. This answer hasn't been accepted yet
+              // 3. Current user hasn't accepted any answer in this question yet
+              const canAccept =
+                userAccountId &&
+                comment.accountId !== userAccountId &&
+                !isThisAnswerAccepted &&
+                !hasCurrentUserAcceptedAnyAnswer;
 
               return (
                 <Card
@@ -318,15 +343,17 @@ const QuestionDetails = () => {
                   <p className={styles.answerText}>{comment.text}</p>
 
                   {/* Accept Answer Button */}
-                  <div className={styles.acceptSection}>
-                    <AcceptAnswerButton
-                      answerId={answerId}
-                      answerAuthorId={comment.accountId}
-                      isAccepted={isAccepted}
-                      currentUserId={userAccountId}
-                      onAccept={handleAcceptAnswer}
-                    />
-                  </div>
+                  {(isThisAnswerAccepted || canAccept) && (
+                    <div className={styles.acceptSection}>
+                      <AcceptAnswerButton
+                        answerId={answerId}
+                        answerAuthorId={comment.accountId}
+                        isAccepted={isThisAnswerAccepted}
+                        currentUserId={userAccountId}
+                        onAccept={handleAcceptAnswer}
+                      />
+                    </div>
+                  )}
                 </Card>
               );
             })}
