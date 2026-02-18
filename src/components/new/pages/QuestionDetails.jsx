@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Clock, Code, Send } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
@@ -6,81 +6,85 @@ import NeonButton from "../ui/NeonButton";
 import AnswerCardNew from "../features/AnswerCardNew";
 import TipModal from "../features/TipModal";
 import ArbitrationTimer from "../features/ArbitrationTimer";
-import { MOCK_QUESTIONS, MOCK_USERS } from "../data/mock";
+import {
+  fetchQuestionBySequenceNumber,
+  fetchAnswersForQuestion,
+} from "../../../services/fetchService";
+import { userWalletContext } from "../../../context/userWalletContext";
 import styles from "./QuestionDetails.module.css";
 
 const QuestionDetailsNew = () => {
-  const { id } = useParams();
+  const { id: sequenceNumber } = useParams();
+  const { accountId, walletData } = useContext(userWalletContext);
+
+  const [question, setQuestion] = useState(null);
+  const [answers, setAnswers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [tipTarget, setTipTarget] = useState(null);
+  const [answerContent, setAnswerContent] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const question = MOCK_QUESTIONS.find((q) => q.id === id) || MOCK_QUESTIONS[0];
+  const gateway = import.meta.env.VITE_PINATA_GATEWAY;
 
-  // Mock AI response data (will be fetched from Groq via Agent Kit)
-  const aiResponse = {
-    answer: `The issue is related to how React Native handles crypto modules. Here's the solution:
+  // Fetch question and answers
+  useEffect(() => {
+    const loadQuestionData = async () => {
+      try {
+        setIsLoading(true);
 
-\`\`\`javascript
-// 1. Install the polyfill
-npm install react-native-get-random-values
+        // Fetch question by sequence number
+        const questionData = await fetchQuestionBySequenceNumber(
+          parseInt(sequenceNumber),
+          gateway,
+        );
+        setQuestion(questionData);
 
-// 2. Import at the TOP of index.js (before anything else)
-import 'react-native-get-random-values';
-import { AppRegistry } from 'react-native';
+        // Fetch answers using questionId
+        const answersData = await fetchAnswersForQuestion(
+          questionData.questionId,
+          gateway,
+        );
+        setAnswers(answersData);
+      } catch (err) {
+        console.error("Error loading question:", err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-// 3. Then import Hedera SDK
-import { Client } from '@hashgraph/sdk';
-\`\`\`
+    if (sequenceNumber) {
+      loadQuestionData();
+    }
+  }, [sequenceNumber, gateway]);
 
-This ensures the crypto polyfill is loaded before the Hedera SDK tries to use it.`,
-    confidence: 85,
-  };
-
-  // Mock answers logic (in reality comes from HCS)
-  const humanAnswers = [
-    {
-      id: 101,
-      author: MOCK_USERS.users[1], // Expert
-      content:
-        "You need to ensure the polyfill is imported *before* anything else in your entry file (index.js). Also, Expo requires a specific metro config setup for node modules.",
-      createdAt: "2024-02-14T12:00:00Z",
-      likes: 12,
-      isAccepted: true,
-    },
-    {
-      id: 102,
-      author: MOCK_USERS.users[0], // Contributor
-      content:
-        "Have you checked the 'react-native-quick-crypto' library? It is much faster than the standard random values polyfill and works better with Hedera SDK.",
-      createdAt: "2024-02-14T13:30:00Z",
-      likes: 5,
-      isAccepted: false,
-    },
-  ];
-
-  // Combine AI answer with human answers (only if confidence >= 50)
-  const allAnswers = [];
-
-  if (aiResponse.confidence >= 50) {
-    allAnswers.push({
-      id: "ai-answer",
-      author: {
-        username: "DevVault Assistant",
-        rank: "AI Agent",
-        avatar: null, // Will use bot icon
-      },
-      content: aiResponse.answer,
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      isAccepted: false,
-      isAI: true,
-      confidence: aiResponse.confidence,
-    });
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loading}>
+          <div className={styles.spinner} />
+          <p>Loading question...</p>
+        </div>
+      </div>
+    );
   }
 
-  allAnswers.push(...humanAnswers);
+  if (error || !question) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.error}>
+          <p>Failed to load question: {error || "Question not found"}</p>
+          <Link to="/questions">
+            <NeonButton>Back to Questions</NeonButton>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
-  const hasAcceptedAnswer = allAnswers.some((a) => a.isAccepted);
+  const hasAcceptedAnswer = answers.some((a) => a.isAccepted);
 
   const handleOpenTip = (authorName) => {
     setTipTarget(authorName);
@@ -164,13 +168,13 @@ This ensures the crypto polyfill is loaded before the Hedera SDK tries to use it
           <div className={styles.divider} />
 
           <h3 className={styles.sectionTitle}>
-            {allAnswers.length} {allAnswers.length === 1 ? "Answer" : "Answers"}
+            {answers.length} {answers.length === 1 ? "Answer" : "Answers"}
           </h3>
 
           <div className={styles.answersList}>
-            {allAnswers.map((ans) => (
+            {answers.map((ans) => (
               <AnswerCardNew
-                key={ans.id}
+                key={ans.answerId}
                 answer={ans}
                 isAccepted={ans.isAccepted}
                 onTip={() => handleOpenTip(ans.author.username)}
@@ -185,9 +189,67 @@ This ensures the crypto polyfill is loaded before the Hedera SDK tries to use it
               className={styles.textarea}
               placeholder="Type your solution here. Markdown supported..."
               rows={6}
+              value={answerContent}
+              onChange={(e) => setAnswerContent(e.target.value)}
             />
             <div className={styles.postActions}>
-              <NeonButton icon={<Send size={16} />}>Submit Answer</NeonButton>
+              <NeonButton
+                icon={<Send size={16} />}
+                onClick={async () => {
+                  if (!accountId || !walletData) {
+                    const toast = (await import("react-hot-toast")).default;
+                    toast.error("Please connect your wallet first");
+                    return;
+                  }
+
+                  if (!answerContent.trim()) {
+                    const toast = (await import("react-hot-toast")).default;
+                    toast.error("Please enter your answer");
+                    return;
+                  }
+
+                  try {
+                    setIsSubmitting(true);
+                    const { submitAnswer } =
+                      await import("../../../services/hcsService");
+
+                    await submitAnswer(
+                      {
+                        questionId: question.questionId,
+                        content: answerContent,
+                        isAI: false,
+                        confidence: null,
+                      },
+                      walletData,
+                      accountId,
+                    );
+
+                    const toast = (await import("react-hot-toast")).default;
+                    toast.success("Answer submitted successfully!");
+
+                    // Clear form
+                    setAnswerContent("");
+
+                    // Reload answers after delay for mirror node
+                    setTimeout(async () => {
+                      const answersData = await fetchAnswersForQuestion(
+                        question.questionId,
+                        gateway,
+                      );
+                      setAnswers(answersData);
+                    }, 2000);
+                  } catch (err) {
+                    console.error("Error submitting answer:", err);
+                    const toast = (await import("react-hot-toast")).default;
+                    toast.error("Failed to submit answer");
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Submitting..." : "Submit Answer"}
+              </NeonButton>
             </div>
           </GlassCard>
         </div>

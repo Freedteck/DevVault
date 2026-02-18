@@ -1,14 +1,13 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, Eye, Heart, Code } from "lucide-react";
+import { MessageSquare, Eye, Heart } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
-import NeonButton from "../ui/NeonButton";
 import styles from "./QuestionCardNew.module.css";
+import PropTypes from "prop-types";
 
 const QuestionCardNew = ({ question }) => {
   const navigate = useNavigate();
   const {
-    id,
+    sequenceNumber,
     title,
     description,
     tags,
@@ -37,7 +36,7 @@ const QuestionCardNew = ({ question }) => {
     <GlassCard
       hoverEffect
       className={styles.card}
-      onClick={() => navigate(`/questions/${id}`)}
+      onClick={() => navigate(`/questions/${sequenceNumber}`)}
     >
       <div className={styles.header}>
         <div className={styles.author}>
@@ -91,6 +90,10 @@ const QuestionCardNew = ({ question }) => {
       </div>
     </GlassCard>
   );
+};
+
+QuestionCardNew.propTypes = {
+  question: PropTypes.object.isRequired,
 };
 
 export default QuestionCardNew;

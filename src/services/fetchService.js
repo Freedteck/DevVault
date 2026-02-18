@@ -44,6 +44,7 @@ export async function fetchQuestions(limit = 10, nextLink = null, gateway) {
       const fullContent = await fetchFromPinata(metadata.cid, gateway);
 
       return {
+        sequenceNumber: msg.sequenceNumber,
         questionId: metadata.questionId,
         id: metadata.questionId, // For compatibility with card component
         title: metadata.title,
@@ -71,6 +72,49 @@ export async function fetchQuestions(limit = 10, nextLink = null, gateway) {
   return {
     questions,
     nextLink: newNextLink,
+  };
+}
+
+/**
+ * Fetch single question by sequence number
+ * @param {number} sequenceNumber - Sequence number of question
+ * @param {string} gateway - Pinata gateway URL
+ * @returns {Promise<object>} - Question data
+ */
+export async function fetchQuestionBySequenceNumber(sequenceNumber, gateway) {
+  const { getMessageBySequenceNumber } = await import("./getMessages.js");
+
+  // 1. Get message from HCS by sequence number
+  const msg = await getMessageBySequenceNumber(
+    TOPICS.QUESTIONS,
+    sequenceNumber,
+  );
+  const metadata = JSON.parse(msg.content);
+
+  // 2. Fetch full content from Pinata
+  const fullContent = await fetchFromPinata(metadata.cid, gateway);
+
+  return {
+    sequenceNumber: msg.sequenceNumber,
+    questionId: metadata.questionId,
+    title: metadata.title,
+    description: fullContent.description,
+    codeSnippet: fullContent.codeSnippet,
+    tags: metadata.tags,
+    bounty: metadata.bounty,
+    author: {
+      username: metadata.author,
+      avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${metadata.author}`,
+      rank: "Contributor",
+    },
+    stats: {
+      views: 0,
+      answers: 0,
+      likes: 0,
+    },
+    isSolved: false,
+    timestamp: metadata.timestamp,
+    createdAt: new Date(metadata.timestamp).toISOString(),
   };
 }
 
@@ -107,12 +151,17 @@ export async function fetchAnswersForQuestion(questionId, gateway) {
         answerId: metadata.answerId,
         questionId: metadata.questionId,
         content: fullContent.content,
-        author: metadata.author,
+        author: {
+          username: metadata.author,
+          avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${metadata.author}`,
+          rank: "Contributor",
+        },
         isAI: metadata.isAI || false,
         confidence: metadata.confidence,
         timestamp: metadata.timestamp,
         createdAt: new Date(metadata.timestamp).toISOString(),
         likes: 0, // TODO: Calculate from separate likes topic if you add that
+        isAccepted: false, // TODO: Check acceptances topic
       };
     }),
   );

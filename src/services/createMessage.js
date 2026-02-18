@@ -26,5 +26,9 @@ export async function submitMessage(
   // DAppSigner.call() handles freezing, signing, and executing
   const txResponse = await signer.call(transaction);
 
-  return [txResponse.status.toString(), txResponse.transactionId];
+  // Extract status and transactionId safely
+  const status = txResponse.status?.toString() || txResponse.toString() || "SUCCESS";
+  const transactionId = txResponse.transactionId || txResponse;
+
+  return [status, transactionId];
 }
