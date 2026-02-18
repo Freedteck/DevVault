@@ -11,6 +11,9 @@ import {
 import toast from "react-hot-toast";
 import GlassCard from "../ui/GlassCard";
 import NeonButton from "../ui/NeonButton";
+import MarkdownEditor from "../ui/MarkdownEditor";
+import MarkdownRenderer from "../ui/MarkdownRenderer";
+import ExpandableContent from "../ui/ExpandableContent";
 import TipModal from "../features/TipModal";
 import { fetchUpdates, fetchComments } from "../../../services/fetchService";
 import { submitComment } from "../../../services/hcsService";
@@ -236,12 +239,11 @@ const UpdateDetailsNew = () => {
               </span>
             </div>
 
-            <div
+            <MarkdownRenderer
+              content={update.content}
               className={styles.description}
-              style={{ fontSize: "1.1rem", whiteSpace: "pre-wrap" }}
-            >
-              {update.content}
-            </div>
+              style={{ fontSize: "1.1rem" }}
+            />
 
             <div
               className={styles.bountyBar}
@@ -307,11 +309,12 @@ const UpdateDetailsNew = () => {
                       </div>
                     </div>
                   </div>
-                  <div
-                    className={styles.answerContent}
-                    style={{ marginTop: "12px" }}
-                  >
-                    {comment.content}
+                  <div style={{ marginTop: "12px" }}>
+                    <ExpandableContent
+                      content={comment.content}
+                      maxLength={400}
+                      className={styles.answerContent}
+                    />
                   </div>
                 </GlassCard>
               ))}
@@ -320,12 +323,11 @@ const UpdateDetailsNew = () => {
 
           <GlassCard className={styles.postArea}>
             <h3 className={styles.postTitle}>Post a Comment</h3>
-            <textarea
-              className={styles.textarea}
-              placeholder="Share your thoughts..."
-              rows={4}
+            <MarkdownEditor
               value={commentContent}
-              onChange={(e) => setCommentContent(e.target.value)}
+              onChange={(value) => setCommentContent(value)}
+              placeholder="Share your thoughts... Markdown supported!"
+              minRows={4}
             />
             <div className={styles.postActions}>
               <NeonButton

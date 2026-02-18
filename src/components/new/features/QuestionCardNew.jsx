@@ -32,6 +32,12 @@ const QuestionCardNew = ({ question }) => {
     return `${days}d ago`;
   };
 
+  // Truncate for card preview (strip markdown)
+  const truncateDescription = (text) => {
+    const stripped = text.replace(/[*_`#[\]()!]/g, "").substring(0, 150);
+    return stripped + (text.length > 150 ? "..." : "");
+  };
+
   return (
     <GlassCard
       hoverEffect
@@ -55,7 +61,7 @@ const QuestionCardNew = ({ question }) => {
 
       <div className={styles.body}>
         <h3 className={styles.title}>{title}</h3>
-        <p className={styles.description}>{description}</p>
+        <p className={styles.description}>{truncateDescription(description)}</p>
 
         <div className={styles.tags}>
           {tags.map((tag) => (

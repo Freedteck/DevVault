@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { Send, Loader2 } from "lucide-react";
 import Modal from "../ui/Modal";
 import NeonButton from "../ui/NeonButton";
+import MarkdownEditor from "../ui/MarkdownEditor";
 import styles from "./CreateQuestionModal.module.css";
 import { userWalletContext } from "../../../context/userWalletContext";
 import { submitUpdate } from "../../../services/hcsService";
@@ -79,15 +80,13 @@ const CreateUpdateModalNew = ({ isOpen, onClose }) => {
 
         <div className={styles.field}>
           <label className={styles.label}>Description</label>
-          <textarea
-            className={styles.textarea}
-            placeholder="Summarize the news or update..."
-            rows={4}
+          <MarkdownEditor
             value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
+            onChange={(value) =>
+              setFormData({ ...formData, description: value })
             }
-            required
+            placeholder="Summarize the news or update... Markdown supported!"
+            minRows={4}
           />
         </div>
 

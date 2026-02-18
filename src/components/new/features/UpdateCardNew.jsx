@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Share2 } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
+import MarkdownRenderer from "../ui/MarkdownRenderer";
 import styles from "./UpdateCardNew.module.css";
 
 const UpdateCardNew = ({ update }) => {
@@ -17,9 +18,12 @@ const UpdateCardNew = ({ update }) => {
     year: "numeric",
   });
 
-  // Truncate content for preview
-  const description =
-    content?.substring(0, 150) + (content?.length > 150 ? "..." : "");
+  // Truncate content for preview (strip markdown)
+  const truncateContent = (text) => {
+    const stripped = text.replace(/[*_`#\[\]()!]/g, "").substring(0, 150);
+    return stripped + (text.length > 150 ? "..." : "");
+  };
+  const description = truncateContent(content || "");
 
   // Handle author format (could be string or object)
   const authorData =

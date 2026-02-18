@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { Send, DollarSign, Loader2 } from "lucide-react";
 import Modal from "../ui/Modal";
 import NeonButton from "../ui/NeonButton";
+import MarkdownEditor from "../ui/MarkdownEditor";
 import styles from "./CreateQuestionModal.module.css";
 import PropTypes from "prop-types";
 import { userWalletContext } from "../../../context/userWalletContext";
@@ -107,28 +108,25 @@ const CreateQuestionModalNew = ({ isOpen, onClose }) => {
 
         <div className={styles.field}>
           <label className={styles.label}>Description</label>
-          <textarea
-            className={styles.textarea}
-            placeholder="Describe your problem in detail..."
-            rows={4}
+          <MarkdownEditor
             value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
+            onChange={(value) =>
+              setFormData({ ...formData, description: value })
             }
-            required
+            placeholder="Describe your problem in detail... Markdown supported!"
+            minRows={4}
           />
         </div>
 
         <div className={styles.field}>
           <label className={styles.label}>Code Snippet (Optional)</label>
-          <textarea
-            className={`${styles.textarea} ${styles.code}`}
-            placeholder="// Paste your code here..."
-            rows={4}
+          <MarkdownEditor
             value={formData.codeSnippet}
-            onChange={(e) =>
-              setFormData({ ...formData, codeSnippet: e.target.value })
+            onChange={(value) =>
+              setFormData({ ...formData, codeSnippet: value })
             }
+            placeholder="```javascript\n// Paste your code here...\n```"
+            minRows={4}
           />
         </div>
 

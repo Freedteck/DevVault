@@ -4,6 +4,8 @@ import { ArrowLeft, Clock, Code, Send, Coins } from "lucide-react";
 import toast from "react-hot-toast";
 import GlassCard from "../ui/GlassCard";
 import NeonButton from "../ui/NeonButton";
+import MarkdownEditor from "../ui/MarkdownEditor";
+import MarkdownRenderer from "../ui/MarkdownRenderer";
 import AnswerCardNew from "../features/AnswerCardNew";
 import TipModal from "../features/TipModal";
 import ArbitrationTimer from "../features/ArbitrationTimer";
@@ -207,16 +209,17 @@ const QuestionDetailsNew = () => {
               </div>
             </div>
 
-            <p className={styles.description}>{question.description}</p>
+            <MarkdownRenderer
+              content={question.description}
+              className={styles.description}
+            />
 
             {question.codeSnippet && (
               <div className={styles.codeBlock}>
                 <div className={styles.codeHeader}>
                   <Code size={14} /> Code Snippet
                 </div>
-                <pre>
-                  <code>{question.codeSnippet}</code>
-                </pre>
+                <MarkdownRenderer content={question.codeSnippet} />
               </div>
             )}
 
@@ -299,12 +302,11 @@ const QuestionDetailsNew = () => {
           {/* Post Answer Area */}
           <GlassCard className={styles.postArea}>
             <h3 className={styles.postTitle}>Post a Solution</h3>
-            <textarea
-              className={styles.textarea}
-              placeholder="Type your solution here. Markdown supported..."
-              rows={6}
+            <MarkdownEditor
               value={answerContent}
-              onChange={(e) => setAnswerContent(e.target.value)}
+              onChange={(value) => setAnswerContent(value)}
+              placeholder="Type your solution here. Markdown supported: **bold**, `code`, [links](url), etc."
+              minRows={6}
             />
             <div className={styles.postActions}>
               <NeonButton

@@ -1,6 +1,7 @@
 import { Coins, Bot } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
 import NeonButton from "../ui/NeonButton";
+import ExpandableContent from "../ui/ExpandableContent";
 import { getBadgeComponent } from "../ui/BadgeIcons";
 import { AnswerTypeBadge } from "../ui/AnswerBadges";
 import styles from "./AnswerCardNew.module.css";
@@ -91,7 +92,11 @@ const AnswerCardNew = ({
         )}
       </div>
 
-      <div className={styles.content}>{content}</div>
+      <ExpandableContent
+        content={content}
+        maxLength={600}
+        className={styles.content}
+      />
 
       <div className={styles.footer}>
         <div className={styles.actions}>
