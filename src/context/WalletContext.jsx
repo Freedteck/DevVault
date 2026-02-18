@@ -37,7 +37,7 @@ const WalletContext = ({ children }) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({ accountId: accountId, network: "testnet" }),
-          }
+          },
         );
 
         // Check for a successful response
