@@ -6,6 +6,7 @@ import styles from "./CreateQuestionModal.module.css";
 import PropTypes from "prop-types";
 import { userWalletContext } from "../../../context/userWalletContext";
 import { submitQuestion } from "../../../services/hcsService";
+import { processQuestion } from "../../../services/aiAgent";
 import toast from "react-hot-toast";
 
 const CreateQuestionModalNew = ({ isOpen, onClose }) => {
@@ -50,6 +51,21 @@ const CreateQuestionModalNew = ({ isOpen, onClose }) => {
       const result = await submitQuestion(questionData, walletData, accountId);
 
       toast.success(`Question posted! ID: ${result.questionId}`);
+
+      // Trigger AI processing in background (don't await - let it run async)
+      await processQuestion(questionData, result.questionId)
+        .then((aiResult) => {
+          if (aiResult) {
+            console.log(
+              `✅ AI answered with ${aiResult.confidence}% confidence`,
+            );
+          } else {
+            console.log(`⚠️ AI couldn't answer confidently (<50%)`);
+          }
+        })
+        .catch((err) => {
+          console.error("AI processing error:", err);
+        });
 
       // Reset form
       setFormData({

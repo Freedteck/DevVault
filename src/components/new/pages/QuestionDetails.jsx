@@ -9,8 +9,11 @@ import ArbitrationTimer from "../features/ArbitrationTimer";
 import {
   fetchQuestionBySequenceNumber,
   fetchAnswersForQuestion,
+  fetchAcceptances,
 } from "../../../services/fetchService";
+import { processArbitration } from "../../../services/aiArbiter";
 import { userWalletContext } from "../../../context/userWalletContext";
+import toast from "react-hot-toast";
 import styles from "./QuestionDetails.module.css";
 
 const QuestionDetailsNew = () => {
@@ -110,15 +113,16 @@ const QuestionDetailsNew = () => {
       toast.loading("Accepting answer...");
 
       // 1. Submit acceptance to HCS
-      const { submitAcceptance, releaseEscrow } = await import("../../../services/hcsService");
-      
+      const { submitAcceptance, releaseEscrow } =
+        await import("../../../services/hcsService");
+
       await submitAcceptance(
         {
           questionId: question.questionId,
           answerId: answer.answerId,
         },
         walletData,
-        accountId
+        accountId,
       );
 
       // 2. Release escrow if bounty exists
@@ -134,7 +138,9 @@ const QuestionDetailsNew = () => {
               answer.author.username, // Author's account ID
             );
             toast.dismiss();
-            toast.success(`Answer accepted! ${question.bounty} HBAR released to ${answer.author.username}`);
+            toast.success(
+              `Answer accepted! ${question.bounty} HBAR released to ${answer.author.username}`,
+            );
           } catch (escrowError) {
             console.error("Escrow release error:", escrowError);
             toast.dismiss();
@@ -151,10 +157,12 @@ const QuestionDetailsNew = () => {
 
       // 3. Refresh answers to show accepted status
       setTimeout(async () => {
-        const answersData = await fetchAnswersForQuestion(question.questionId, gateway);
+        const answersData = await fetchAnswersForQuestion(
+          question.questionId,
+          gateway,
+        );
         setAnswers(answersData);
       }, 2000);
-
     } catch (error) {
       console.error("Error accepting answer:", error);
       const toast = (await import("react-hot-toast")).default;
@@ -231,8 +239,41 @@ const QuestionDetailsNew = () => {
               hasBounty={question.bounty > 0}
               hasAcceptedAnswer={hasAcceptedAnswer}
               arbitrationDelay={7 * 24 * 60 * 60 * 1000} // 7 days
-              onArbitrationTrigger={() => {
-                console.log("AI arbiter should analyze answers now");
+              onArbitrationTrigger={async () => {
+                try {
+                  toast.loading("AI Arbiter analyzing answers...");
+
+                  // Get acceptances to check eligibility
+                  const acceptances = await fetchAcceptances();
+
+                  // Process arbitration
+                  const result = await processArbitration(
+                    question,
+                    answers,
+                    acceptances,
+                  );
+
+                  if (result) {
+                    toast.dismiss();
+                    toast.success(
+                      `AI Arbiter released ${question.bounty} HBAR to ${result.winnerAccountId}`,
+                    );
+
+                    // Reload answers to show arbitration badge
+                    const answersData = await fetchAnswersForQuestion(
+                      question.questionId,
+                      gateway,
+                    );
+                    setAnswers(answersData);
+                  } else {
+                    toast.dismiss();
+                    toast.error("Question not eligible for arbitration yet");
+                  }
+                } catch (error) {
+                  console.error("Arbitration error:", error);
+                  toast.dismiss();
+                  toast.error(`Arbitration failed: ${error.message}`);
+                }
               }}
             />
           )}

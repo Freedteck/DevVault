@@ -4,6 +4,7 @@ import {
   PrivateKey,
   ContractExecuteTransaction,
   ContractFunctionParameters,
+  AccountId,
 } from "@hashgraph/sdk";
 import { ChatGroq } from "@langchain/groq";
 
@@ -190,7 +191,7 @@ export async function executeArbitration(
     );
 
     // Convert recipient to EVM address for contract call
-    const recipientAddress = `0x${Buffer.from(recipientAccountId.split(".")[2]).toString("hex").padStart(40, "0")}`;
+    const recipientAddress = AccountId.fromString(recipientAccountId).toSolidityAddress();
 
     // Call arbiterRelease on the contract
     const arbiterReleaseTx = new ContractExecuteTransaction()
@@ -249,10 +250,13 @@ export async function processArbitration(question, answers, acceptances) {
       throw new Error("Escrow contract ID not configured");
     }
 
+    // Convert questionId to numeric for smart contract
+    const numericQuestionId = parseInt(question.questionId.split("-")[1]) || Date.now();
+    
     const transactionId = await executeArbitration(
       escrowContractId,
-      question.escrowId,
-      bestAnswer.author,
+      numericQuestionId,
+      bestAnswer.author.username || bestAnswer.author,
     );
 
     return {
