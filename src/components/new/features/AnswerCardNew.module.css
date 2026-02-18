@@ -8,23 +8,25 @@
 }
 
 .accepted {
-  border: 1px solid var(--apex-green-500);
-  background: linear-gradient(145deg, rgba(16, 185, 129, 0.05) 0%, rgba(15, 23, 42, 0.4) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  background: linear-gradient(
+    145deg,
+    rgba(59, 130, 246, 0.05) 0%,
+    rgba(15, 23, 42, 0.4) 100%
+  );
 }
 
-.acceptedBadge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--apex-green-500);
-  background: rgba(16, 185, 129, 0.1);
-  padding: 4px 10px;
-  border-radius: 20px;
+.arbitrated {
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  background: linear-gradient(
+    145deg,
+    rgba(139, 92, 246, 0.05) 0%,
+    rgba(15, 23, 42, 0.4) 100%
+  );
+}
+
+.badgeRow {
+  margin-bottom: 0.75rem;
 }
 
 .header {
@@ -99,7 +101,8 @@
   gap: var(--space-3);
 }
 
-.actionBtn, .tipBtn {
+.actionBtn,
+.tipBtn {
   background: transparent;
   border: 1px solid transparent;
   color: var(--apex-text-muted);
@@ -125,7 +128,7 @@
 }
 
 .tipBtn:hover {
-   background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08);
   border-color: var(--apex-primary-400);
   box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
   transform: translateY(-1px);

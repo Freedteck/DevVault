@@ -1,0 +1,174 @@
+.timerCard {
+  margin: 1.5rem 0;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.timerCard.normal {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.05),
+    rgba(139, 92, 246, 0.05)
+  );
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.timerCard.warning {
+  background: linear-gradient(
+    135deg,
+    rgba(251, 191, 36, 0.05),
+    rgba(245, 158, 11, 0.05)
+  );
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.timerCard.urgent {
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.05),
+    rgba(220, 38, 38, 0.05)
+  );
+  border-color: rgba(239, 68, 68, 0.4);
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+.timerCard.triggered {
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.05),
+    rgba(22, 163, 74, 0.05)
+  );
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    border-color: rgba(239, 68, 68, 0.7);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  color: #a78bfa;
+  font-weight: 600;
+}
+
+.icon {
+  color: #8b5cf6;
+}
+
+.timerCard.warning .icon {
+  color: #fbbf24;
+}
+
+.timerCard.urgent .icon {
+  color: #f87171;
+}
+
+.timerCard.triggered .icon {
+  color: #4ade80;
+}
+
+.title {
+  font-size: 1rem;
+}
+
+.countdown {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.timeDisplay {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.timerCard.warning .timeDisplay {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.timerCard.urgent .timeDisplay {
+  background: linear-gradient(135deg, #f87171, #dc2626);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.timeLabel {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.875rem;
+}
+
+.description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.description p {
+  margin-top: 0.5rem;
+}
+
+.urgentNotice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid #f87171;
+  border-radius: 0.25rem;
+  margin-bottom: 0.75rem;
+  color: #f87171;
+  font-weight: 500;
+}
+
+.progressBar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+  transition: width 1s linear;
+  border-radius: 3px;
+}
+
+.timerCard.warning .progressFill {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.timerCard.urgent .progressFill {
+  background: linear-gradient(90deg, #f87171, #dc2626);
+}
+
+.timerCard.triggered .progressFill {
+  background: linear-gradient(90deg, #4ade80, #22c55e);
+  width: 100% !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .timeDisplay {
+    font-size: 2rem;
+  }
+}

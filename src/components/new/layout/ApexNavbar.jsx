@@ -1,8 +1,8 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Wallet, Menu, Search } from 'lucide-react';
-import NeonButton from '../ui/NeonButton';
-import styles from './ApexNavbar.module.css';
+import React from "react";
+import { NavLink } from "react-router-dom";
+import { Wallet, Menu, Search, Bot } from "lucide-react";
+import NeonButton from "../ui/NeonButton";
+import styles from "./ApexNavbar.module.css";
 
 const ApexNavbar = () => {
   return (
@@ -13,22 +13,52 @@ const ApexNavbar = () => {
           <div className={styles.logo}>
             <span className={styles.logoIcon}>⚡</span>
           </div>
-          <span className={styles.logoText}>DevVault<span className={styles.pro}>APEX</span></span>
+          <span className={styles.logoText}>
+            DevVault<span className={styles.pro}>APEX</span>
+          </span>
         </div>
 
         {/* Center Nav */}
         <div className={styles.navLinks}>
-          <NavLink to="/" className={({isActive}) => `${styles.link} ${isActive ? styles.active : ''}`}>
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              `${styles.link} ${isActive ? styles.active : ""}`
+            }
+          >
             Dashboard
           </NavLink>
-          <NavLink to="/questions" className={({isActive}) => `${styles.link} ${isActive ? styles.active : ''}`}>
+          <NavLink
+            to="/questions"
+            className={({ isActive }) =>
+              `${styles.link} ${isActive ? styles.active : ""}`
+            }
+          >
             Questions
           </NavLink>
-          <NavLink to="/updates" className={({isActive}) => `${styles.link} ${isActive ? styles.active : ''}`}>
+          <NavLink
+            to="/updates"
+            className={({ isActive }) =>
+              `${styles.link} ${isActive ? styles.active : ""}`
+            }
+          >
             Updates
           </NavLink>
-          <NavLink to="/leaderboard" className={({isActive}) => `${styles.link} ${isActive ? styles.active : ''}`}>
+          <NavLink
+            to="/leaderboard"
+            className={({ isActive }) =>
+              `${styles.link} ${isActive ? styles.active : ""}`
+            }
+          >
             Leaderboard
+          </NavLink>
+          <NavLink
+            to="/ai-agent"
+            className={({ isActive }) =>
+              `${styles.link} ${styles.aiLink} ${isActive ? styles.active : ""}`
+            }
+          >
+            <Bot size={16} /> AI Agent
           </NavLink>
         </div>
 
@@ -37,8 +67,8 @@ const ApexNavbar = () => {
           <button className={styles.iconBtn}>
             <Search size={20} />
           </button>
-          
-          <NavLink to="/profile" style={{textDecoration: 'none'}}>
+
+          <NavLink to="/profile" style={{ textDecoration: "none" }}>
             <NeonButton variant="outline" size="sm" icon={<Wallet size={16} />}>
               0.0.123456
             </NeonButton>
