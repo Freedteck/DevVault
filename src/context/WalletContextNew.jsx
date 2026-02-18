@@ -6,11 +6,13 @@ import {
   disconnectWallet as disconnectWalletFcn,
   initDAppConnector,
 } from "../client/walletConnectNew";
+import accountBalance from "../client/accountBalance";
 
 const WalletContextNew = ({ children }) => {
   const [walletData, setWalletData] = useState(null);
   const [accountId, setAccountId] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+  const [balance, setBalance] = useState(null);
 
   const connectWallet = async () => {
     try {
@@ -49,6 +51,7 @@ const WalletContextNew = ({ children }) => {
       setWalletData(null);
       setAccountId(null);
       setUserProfile(null);
+      setBalance(null);
 
       // Clear stored connection state
       localStorage.removeItem("devvault_wallet_connected");
@@ -127,6 +130,25 @@ const WalletContextNew = ({ children }) => {
     getUserProfile();
   }, [accountId]);
 
+  // Fetch account balance when accountId changes
+  useEffect(() => {
+    const getBalance = async () => {
+      if (!accountId) return;
+
+      try {
+        console.log(`- Fetching balance for ${accountId}...`);
+        const newBalance = await accountBalance(accountId);
+        setBalance(newBalance);
+        console.log(`- Balance fetched: ${newBalance} HBAR`);
+      } catch (error) {
+        console.error("Error fetching account balance:", error);
+        setBalance(0);
+      }
+    };
+
+    getBalance();
+  }, [accountId]);
+
   return (
     <userWalletContext.Provider
       value={{
@@ -135,6 +157,7 @@ const WalletContextNew = ({ children }) => {
         connectWallet,
         disconnectWallet: disconnect,
         userProfile,
+        balance,
       }}
     >
       {children}

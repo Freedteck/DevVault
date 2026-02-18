@@ -1,153 +1,229 @@
-import React from 'react';
-import { User, Shield, Zap, Gift, Trophy } from 'lucide-react';
-import GlassCard from '../ui/GlassCard';
-import NeonButton from '../ui/NeonButton';
-import { HelperBadge, ContributorBadge, ExpertBadge, LegendBadge, getBadgeComponent } from '../ui/BadgeIcons';
-import { MOCK_USERS } from '../data/mock';
-import styles from './Profile.module.css';
+import React, { useContext } from "react";
+import {
+  Award,
+  MessageSquare,
+  CheckCircle,
+  HelpCircle,
+  Loader,
+} from "lucide-react";
+import GlassCard from "../ui/GlassCard";
+import { userWalletContext } from "../../../context/userWalletContext";
+import { useUserProfile } from "../../../hooks/useUserProfile";
+import { getBadgeComponent } from "../ui/BadgeIcons";
+import styles from "./Profile.module.css";
 
 const ProfileNew = () => {
-  const user = MOCK_USERS.currentUser;
-  
-  // Logic to determine current badge component
-  const CurrentBadgeIcon = getBadgeComponent(user.reputation.tier);
+  const { accountId, balance } = useContext(userWalletContext);
+  const { profile, isLoading, error } = useUserProfile(accountId);
+
+  if (!accountId) {
+    return (
+      <div className={styles.container}>
+        <GlassCard>
+          <div style={{ padding: "3rem", textAlign: "center" }}>
+            <p style={{ color: "var(--text-secondary)", fontSize: "1.1rem" }}>
+              Connect your wallet to view your profile
+            </p>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <GlassCard>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "3rem",
+            }}
+          >
+            <Loader className="spin" size={32} color="var(--primary)" />
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <GlassCard>
+          <div style={{ padding: "3rem", textAlign: "center" }}>
+            <p style={{ color: "var(--text-error)" }}>
+              Error loading profile: {error}
+            </p>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
+
+  const BadgeIcon = getBadgeComponent(profile?.tier || "Helper");
 
   return (
     <div className={styles.container}>
       {/* Profile Header */}
       <GlassCard className={styles.headerCard}>
-        <div className={styles.headerContent}>
-          <div className={styles.avatarWrapper}>
-            <img src={user.avatar} alt={user.username} className={styles.avatar} />
-            <div className={styles.statusIndicator} />
-          </div>
-          
-          <div className={styles.userInfo}>
-             <h1 className={styles.username}>{user.username}</h1>
-             
-             <div className={styles.badges}>
-               {/* Primary Rank Badge */}
-               <div className={`${styles.rankBadge} ${styles[user.reputation.tier.toLowerCase()]}`}>
-                  {CurrentBadgeIcon && <CurrentBadgeIcon size={16} />} 
-                  <span>{user.reputation.tier}</span>
-               </div>
-               
-               {/* Other Badges */}
-               {user.badges.map(b => (
-                 <span key={b} className={styles.badge}>
-                   <Shield size={14} /> {b}
-                 </span>
-               ))}
-             </div>
+        <div className={styles.profileHeader}>
+          <div className={styles.avatarSection}>
+            <img
+              src={`https://api.dicebear.com/7.x/identicon/svg?seed=${accountId}`}
+              alt={accountId}
+              className={styles.avatar}
+            />
+            <div className={styles.badge}>
+              {BadgeIcon && <BadgeIcon size={20} />}
+              <span>{profile?.tier || "Helper"}</span>
+            </div>
           </div>
 
-          <div className={styles.statsGrid}>
-             <div className={styles.statBox}>
-                <span className={styles.statLabel}>Wallet Balance</span>
-                <span className={styles.statValue}>
-                  {user.balance} <span className={styles.unit}>HBAR</span>
-                </span>
-             </div>
-             <div className={styles.statBox}>
-                <span className={styles.statLabel}>Reputation</span>
-                <span className={styles.statValue}>
-                  {user.reputation.acceptanceCount} <span className={styles.unit}>Accepted</span>
-                </span>
-             </div>
+          <div className={styles.userInfo}>
+            <h1 className={styles.accountId}>{accountId}</h1>
+            <div className={styles.balanceInfo}>
+              <span className={styles.balance}>
+                {balance !== null && balance !== undefined
+                  ? `${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} HBAR`
+                  : "Loading..."}
+              </span>
+              <span className={styles.balanceLabel}>Wallet Balance</span>
+            </div>
           </div>
         </div>
       </GlassCard>
 
-      <div className={styles.contentGrid}>
-        {/* Left Column: Reputation Breakdown */}
-        <div className={styles.leftCol}>
-          <GlassCard title="Reputation Status">
-             <div className={styles.reputationHeader}>
-               <h3 className={styles.cardTitle}><Trophy size={18}/> Current Standings</h3>
-             </div>
-             
-             <div className={styles.reputationCard}>
-                <div className={styles.currentTier}>
-                   <div className={styles.largeIcon}>
-                      {CurrentBadgeIcon && <CurrentBadgeIcon size={48} />}
-                   </div>
-                   <div className={styles.tierInfo}>
-                      <h4>{user.reputation.tier} Tier</h4>
-                      <p>Top {user.reputation.score > 500 ? '1%' : '10%'} contributor</p>
-                   </div>
-                </div>
+      {/* Stats Grid */}
+      <div className={styles.statsGrid}>
+        <GlassCard>
+          <div className={styles.statCard}>
+            <div className={styles.statIcon}>
+              <Award size={24} color="#8b5cf6" />
+            </div>
+            <div className={styles.statContent}>
+              <span className={styles.statValue}>
+                {profile?.reputationScore || 0}
+              </span>
+              <span className={styles.statLabel}>Reputation Score</span>
+            </div>
+          </div>
+        </GlassCard>
 
-                <div className={styles.progressSection}>
-                   <div className={styles.progressLabel}>
-                      <span>Progress to Next Tier</span>
-                      <span>{user.reputation.acceptanceCount} / 50</span>
-                   </div>
-                   <div className={styles.progressBar}>
-                      <div className={styles.progressFill} style={{width: '84%'}} />
-                   </div>
-                </div>
-             </div>
+        <GlassCard>
+          <div className={styles.statCard}>
+            <div className={styles.statIcon}>
+              <CheckCircle size={24} color="#10b981" />
+            </div>
+            <div className={styles.statContent}>
+              <span className={styles.statValue}>
+                {profile?.acceptedAnswers || 0}
+              </span>
+              <span className={styles.statLabel}>Accepted Answers</span>
+            </div>
+          </div>
+        </GlassCard>
 
-             <div className={styles.achievementList}>
-                <div className={styles.achievementItem}>
-                   <div className={`${styles.iconBox} ${styles.unlocked}`}>
-                      <Zap size={20} />
-                   </div>
-                   <div className={styles.achievementInfo}>
-                      <span className={styles.achTitle}>First Answer</span>
-                      <span className={styles.achDesc}>Solved 1 question</span>
-                   </div>
-                </div>
-                {/* Locked Item */}
-                <div className={styles.achievementItem}>
-                   <div className={styles.iconBox}>
-                      <Gift size={20} />
-                   </div>
-                   <div className={styles.achievementInfo}>
-                      <span className={styles.achTitle}>Big Tipper</span>
-                      <span className={styles.achDesc}>Tip 1000 HBAR total</span>
-                   </div>
-                </div>
-             </div>
-          </GlassCard>
-        </div>
+        <GlassCard>
+          <div className={styles.statCard}>
+            <div className={styles.statIcon}>
+              <MessageSquare size={24} color="#6366f1" />
+            </div>
+            <div className={styles.statContent}>
+              <span className={styles.statValue}>
+                {profile?.answersProvided || 0}
+              </span>
+              <span className={styles.statLabel}>Total Answers</span>
+            </div>
+          </div>
+        </GlassCard>
 
-        {/* Right Column: Key History */}
-        <div className={styles.rightCol}>
-           <GlassCard>
-              <h3 className={styles.cardTitle}>Recent Activity</h3>
-              <div className={styles.activityList}>
-                 <div className={styles.activityItem}>
-                    <span className={styles.activityIcon}>✅</span>
-                    <div className={styles.activityContent}>
-                       <span className={styles.activityText}>Solved <strong>HTS Token Issue</strong></span>
-                       <span className={styles.activityTime}>2 hours ago</span>
-                    </div>
-                    <span className={styles.activityReward}>+50 HBAR Bounty</span>
-                 </div>
-                 
-                 <div className={styles.activityItem}>
-                    <span className={styles.activityIcon}>💎</span>
-                    <div className={styles.activityContent}>
-                       <span className={styles.activityText}>Received Tip from <strong>solidity_sage</strong></span>
-                       <span className={styles.activityTime}>5 hours ago</span>
-                    </div>
-                    <span className={styles.activityReward}>+10 HBAR</span>
-                 </div>
-
-                 <div className={styles.activityItem}>
-                    <span className={styles.activityIcon}>❓</span>
-                    <div className={styles.activityContent}>
-                       <span className={styles.activityText}>Asked <strong>Smart Contract Upgrade...</strong></span>
-                       <span className={styles.activityTime}>1 day ago</span>
-                    </div>
-                 </div>
-              </div>
-           </GlassCard>
-        </div>
+        <GlassCard>
+          <div className={styles.statCard}>
+            <div className={styles.statIcon}>
+              <HelpCircle size={24} color="#06b6d4" />
+            </div>
+            <div className={styles.statContent}>
+              <span className={styles.statValue}>
+                {profile?.questionsAsked || 0}
+              </span>
+              <span className={styles.statLabel}>Questions Asked</span>
+            </div>
+          </div>
+        </GlassCard>
       </div>
+
+      {/* Recent Activity */}
+      <GlassCard>
+        <h2 className={styles.sectionTitle}>Recent Activity</h2>
+        {!profile?.recentActivity || profile.recentActivity.length === 0 ? (
+          <p className={styles.emptyState}>No recent activity</p>
+        ) : (
+          <div className={styles.activityList}>
+            {profile.recentActivity.map((activity, index) => (
+              <div key={index} className={styles.activityItem}>
+                {activity.type === "answer" ? (
+                  <>
+                    <div className={styles.activityIcon}>
+                      {activity.isAccepted ? (
+                        <CheckCircle size={20} color="var(--success)" />
+                      ) : (
+                        <MessageSquare
+                          size={20}
+                          color="var(--text-secondary)"
+                        />
+                      )}
+                    </div>
+                    <div className={styles.activityContent}>
+                      <span className={styles.activityText}>
+                        {activity.isAccepted
+                          ? "Answer accepted on"
+                          : "Answered"}{" "}
+                        {activity.questionTitle}
+                      </span>
+                      <span className={styles.activityTime}>
+                        {formatTimeAgo(activity.timestamp)}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={styles.activityIcon}>
+                      <HelpCircle size={20} color="var(--text-secondary)" />
+                    </div>
+                    <div className={styles.activityContent}>
+                      <span className={styles.activityText}>
+                        Asked: {activity.title}
+                      </span>
+                      <span className={styles.activityTime}>
+                        {formatTimeAgo(activity.timestamp)}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </GlassCard>
     </div>
   );
 };
+
+// Helper function to format timestamps
+function formatTimeAgo(timestamp) {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `${days} ${days === 1 ? "day" : "days"} ago`;
+  if (hours > 0) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  if (minutes > 0)
+    return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
+  return "Just now";
+}
 
 export default ProfileNew;

@@ -103,7 +103,7 @@
 }
 
 .score {
-  font-family: 'Inter', monospace;
+  font-family: "Inter", monospace;
   font-weight: 700;
   color: var(--apex-cyan-400);
 }
@@ -111,14 +111,20 @@
 .repBar {
   width: 100%;
   max-width: 200px;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.1);
+  height: 8px;
+  background: rgba(139, 92, 246, 0.15);
   border-radius: var(--radius-full);
   overflow: hidden;
+  border: 1px solid rgba(139, 92, 246, 0.2);
 }
 
 .repFill {
   height: 100%;
-  background: linear-gradient(90deg, var(--apex-primary-600), var(--apex-cyan-400));
+  background: linear-gradient(
+    90deg,
+    var(--apex-primary-600),
+    var(--apex-cyan-400)
+  );
   border-radius: var(--radius-full);
+  transition: width 0.5s ease;
 }
