@@ -12,7 +12,7 @@ import QuestionDetails from "./pages/questionDetails";
 import UpdateDetails from "./pages/updateDetails";
 import Leaderboard from "./pages/leaderboard";
 import Profile from "./pages/profile";
-import WalletContext from "./context/WalletContext";
+import WalletContextNew from "./context/WalletContextNew";
 
 const router = createBrowserRouter([
   {
@@ -61,6 +61,8 @@ import AppNew from "./AppNew";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <AppNew />
+    <WalletContextNew>
+      <AppNew />
+    </WalletContextNew>
   </StrictMode>
 );

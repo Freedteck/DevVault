@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useContext } from "react";
 import { NavLink } from "react-router-dom";
 import { Wallet, Menu, Search, Bot } from "lucide-react";
 import NeonButton from "../ui/NeonButton";
 import styles from "./ApexNavbar.module.css";
+import { userWalletContext } from "../../../context/userWalletContext";
 
 const ApexNavbar = () => {
+  const { accountId, connectWallet } = useContext(userWalletContext);
+
   return (
     <nav className={styles.navbar}>
       <div className={styles.container}>
@@ -68,11 +71,22 @@ const ApexNavbar = () => {
             <Search size={20} />
           </button>
 
-          <NavLink to="/profile" style={{ textDecoration: "none" }}>
-            <NeonButton variant="outline" size="sm" icon={<Wallet size={16} />}>
-              0.0.123456
+          {accountId ? (
+            <NavLink to="/profile" style={{ textDecoration: "none" }}>
+              <NeonButton variant="outline" size="sm" icon={<Wallet size={16} />}>
+                {accountId}
+              </NeonButton>
+            </NavLink>
+          ) : (
+            <NeonButton
+              variant="outline"
+              size="sm"
+              icon={<Wallet size={16} />}
+              onClick={connectWallet}
+            >
+              Connect Wallet
             </NeonButton>
-          </NavLink>
+          )}
         </div>
       </div>
     </nav>
