@@ -8,21 +8,31 @@ contract BountyEscrow {
         address recipient;
         bool released;
         uint256 createdAt;
+        bool arbitrated;
     }
 
     mapping(uint256 => Escrow) public escrows;
     address public owner;
+    address public aiArbiter;
+    uint256 public constant ARBITRATION_TIMEOUT = 7 days;
 
     event Deposited(uint256 indexed questionId, address indexed depositor, uint256 amount);
-    event Released(uint256 indexed questionId, address indexed recipient, uint256 amount);
+    event Released(uint256 indexed questionId, address indexed recipient, uint256 amount, bool arbitrated);
+    event ArbiterUpdated(address indexed oldArbiter, address indexed newArbiter);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function");
         _;
     }
 
-    constructor() {
+    modifier onlyArbiter() {
+        require(msg.sender == aiArbiter, "Only AI arbiter can call this function");
+        _;
+    }
+
+    constructor(address _aiArbiter) {
         owner = msg.sender;
+        aiArbiter = _aiArbiter;
     }
 
     // Deposit HBAR into escrow for a question
@@ -33,28 +43,88 @@ contract BountyEscrow {
         escrows[questionId] = Escrow({
             depositor: msg.sender,
             amount: msg.value,
-            recipient: address(0), // Will be set when released
+            recipient: address(0),
             released: false,
-            createdAt: block.timestamp
+            createdAt: block.timestamp,
+            arbitrated: false
         });
 
         emit Deposited(questionId, msg.sender, msg.value);
     }
 
-    // Release escrow funds to recipient (only owner can call this)
-    function release(uint256 questionId, address recipient) external onlyOwner {
+    // Release escrow funds to recipient (owner or depositor can call)
+    function release(uint256 questionId, address recipient) external {
         Escrow storage escrow = escrows[questionId];
         require(escrow.amount > 0, "No escrow found for this question");
         require(!escrow.released, "Escrow already released");
         require(recipient != address(0), "Invalid recipient");
+        require(
+            msg.sender == owner || msg.sender == escrow.depositor,
+            "Only owner or depositor can release"
+        );
 
         escrow.recipient = recipient;
         escrow.released = true;
+        uint256 amount = escrow.amount;
 
-        // Transfer HBAR to recipient
-        payable(recipient).transfer(escrow.amount);
+        (bool success, ) = payable(recipient).call{value: amount}("");
+        require(success, "Transfer failed");
 
-        emit Released(questionId, recipient, escrow.amount);
+        emit Released(questionId, recipient, amount, false);
+    }
+
+    // AI arbiter releases funds after timeout (7 days)
+    function arbiterRelease(uint256 questionId, address recipient) external onlyArbiter {
+        Escrow storage escrow = escrows[questionId];
+        require(escrow.amount > 0, "No escrow found for this question");
+        require(!escrow.released, "Escrow already released");
+        require(recipient != address(0), "Invalid recipient");
+        require(
+            block.timestamp >= escrow.createdAt + ARBITRATION_TIMEOUT,
+            "Arbitration timeout not reached"
+        );
+
+        escrow.recipient = recipient;
+        escrow.released = true;
+        escrow.arbitrated = true;
+        uint256 amount = escrow.amount;
+
+        (bool success, ) = payable(recipient).call{value: amount}("");
+        require(success, "Transfer failed");
+
+        emit Released(questionId, recipient, amount, true);
+    }
+
+    // Update AI arbiter address
+    function updateArbiter(address _newArbiter) external onlyOwner {
+        require(_newArbiter != address(0), "Invalid arbiter address");
+        address oldArbiter = aiArbiter;
+        aiArbiter = _newArbiter;
+        emit ArbiterUpdated(oldArbiter, _newArbiter);
+    }
+
+    // Check if escrow is eligible for arbitration
+    function isEligibleForArbitration(uint256 questionId) external view returns (bool) {
+        Escrow memory escrow = escrows[questionId];
+        if (escrow.amount == 0 || escrow.released) {
+            return false;
+        }
+        return block.timestamp >= escrow.createdAt + ARBITRATION_TIMEOUT;
+    }
+
+    // Get time remaining until arbitration
+    function getTimeUntilArbitration(uint256 questionId) external view returns (uint256) {
+        Escrow memory escrow = escrows[questionId];
+        if (escrow.amount == 0 || escrow.released) {
+            return 0;
+        }
+        
+        uint256 arbitrationTime = escrow.createdAt + ARBITRATION_TIMEOUT;
+        if (block.timestamp >= arbitrationTime) {
+            return 0;
+        }
+        
+        return arbitrationTime - block.timestamp;
     }
 
     // Get escrow details
@@ -63,7 +133,8 @@ contract BountyEscrow {
         uint256 amount,
         address recipient,
         bool released,
-        uint256 createdAt
+        uint256 createdAt,
+        bool arbitrated
     ) {
         Escrow memory escrow = escrows[questionId];
         return (
@@ -71,7 +142,8 @@ contract BountyEscrow {
             escrow.amount,
             escrow.recipient,
             escrow.released,
-            escrow.createdAt
+            escrow.createdAt,
+            escrow.arbitrated
         );
     }
 
