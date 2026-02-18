@@ -82,19 +82,18 @@ async function deployBountyEscrow(dAppConnector, accountId, aiArbiterAddress) {
 
   // Create a file on Hedera and store the hex-encoded bytecode
   console.log("- Creating bytecode file on Hedera...");
-  let fileCreateTx = new FileCreateTransaction()
+  const fileCreateTx = new FileCreateTransaction()
     .setContents(bytecode)
     .setMaxTransactionFee(100);
 
-  // Sign and execute the transaction
-  fileCreateTx = await signer.signTransaction(fileCreateTx);
-  const fileSubmit = await signer.call(fileCreateTx);
-  const bytecodeFileId = fileSubmit.fileId;
+  // Execute the transaction (call handles freezing, signing, and executing)
+  const fileReceipt = await signer.call(fileCreateTx);
+  const bytecodeFileId = fileReceipt.fileId;
   console.log(`- Bytecode file ID: ${bytecodeFileId}`);
 
   // Deploy the contract with AI arbiter address as constructor parameter
   console.log("- Deploying contract...");
-  let contractCreateTx = new ContractCreateTransaction()
+  const contractCreateTx = new ContractCreateTransaction()
     .setBytecodeFileId(bytecodeFileId)
     .setGas(3000000)
     .setConstructorParameters(
@@ -102,18 +101,16 @@ async function deployBountyEscrow(dAppConnector, accountId, aiArbiterAddress) {
     )
     .setMaxTransactionFee(100);
 
-  // Sign and execute the transaction
-  contractCreateTx = await signer.signTransaction(contractCreateTx);
-  const contractSubmit = await signer.call(contractCreateTx);
-  const contractId = contractSubmit.contractId;
+  // Execute the transaction
+  const contractReceipt = await signer.call(contractCreateTx);
+  const contractId = contractReceipt.contractId;
   const contractAddress = contractId.toSolidityAddress();
 
   console.log(`- Contract deployed successfully!`);
   console.log(`- Contract ID: ${contractId}`);
   console.log(`- Contract address (Solidity): ${contractAddress}`);
-  console.log(`- Transaction ID: ${contractSubmit.transactionId}`);
 
-  return [contractId, contractSubmit.transactionId.toString(), contractAddress];
+  return [contractId, contractId.toString(), contractAddress];
 }
 
 export default deployBountyEscrow;

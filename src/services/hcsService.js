@@ -10,11 +10,11 @@ import { TOPICS } from "./constants.js";
 /**
  * Submit Question
  * @param {object} questionData - { title, description, codeSnippet, tags, bounty }
- * @param {Array} walletData - [hashconnect, saveData]
+ * @param {object} dAppConnector - DAppConnector instance
  * @param {string} accountId - User's account ID
  * @returns {Promise<object>} - { questionId, transactionId, cid }
  */
-export async function submitQuestion(questionData, walletData, accountId) {
+export async function submitQuestion(questionData, dAppConnector, accountId) {
   const { title, description, codeSnippet, tags, bounty } = questionData;
 
   // 1. Upload full content to Pinata
@@ -41,7 +41,7 @@ export async function submitQuestion(questionData, walletData, accountId) {
 
   // 3. Submit to HCS
   const [status, transactionId] = await submitMessage(
-    walletData,
+    dAppConnector,
     accountId,
     TOPICS.QUESTIONS,
     hcsMetadata,
@@ -58,11 +58,11 @@ export async function submitQuestion(questionData, walletData, accountId) {
 /**
  * Submit Answer
  * @param {object} answerData - { questionId, content, isAI, confidence }
- * @param {Array} walletData - [hashconnect, saveData]
+ * @param {object} dAppConnector - DAppConnector instance
  * @param {string} accountId - User's account ID
  * @returns {Promise<object>} - { answerId, transactionId, cid }
  */
-export async function submitAnswer(answerData, walletData, accountId) {
+export async function submitAnswer(answerData, dAppConnector, accountId) {
   const { questionId, content, isAI = false, confidence = null } = answerData;
 
   // 1. Upload full content to Pinata
@@ -88,7 +88,7 @@ export async function submitAnswer(answerData, walletData, accountId) {
 
   // 3. Submit to HCS
   const [status, transactionId] = await submitMessage(
-    walletData,
+    dAppConnector,
     accountId,
     TOPICS.ANSWERS,
     hcsMetadata,
@@ -105,11 +105,11 @@ export async function submitAnswer(answerData, walletData, accountId) {
 /**
  * Submit Update/News
  * @param {object} updateData - { title, content, tags }
- * @param {Array} walletData - [hashconnect, saveData]
+ * @param {object} dAppConnector - DAppConnector instance
  * @param {string} accountId - User's account ID
  * @returns {Promise<object>} - { updateId, transactionId, cid }
  */
-export async function submitUpdate(updateData, walletData, accountId) {
+export async function submitUpdate(updateData, dAppConnector, accountId) {
   const { title, content, tags } = updateData;
 
   // 1. Upload full content to Pinata
@@ -134,7 +134,7 @@ export async function submitUpdate(updateData, walletData, accountId) {
 
   // 3. Submit to HCS
   const [status, transactionId] = await submitMessage(
-    walletData,
+    dAppConnector,
     accountId,
     TOPICS.UPDATES,
     hcsMetadata,
@@ -151,11 +151,15 @@ export async function submitUpdate(updateData, walletData, accountId) {
 /**
  * Submit Answer Acceptance
  * @param {object} acceptanceData - { questionId, answerId }
- * @param {Array} walletData - [hashconnect, saveData]
+ * @param {object} dAppConnector - DAppConnector instance
  * @param {string} accountId - User's account ID (must be question author)
  * @returns {Promise<object>} - { transactionId, status }
  */
-export async function submitAcceptance(acceptanceData, walletData, accountId) {
+export async function submitAcceptance(
+  acceptanceData,
+  dAppConnector,
+  accountId,
+) {
   const { questionId, answerId } = acceptanceData;
 
   // Acceptance is lightweight - goes directly to HCS
@@ -168,7 +172,7 @@ export async function submitAcceptance(acceptanceData, walletData, accountId) {
   };
 
   const [status, transactionId] = await submitMessage(
-    walletData,
+    dAppConnector,
     accountId,
     TOPICS.ACCEPTANCES,
     hcsMetadata,
@@ -183,11 +187,11 @@ export async function submitAcceptance(acceptanceData, walletData, accountId) {
 /**
  * Submit Comment
  * @param {object} commentData - { parentId, parentType, content }
- * @param {Array} walletData - [hashconnect, saveData]
+ * @param {object} dAppConnector - DAppConnector instance
  * @param {string} accountId - User's account ID
  * @returns {Promise<object>} - { commentId, transactionId, cid }
  */
-export async function submitComment(commentData, walletData, accountId) {
+export async function submitComment(commentData, dAppConnector, accountId) {
   const { parentId, parentType, content } = commentData;
 
   // 1. Upload content to Pinata
@@ -209,7 +213,7 @@ export async function submitComment(commentData, walletData, accountId) {
 
   // 3. Submit to HCS
   const [status, transactionId] = await submitMessage(
-    walletData,
+    dAppConnector,
     accountId,
     TOPICS.COMMENTS,
     hcsMetadata,
