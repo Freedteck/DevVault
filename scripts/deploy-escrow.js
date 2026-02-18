@@ -1,7 +1,7 @@
 import { AccountId, PrivateKey, Client } from "@hashgraph/sdk";
 import deployBountyEscrow from "../src/client/deployBountyEscrow.js";
-import * as fs from "fs";
-import * as path from "path";
+import fs from "fs";
+import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
@@ -37,22 +37,30 @@ async function main() {
   }
   console.log(`AI Arbiter Address (EVM): ${aiArbiterAddress}\n`);
 
-  // Mock wallet data for operator-based deployment
-  const mockWalletData = {
-    getSigner: () => ({
-      getAccountId: () => operatorId,
-      executeWithSigner: async (tx) => {
-        return await tx.execute(client);
+  // Mock DAppConnector for operator-based deployment
+  const mockDAppConnector = {
+    getSigner: (accountId) => ({
+      getAccountId: () => accountId,
+      signTransaction: async (tx) => {
+        // Freeze with client if not already frozen
+        if (!tx.isFrozen()) {
+          tx.freezeWith(client);
+        }
+        // Sign with operator key
+        await tx.sign(operatorKey);
+        return tx;
       },
-      freezeWithSigner: async (tx) => {
-        return await tx.freeze();
+      call: async (tx) => {
+        const response = await tx.execute(client);
+        const receipt = await response.getReceipt(client);
+        return receipt;
       },
     }),
   };
 
   try {
     const [contractId, transactionId, contractAddress] = await deployBountyEscrow(
-      mockWalletData,
+      mockDAppConnector,
       operatorId.toString(),
       aiArbiterAddress
     );

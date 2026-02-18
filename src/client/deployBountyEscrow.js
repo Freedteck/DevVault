@@ -27,7 +27,10 @@ async function deployBountyEscrow(dAppConnector, accountId, aiArbiterAddress) {
   const signer = dAppConnector.getSigner(AccountId.fromString(accountId));
 
   // Read the Solidity source code
-  const contractPath = path.resolve(__dirname, "../../contracts/BountyEscrow.sol");
+  const contractPath = path.resolve(
+    __dirname,
+    "../../contracts/BountyEscrow.sol",
+  );
   const source = fs.readFileSync(contractPath, "utf8");
 
   // Compile the contract
@@ -73,7 +76,7 @@ async function deployBountyEscrow(dAppConnector, accountId, aiArbiterAddress) {
   }
   fs.writeFileSync(
     path.join(buildDir, "BountyEscrow.json"),
-    JSON.stringify({ abi, bytecode }, null, 2)
+    JSON.stringify({ abi, bytecode }, null, 2),
   );
   console.log("- ABI saved to build/BountyEscrow.json");
 
@@ -95,7 +98,7 @@ async function deployBountyEscrow(dAppConnector, accountId, aiArbiterAddress) {
     .setBytecodeFileId(bytecodeFileId)
     .setGas(3000000)
     .setConstructorParameters(
-      new ContractFunctionParameters().addAddress(aiArbiterAddress)
+      new ContractFunctionParameters().addAddress(aiArbiterAddress),
     )
     .setMaxTransactionFee(100);
 
