@@ -1,11 +1,17 @@
-import { useState } from "react";
-import { Send, DollarSign } from "lucide-react";
+import { useState, useContext } from "react";
+import { Send, DollarSign, Loader2 } from "lucide-react";
 import Modal from "../ui/Modal";
 import NeonButton from "../ui/NeonButton";
 import styles from "./CreateQuestionModal.module.css";
 import PropTypes from "prop-types";
+import { userWalletContext } from "../../../context/userWalletContext";
+import { submitQuestion } from "../../../services/hcsService";
+import toast from "react-hot-toast";
 
 const CreateQuestionModalNew = ({ isOpen, onClose }) => {
+  const { walletData, accountId } = useContext(userWalletContext);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -14,11 +20,57 @@ const CreateQuestionModalNew = ({ isOpen, onClose }) => {
     tags: "",
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting new question:", formData);
-    // Here we would call the contract/HCS hook
-    onClose();
+
+    if (!accountId || !walletData) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Parse tags
+      const tags = formData.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => t);
+
+      // Prepare question data
+      const questionData = {
+        title: formData.title,
+        description: formData.description,
+        codeSnippet: formData.codeSnippet || "",
+        tags,
+        bounty: parseFloat(formData.bounty) || 0,
+      };
+
+      // Submit to HCS
+      const result = await submitQuestion(questionData, walletData, accountId);
+
+      toast.success(`Question posted! ID: ${result.questionId}`);
+
+      // Reset form
+      setFormData({
+        title: "",
+        description: "",
+        codeSnippet: "",
+        bounty: "",
+        tags: "",
+      });
+
+      // Close modal and trigger refresh after a delay (mirror node indexing)
+      onClose();
+      setTimeout(() => {
+        window.location.reload(); // Simple refresh to show new question
+      }, 2000);
+    } catch (error) {
+      console.error("Error submitting question:", error);
+      toast.error(`Failed to post question: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -94,11 +146,26 @@ const CreateQuestionModalNew = ({ isOpen, onClose }) => {
         </div>
 
         <div className={styles.actions}>
-          <NeonButton variant="ghost" type="button" onClick={onClose}>
+          <NeonButton
+            variant="ghost"
+            type="button"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancel
           </NeonButton>
-          <NeonButton type="submit" icon={<Send size={16} />}>
-            Post Question
+          <NeonButton
+            type="submit"
+            icon={
+              isSubmitting ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Send size={16} />
+              )
+            }
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Posting..." : "Post Question"}
           </NeonButton>
         </div>
       </form>

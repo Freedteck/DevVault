@@ -2,7 +2,7 @@
   /* --- Color Palette: Deep Space & Neon --- */
   --apex-bg-deep: #030712; /* Very dark blue/black */
   --apex-bg-surface: #0f172a; /* Slate 900 */
-  
+
   /* Primary Brand: Electric Violet */
   --apex-primary-400: #818cf8;
   --apex-primary-500: #6366f1;
@@ -61,7 +61,11 @@
 body {
   background-color: var(--apex-bg-deep);
   color: var(--apex-text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
   overflow-x: hidden;
 }
 
@@ -73,10 +77,10 @@ body {
   width: 100vw;
   height: 100vh;
   z-index: -1;
-  background: 
-    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
-    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+  background:
+    radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
   opacity: 0.6;
   pointer-events: none;
 }
@@ -94,4 +98,18 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--apex-primary-500);
+}
+
+/* Animations */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }

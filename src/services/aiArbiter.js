@@ -1,30 +1,69 @@
+/* eslint-disable no-undef */
 import {
   Client,
   PrivateKey,
   ContractExecuteTransaction,
   ContractFunctionParameters,
 } from "@hashgraph/sdk";
+import { HederaLangchainToolkit, AgentMode } from "hedera-agent-kit";
+import { createAgent } from "langchain";
+import { MemorySaver } from "@langchain/langgraph";
+import { ChatGroq } from "@langchain/groq";
 
 /**
  * AI Arbiter Service - Handles automatic bounty releases after 7-day timeout
  *
  * Responsibilities:
  * 1. Check for expired bounties (7 days with no acceptance)
- * 2. Evaluate answers and select best one
+ * 2. Evaluate answers using AI and select best one
  * 3. Release bounty to best answer author
  * 4. Post arbitration result to HCS
  */
 
 const ARBITRATION_TIMEOUT = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
-// AI Arbiter account configuration
-const AI_ARBITER_CONFIG = {
-  accountId:
-    import.meta.env.VITE_AGENT_ACCOUNT_ID || import.meta.env.VITE_MY_ACCOUNT_ID,
-  privateKey:
-    import.meta.env.VITE_AGENT_PRIVATE_KEY ||
-    import.meta.env.VITE_MY_PRIVATE_KEY,
-};
+/**
+ * Create AI agent for answer evaluation
+ */
+function createEvaluationAgent() {
+  const accountId = import.meta.env.VITE_MY_ACCOUNT_ID;
+  const privateKey = import.meta.env.VITE_MY_PRIVATE_KEY;
+
+  if (!accountId || !privateKey) {
+    throw new Error("Missing VITE_MY_ACCOUNT_ID or VITE_MY_PRIVATE_KEY");
+  }
+
+  const client = Client.forTestnet().setOperator(
+    accountId,
+    PrivateKey.fromStringECDSA(privateKey),
+  );
+
+  const hederaToolkit = new HederaLangchainToolkit({
+    client,
+    configuration: {
+      tools: [],
+      plugins: [],
+      context: {
+        mode: AgentMode.AUTONOMOUS,
+      },
+    },
+  });
+
+  const tools = hederaToolkit.getTools();
+
+  const llm = new ChatGroq({
+    model: "llama-3.3-70b-versatile",
+    apiKey: import.meta.env.VITE_GROQ_API_KEY,
+    temperature: 0.3,
+  });
+
+  return createAgent({
+    model: llm,
+    tools: tools,
+    systemPrompt: "You are an expert code reviewer evaluating answer quality.",
+    checkpointer: new MemorySaver(),
+  });
+}
 
 /**
  * Check if question bounty is eligible for arbitration
@@ -67,34 +106,90 @@ export function getTimeUntilArbitration(questionTimestamp) {
 }
 
 /**
- * Select best answer for arbitration
- * Uses scoring: AI confidence vs human base score
- * @param {Array} answers - Array of answers to the question
- * @returns {object|null} - Best answer or null if no answers
+ * Evaluate human answer quality using AI
+ * @param {string} questionContent - The original question
+ * @param {string} answerContent - The answer to evaluate
+ * @returns {Promise<number>} - Quality score (0-100)
  */
-export function selectBestAnswer(answers) {
+async function evaluateAnswerQuality(questionContent, answerContent) {
+  try {
+    const agent = createEvaluationAgent();
+
+    const prompt = `You are evaluating the quality of a developer's answer to a technical question.
+
+Question: ${questionContent}
+
+Answer: ${answerContent}
+
+Score this answer from 0-100 based on:
+1. Does it actually answer the question? (30 points)
+2. Is the code/solution correct and functional? (30 points)
+3. Is the explanation complete and clear? (20 points)
+4. Does it follow best practices? (20 points)
+
+Return ONLY a number between 0-100. No explanation needed.`;
+
+    const response = await agent.invoke(
+      { messages: [{ role: "user", content: prompt }] },
+      { configurable: { thread_id: Date.now().toString() } },
+    );
+
+    const content = response.messages[response.messages.length - 1].content;
+    const score = parseInt(content.trim());
+
+    // Validate score
+    if (isNaN(score) || score < 0 || score > 100) {
+      console.warn(`Invalid score received: ${content}, defaulting to 50`);
+      return 50;
+    }
+
+    return score;
+  } catch (error) {
+    console.error("Error evaluating answer quality:", error);
+    return 50; // Default to middle score on error
+  }
+}
+
+/**
+ * Select best answer for arbitration
+ * AI answers use confidence, human answers get AI quality evaluation
+ * @param {Array} answers - Array of answers to the question
+ * @param {string} questionContent - The original question content
+ * @returns {Promise<object|null>} - Best answer or null if no answers
+ */
+export async function selectBestAnswer(answers, questionContent) {
   if (!answers || answers.length === 0) {
     return null;
   }
 
+  console.log(`🔍 AI Arbiter evaluating ${answers.length} answers...`);
+
   // Score each answer
-  const scored = answers.map((answer) => {
-    let score = 0;
+  const scored = await Promise.all(
+    answers.map(async (answer) => {
+      let score = 0;
 
-    // AI answers: use confidence score
-    if (answer.isAI && answer.confidence) {
-      score = answer.confidence;
-    } else {
-      // Human answers: base score of 70
-      // Could be enhanced later with quality metrics
-      score = 70;
-    }
+      if (answer.isAI && answer.confidence) {
+        // AI answers: use their confidence score
+        score = answer.confidence;
+        console.log(`   AI answer: ${score} (confidence)`);
+      } else {
+        // Human answers: evaluate quality with AI
+        score = await evaluateAnswerQuality(questionContent, answer.content);
+        console.log(`   Human answer by ${answer.author}: ${score} (quality)`);
+      }
 
-    return { ...answer, arbitrationScore: score };
-  });
+      return { ...answer, arbitrationScore: score };
+    }),
+  );
 
   // Sort by score and return best
   scored.sort((a, b) => b.arbitrationScore - a.arbitrationScore);
+
+  console.log(
+    `   ✅ Best answer: ${scored[0].author} (score: ${scored[0].arbitrationScore})`,
+  );
+
   return scored[0];
 }
 
@@ -116,10 +211,13 @@ export async function executeArbitration(
     );
     console.log(`   Winner: ${recipientAccountId}`);
 
-    // Create Hedera client with AI arbiter credentials
+    // Create Hedera client with operator account
+    const accountId = import.meta.env.VITE_MY_ACCOUNT_ID;
+    const privateKey = import.meta.env.VITE_MY_PRIVATE_KEY;
+
     const client = Client.forTestnet().setOperator(
-      AI_ARBITER_CONFIG.accountId,
-      PrivateKey.fromStringECDSA(AI_ARBITER_CONFIG.privateKey),
+      accountId,
+      PrivateKey.fromStringECDSA(privateKey),
     );
 
     // Convert recipient to EVM address for contract call
@@ -152,7 +250,7 @@ export async function executeArbitration(
 /**
  * Process arbitration for a question
  * Full workflow: check eligibility, select winner, execute release
- * @param {object} question - Question data
+ * @param {object} question - Question data (must include content)
  * @param {Array} answers - Answers to the question
  * @param {Array} acceptances - Acceptance events
  * @returns {Promise<object|null>} - Arbitration result or null if not eligible
@@ -164,8 +262,8 @@ export async function processArbitration(question, answers, acceptances) {
       return null;
     }
 
-    // Select best answer
-    const bestAnswer = selectBestAnswer(answers);
+    // Select best answer using AI evaluation
+    const bestAnswer = await selectBestAnswer(answers, question.description);
     if (!bestAnswer) {
       console.log(
         `⚠️  No answers to arbitrate for question ${question.questionId}`,
@@ -193,6 +291,7 @@ export async function processArbitration(question, answers, acceptances) {
       winnerId: bestAnswer.answerId,
       winnerAccountId: bestAnswer.author,
       arbitrationScore: bestAnswer.arbitrationScore,
+      isAIWinner: bestAnswer.isAI || false,
       transactionId,
       timestamp: Date.now(),
     };

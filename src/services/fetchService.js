@@ -45,12 +45,23 @@ export async function fetchQuestions(limit = 10, nextLink = null, gateway) {
 
       return {
         questionId: metadata.questionId,
+        id: metadata.questionId, // For compatibility with card component
         title: metadata.title,
         description: fullContent.description,
         codeSnippet: fullContent.codeSnippet,
         tags: metadata.tags,
         bounty: metadata.bounty,
-        author: metadata.author,
+        author: {
+          username: metadata.author,
+          avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${metadata.author}`,
+          rank: "Contributor", // Default rank
+        },
+        stats: {
+          views: 0, // TODO: Track views
+          answers: 0, // TODO: Fetch answer count
+          likes: 0, // TODO: Track likes
+        },
+        isSolved: false, // TODO: Check acceptances
         timestamp: metadata.timestamp,
         createdAt: new Date(metadata.timestamp).toISOString(),
       };
