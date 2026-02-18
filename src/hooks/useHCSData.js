@@ -6,6 +6,7 @@ export const useHCSData = (topicId, options = {}) => {
     autoFetch = true,
     limit = 10,
     dependencies = [],
+    autoLoadAll = false, // New option to auto-load all data
   } = options;
 
   const [data, setData] = useState([]);
@@ -116,8 +117,16 @@ export const useHCSData = (topicId, options = {}) => {
           .filter(filter);
 
         setData((prev) => (isLoadMore ? [...prev, ...messages] : messages));
-        setNextLink(responseData.links?.next || null);
-        setHasMore(!!responseData.links?.next);
+        
+        const newNextLink = responseData.links?.next || null;
+        setNextLink(newNextLink);
+        setHasMore(!!newNextLink);
+
+        // If autoLoadAll is enabled and there's more data, automatically fetch it
+        if (autoLoadAll && newNextLink && !isLoadMore) {
+          // Recursively fetch all remaining pages
+          await fetchAllRemaining(newNextLink);
+        }
       } catch (err) {
         console.error("Failed to fetch HCS data:", err);
         setError(err.message);
@@ -126,7 +135,102 @@ export const useHCSData = (topicId, options = {}) => {
         setIsLoading(false);
       }
     },
-    [topicId, filter, limit, nextLink]
+    [topicId, filter, limit, nextLink, autoLoadAll]
+  );
+
+  // Helper function to recursively fetch all remaining pages
+  const fetchAllRemaining = useCallback(
+    async (currentNextLink) => {
+      if (!currentNextLink) return;
+
+      try {
+        const url = `https://testnet.mirrornode.hedera.com${currentNextLink}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        const rawMessages = responseData.messages || [];
+
+        // Group and reassemble chunks (same logic as above)
+        const messageGroups = {};
+        rawMessages.forEach((message) => {
+          const txId =
+            message.chunk_info.initial_transaction_id.transaction_valid_start;
+          if (!messageGroups[txId]) {
+            messageGroups[txId] = [];
+          }
+          messageGroups[txId].push(message);
+        });
+
+        const reassembledMessages = Object.values(messageGroups).map(
+          (chunks) => {
+            chunks.sort((a, b) => a.chunk_info.number - b.chunk_info.number);
+            const decodedChunks = chunks.map((chunk) => {
+              try {
+                return atob(chunk.message.replace(/\s/g, ""));
+              } catch (error) {
+                console.error("Failed to decode chunk:", error);
+                return "";
+              }
+            });
+            const fullDecodedContent = decodedChunks.join("");
+            const fullBase64 = btoa(fullDecodedContent);
+            const firstChunk = chunks[0];
+            return {
+              ...firstChunk,
+              message: fullBase64,
+            };
+          }
+        );
+
+        const messages = reassembledMessages
+          .map((message) => {
+            try {
+              const decodedMessage = atob(message.message);
+              if (!decodedMessage.trim().startsWith("{")) {
+                return null;
+              }
+              const parsedData = JSON.parse(decodedMessage);
+              return {
+                ...parsedData,
+                sequence_number: message.sequence_number,
+                consensus_timestamp: message.consensus_timestamp,
+              };
+            } catch (error) {
+              console.error("Failed to parse message:", error);
+              return null;
+            }
+          })
+          .filter((msg) => msg !== null)
+          .filter(filter);
+
+        // Append to existing data, filtering out duplicates based on sequence_number
+        setData((prev) => {
+          const existingSequenceNumbers = new Set(
+            prev.map((item) => item.sequence_number)
+          );
+          const newUniqueMessages = messages.filter(
+            (msg) => !existingSequenceNumbers.has(msg.sequence_number)
+          );
+          return [...prev, ...newUniqueMessages];
+        });
+
+        const newNextLink = responseData.links?.next || null;
+        setNextLink(newNextLink);
+        setHasMore(!!newNextLink);
+
+        // Continue fetching if there's more
+        if (newNextLink) {
+          await fetchAllRemaining(newNextLink);
+        }
+      } catch (err) {
+        console.error("Failed to fetch remaining HCS data:", err);
+      }
+    },
+    [filter]
   );
 
   useEffect(() => {
@@ -187,6 +291,7 @@ export const useAnswers = (questionId) => {
     filter: (msg) =>
       msg.commentsId && String(msg.commentsId) === String(questionId),
     dependencies: [questionId],
+    autoLoadAll: true, // Auto-load all answers
   });
 };
 
@@ -202,6 +307,7 @@ export const useUpdateComments = (updateId) => {
       return msg.commentsId && String(msg.commentsId) === String(updateId);
     },
     dependencies: [updateId],
+    autoLoadAll: true, // Auto-load all comments
   });
 };
 

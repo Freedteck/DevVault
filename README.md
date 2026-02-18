@@ -2,27 +2,47 @@
 
 A decentralized developer platform built on Hedera that rewards knowledge sharing and fosters collaboration. DevVault combines Q&A functionality with content sharing, powered by blockchain-based incentives and secure data storage.
 
+## 🚀 What's New in Ascension (November 2025)
+
+This project was previously submitted to **Hedera Hello Future 2.0** (October 2024). The following **significant improvements** were made during the **Ascension hackathon period** (November 3-21, 2025):
+
+### Architecture & Scalability
+- **5 Separate HCS Topics**: Migrated from a single filtered topic to dedicated topics for Questions, Updates, Answers, Comments, and Acceptances - eliminating frontend filtering complexity and enabling true scalability
+- **Fixed Pagination**: Implemented proper Mirror Node API pagination using `nextLink` for efficient data loading and chunk reassembly for large messages
+
+### Smart Contract Integration
+- **Bounty Escrow System**: Developed and deployed `BountyEscrow.sol` smart contract for secure HBAR bounty management
+- **Deposit/Release Flows**: Integrated escrow deposit on question creation and automatic release on answer acceptance
+- **Payment Guarantees**: Eliminated trust issues by locking funds in smart contracts until solutions are verified
+
+### NFT Reputation System
+- **4-Tier Achievement Badges**: Implemented Helper (1+ acceptances), Contributor (3+), Expert (5+), and Legend (10+) badge tiers
+- **Soulbound NFTs**: Created non-transferable badges using `TokenFreezeTransaction` to prevent gaming the reputation system
+- **Universal Badge Display**: Built `UserWithBadge` component that displays earned badges across all user interactions (questions, answers, comments, leaderboard)
+- **Visual Trust Indicators**: Users can immediately identify reputable developers through badge tier colors and icons
+
+### Answer Acceptance Mechanism
+- **Acceptance Tracking**: Created dedicated HCS topic for recording answer acceptances with question author verification
+- **Reputation Building**: Linked acceptances to both escrow release and NFT badge eligibility
+- **Authorization Controls**: Only question authors can accept answers, preventing abuse
+
+### Enhanced Leaderboard
+- **Rebuilt Ranking Algorithm**: Changed from simple contribution count to acceptance-based + DVT earned ranking
+- **Real-time Acceptance Queries**: Integrated `useUserAcceptanceCount` hook for live reputation tracking
+- **Badge Tier Visualization**: Leaderboard now displays user badge tiers for instant credibility assessment
+
+### Production Readiness
+- **Comprehensive Error Handling**: Added graceful error states for all blockchain operations
+- **Loading States**: Implemented proper async operation feedback across all user interactions
+- **Testing Infrastructure**: Added Vitest and React Testing Library for quality assurance
+- **Responsive Design**: Enhanced mobile and tablet experience
+
+**Result**: Transformed from a basic Q&A prototype into a production-ready developer economy with verifiable reputation, guaranteed payments, and scalable architecture.
+
+
 ## Overview
 
 DevVault is a decentralized application (dApp) that enables developers to ask questions, share technical updates, and receive token-based rewards for valuable contributions. Built on Hedera's high-performance distributed ledger, it creates a transparent and incentivized ecosystem for developer collaboration.
-
-## Legacy Track: What's New in Ascension?
-
-This project is a **Legacy Builder** submission, representing a complete re-architecture and reinvention of the initial DevVault concept submitted in a previous hackathon.
-
-| Feature | Version 1 (Previous) | Ascension Version (Current) |
-| :--- | :--- | :--- |
-| **Architecture** | Generic "Decentralized" Concept | **Hedera-Native**: Full HCS, HTS, and Smart Contract integration |
-| **Data Storage** | Single Topic (Inefficient) | **Multi-Topic HCS**: 5 distinct topics for scalable data organization |
-| **Trust Model** | Trust-based Tipping | **Trustless Escrow**: `BountyEscrow.sol` smart contract locks funds |
-| **Reputation** | Simple Counter | **Soulbound NFTs**: Non-transferable badges minted on-chain based on merit |
-| **Economy** | Basic Token Transfer | **Full Token Economy**: DVT Token + HBAR Tipping + Escrow Bounties |
-| **Business** | None | **Complete GTM**: Business Model Canvas & Go-To-Market Strategy included |
-
-**Key Improvements:**
-*   **Smart Contract Escrow:** Solves the "trust" problem by locking bounty funds until an answer is accepted.
-*   **Soulbound Reputation:** Implements "Proof of Expertise" using frozen NFTs that cannot be bought or transferred.
-*   **Scalable Pagination:** Replaced basic fetching with robust Mirror Node pagination for infinite scrolling.
 
 ## Core Features
 
