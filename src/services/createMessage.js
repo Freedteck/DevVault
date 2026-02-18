@@ -27,7 +27,8 @@ export async function submitMessage(
   const txResponse = await signer.call(transaction);
 
   // Extract status and transactionId safely
-  const status = txResponse.status?.toString() || txResponse.toString() || "SUCCESS";
+  const status =
+    txResponse.status?.toString() || txResponse.toString() || "SUCCESS";
   const transactionId = txResponse.transactionId || txResponse;
 
   return [status, transactionId];
