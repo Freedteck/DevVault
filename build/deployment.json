@@ -1,0 +1,11 @@
+{
+  "contractId": "0.0.7819776",
+  "contractAddress": "0000000000000000000000000000000000775200",
+  "aiArbiterAccount": "0.0.4691108",
+  "aiArbiterAddress": "00000000000000000000000000000000004794a4",
+  "network": "testnet",
+  "deployedAt": "2026-02-03T10:37:19.350Z",
+  "deployer": "0.0.4691108",
+  "bytecodeFileId": "0.0.7819774",
+  "transactionId": "0.0.4691108@1770115031.444505390"
+}

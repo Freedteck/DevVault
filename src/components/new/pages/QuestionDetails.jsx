@@ -91,6 +91,78 @@ const QuestionDetailsNew = () => {
     setIsTipModalOpen(true);
   };
 
+  const handleAcceptAnswer = async (answer) => {
+    if (!accountId || !walletData) {
+      const toast = (await import("react-hot-toast")).default;
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    // Check if user is question author
+    if (accountId !== question.author.username) {
+      const toast = (await import("react-hot-toast")).default;
+      toast.error("Only the question author can accept answers");
+      return;
+    }
+
+    try {
+      const toast = (await import("react-hot-toast")).default;
+      toast.loading("Accepting answer...");
+
+      // 1. Submit acceptance to HCS
+      const { submitAcceptance, releaseEscrow } = await import("../../../services/hcsService");
+      
+      await submitAcceptance(
+        {
+          questionId: question.questionId,
+          answerId: answer.answerId,
+        },
+        walletData,
+        accountId
+      );
+
+      // 2. Release escrow if bounty exists
+      if (question.bounty && question.bounty > 0) {
+        const escrowContractId = import.meta.env.VITE_ESCROW_CONTRACT_ID;
+        if (escrowContractId) {
+          try {
+            await releaseEscrow(
+              walletData,
+              accountId,
+              escrowContractId,
+              question.questionId,
+              answer.author.username, // Author's account ID
+            );
+            toast.dismiss();
+            toast.success(`Answer accepted! ${question.bounty} HBAR released to ${answer.author.username}`);
+          } catch (escrowError) {
+            console.error("Escrow release error:", escrowError);
+            toast.dismiss();
+            toast.success("Answer accepted! (Escrow release pending)");
+          }
+        } else {
+          toast.dismiss();
+          toast.success("Answer accepted!");
+        }
+      } else {
+        toast.dismiss();
+        toast.success("Answer accepted!");
+      }
+
+      // 3. Refresh answers to show accepted status
+      setTimeout(async () => {
+        const answersData = await fetchAnswersForQuestion(question.questionId, gateway);
+        setAnswers(answersData);
+      }, 2000);
+
+    } catch (error) {
+      console.error("Error accepting answer:", error);
+      const toast = (await import("react-hot-toast")).default;
+      toast.dismiss();
+      toast.error("Failed to accept answer");
+    }
+  };
+
   return (
     <div className={styles.container}>
       <Link to="/questions" className={styles.backLink}>
@@ -178,6 +250,11 @@ const QuestionDetailsNew = () => {
                 answer={ans}
                 isAccepted={ans.isAccepted}
                 onTip={() => handleOpenTip(ans.author.username)}
+                onAccept={
+                  accountId === question.author.username && !hasAcceptedAnswer
+                    ? () => handleAcceptAnswer(ans)
+                    : undefined
+                }
               />
             ))}
           </div>

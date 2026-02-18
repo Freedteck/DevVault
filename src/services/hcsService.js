@@ -1,6 +1,9 @@
 import { submitMessage } from "./createMessage.js";
 import { uploadJsonToPinata } from "./pinata.js";
 import { TOPICS } from "./constants.js";
+import { depositBountyToEscrow, releaseEscrow } from "./escrowService.js";
+
+export { releaseEscrow };
 
 /**
  * HCS Service - Handles submission of different content types
@@ -12,7 +15,7 @@ import { TOPICS } from "./constants.js";
  * @param {object} questionData - { title, description, codeSnippet, tags, bounty }
  * @param {object} dAppConnector - DAppConnector instance
  * @param {string} accountId - User's account ID
- * @returns {Promise<object>} - { questionId, transactionId, cid }
+ * @returns {Promise<object>} - { questionId, transactionId, cid, escrowTxId? }
  */
 export async function submitQuestion(questionData, dAppConnector, accountId) {
   const { title, description, codeSnippet, tags, bounty } = questionData;
@@ -47,12 +50,40 @@ export async function submitQuestion(questionData, dAppConnector, accountId) {
     hcsMetadata,
   );
 
-  return {
+  const result = {
     questionId,
     transactionId: transactionId.toString(),
     cid,
     status: status,
   };
+
+  // 4. If bounty > 0, deposit to escrow contract
+  if (bounty && bounty > 0) {
+    try {
+      const escrowContractId = import.meta.env.VITE_ESCROW_CONTRACT_ID;
+      if (!escrowContractId) {
+        console.warn(
+          "⚠️ VITE_ESCROW_CONTRACT_ID not set, skipping escrow deposit",
+        );
+      } else {
+        const escrowResult = await depositBountyToEscrow(
+          dAppConnector,
+          accountId,
+          escrowContractId,
+          questionId,
+          bounty,
+        );
+        result.escrowTxId = escrowResult.transactionId.toString();
+        console.log(`✅ Bounty deposited to escrow: ${result.escrowTxId}`);
+      }
+    } catch (escrowError) {
+      console.error("❌ Escrow deposit failed:", escrowError);
+      // Don't fail the whole question submission if escrow fails
+      result.escrowError = escrowError.message;
+    }
+  }
+
+  return result;
 }
 
 /**

@@ -99,9 +99,9 @@ const CreateQuestionModalNew = ({ isOpen, onClose }) => {
 
       // Close modal and trigger refresh after a delay (mirror node indexing)
       onClose();
-      setTimeout(() => {
-        window.location.reload(); // Simple refresh to show new question
-      }, 2000);
+      // setTimeout(() => {
+      //   window.location.reload(); // Simple refresh to show new question
+      // }, 2000);
     } catch (error) {
       console.error("Error submitting question:", error);
       toast.error(`Failed to post question: ${error.message}`);
