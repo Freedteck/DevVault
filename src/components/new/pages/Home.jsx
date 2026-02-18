@@ -2,10 +2,14 @@ import { ArrowRight, Code, Zap, Trophy } from "lucide-react";
 import NeonButton from "../ui/NeonButton";
 import GlassCard from "../ui/GlassCard";
 import QuestionCardNew from "../features/QuestionCardNew";
-import { MOCK_QUESTIONS } from "../data/mock";
+import { useQuestions } from "../../../hooks/useQuestions";
 import styles from "./Home.module.css";
+import { Link } from "react-router-dom";
 
 const HomeNew = () => {
+  // Fetch recent questions (limit to 3 for trending section)
+  const { questions, isLoading } = useQuestions(3);
+
   return (
     <div className={styles.home}>
       {/* Hero Section */}
@@ -58,15 +62,47 @@ const HomeNew = () => {
           <h2 className={styles.sectionTitle}>
             <span className={styles.sectionIcon}>🔥</span> Trending Questions
           </h2>
-          <NeonButton variant="ghost" size="sm" icon={<ArrowRight size={16} />}>
-            View All
-          </NeonButton>
+          <Link to="/questions" style={{ textDecoration: "none" }}>
+            <NeonButton
+              variant="ghost"
+              size="sm"
+              icon={<ArrowRight size={16} />}
+            >
+              View All
+            </NeonButton>
+          </Link>
         </div>
 
         <div className={styles.grid}>
-          {MOCK_QUESTIONS.map((q) => (
-            <QuestionCardNew key={q.id} question={q} />
-          ))}
+          {isLoading ? (
+            <div
+              style={{
+                gridColumn: "1 / -1",
+                textAlign: "center",
+                padding: "2rem",
+              }}
+            >
+              <p style={{ color: "rgba(255,255,255,0.6)" }}>
+                Loading questions...
+              </p>
+            </div>
+          ) : questions.length > 0 ? (
+            questions
+              .slice(0, 3)
+              .map((q) => <QuestionCardNew key={q.id} question={q} />)
+          ) : (
+            <div
+              style={{
+                gridColumn: "1 / -1",
+                textAlign: "center",
+                padding: "2rem",
+              }}
+            >
+              <p style={{ color: "rgba(255,255,255,0.6)" }}>
+                No questions yet. Be the first to ask!
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

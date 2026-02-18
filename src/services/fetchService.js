@@ -271,6 +271,51 @@ export async function fetchUpdates(limit = 10, nextLink = null, gateway) {
 }
 
 /**
+ * Fetch comments for a parent (question/answer/update)
+ * @param {string} parentId - ID of parent (question/answer/update)
+ * @param {string} gateway - Pinata gateway URL
+ * @returns {Promise<Array>} - Array of comments
+ */
+export async function fetchComments(parentId, gateway) {
+  // 1. Get all comments from HCS (filter client-side)
+  let allComments = [];
+  let nextLink = null;
+
+  do {
+    const { messages, nextLink: newNextLink } = await getMessagesWithPagination(
+      TOPICS.COMMENTS,
+      100,
+      nextLink,
+    );
+
+    const parsed = messages.map((msg) => JSON.parse(msg.content));
+    allComments.push(...parsed.filter((c) => c.parentId === parentId));
+
+    nextLink = newNextLink;
+  } while (nextLink);
+
+  // 2. Fetch full content from Pinata for each comment
+  const comments = await Promise.all(
+    allComments.map(async (metadata) => {
+      const fullContent = await fetchFromPinata(metadata.cid, gateway);
+
+      return {
+        id: metadata.commentId,
+        content: fullContent.content,
+        author: {
+          username: metadata.author,
+          avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${metadata.author}`,
+        },
+        timestamp: metadata.timestamp,
+        createdAt: new Date(metadata.timestamp).toISOString(),
+      };
+    }),
+  );
+
+  return comments;
+}
+
+/**
  * Calculate reputation for an account
  * @param {string} accountId - Account to calculate reputation for
  * @returns {Promise<object>} - { acceptanceCount, tier, score }

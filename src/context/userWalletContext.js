@@ -6,5 +6,5 @@ export const userWalletContext = createContext({
   userProfile: null,
   balance: null,
   connectWallet: () => {},
-  // disconnectWallet: () => {},
+  disconnectWallet: () => {},
 });

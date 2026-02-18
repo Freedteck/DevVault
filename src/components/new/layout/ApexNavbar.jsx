@@ -1,12 +1,14 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { Wallet, Menu, Search, Bot } from "lucide-react";
+import { Wallet, Search, Bot, LogOut } from "lucide-react";
 import NeonButton from "../ui/NeonButton";
 import styles from "./ApexNavbar.module.css";
 import { userWalletContext } from "../../../context/userWalletContext";
 
 const ApexNavbar = () => {
-  const { accountId, connectWallet } = useContext(userWalletContext);
+  const { accountId, connectWallet, disconnectWallet } =
+    useContext(userWalletContext);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   return (
     <nav className={styles.navbar}>
@@ -72,15 +74,86 @@ const ApexNavbar = () => {
           </button>
 
           {accountId ? (
-            <NavLink to="/profile" style={{ textDecoration: "none" }}>
+            <div style={{ position: "relative" }}>
               <NeonButton
                 variant="outline"
                 size="sm"
                 icon={<Wallet size={16} />}
+                onClick={() => setShowDropdown(!showDropdown)}
               >
                 {accountId}
               </NeonButton>
-            </NavLink>
+              {showDropdown && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    right: 0,
+                    marginTop: "0.5rem",
+                    background: "rgba(15, 23, 42, 0.95)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "8px",
+                    padding: "0.5rem",
+                    minWidth: "200px",
+                    zIndex: 1000,
+                    backdropFilter: "blur(10px)",
+                  }}
+                >
+                  <NavLink
+                    to="/profile"
+                    style={{ textDecoration: "none" }}
+                    onClick={() => setShowDropdown(false)}
+                  >
+                    <div
+                      style={{
+                        padding: "0.5rem",
+                        color: "white",
+                        cursor: "pointer",
+                        borderRadius: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background =
+                          "rgba(255,255,255,0.1)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "transparent")
+                      }
+                    >
+                      <Wallet size={16} />
+                      View Profile
+                    </div>
+                  </NavLink>
+                  <div
+                    style={{
+                      padding: "0.5rem",
+                      color: "#ef4444",
+                      cursor: "pointer",
+                      borderRadius: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                    onClick={() => {
+                      disconnectWallet();
+                      setShowDropdown(false);
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        "rgba(239, 68, 68, 0.1)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
+                  >
+                    <LogOut size={16} />
+                    Disconnect
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <NeonButton
               variant="outline"

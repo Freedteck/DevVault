@@ -14,10 +14,16 @@ const WalletContext = ({ children }) => {
     if (!accountId) {
       const wData = await walletConnectFcn();
       wData[0].pairingEvent.once((pairingData) => {
-        // Use the first account from the paired accounts
-        const pairedAccountId = pairingData.accountIds[0];
-        setAccountId(pairedAccountId);
-        console.log(`- Paired account ID: ${pairedAccountId}`);
+        // Use the account that was selected in HashPack
+        const selectedAccountId =
+          pairingData.accountIds.length > 0
+            ? pairingData.accountIds[pairingData.accountIds.length - 1] // Use last selected
+            : pairingData.accountIds[0];
+        setAccountId(selectedAccountId);
+        console.log(`- Selected account ID: ${selectedAccountId}`);
+        console.log(
+          `- Available accounts: ${pairingData.accountIds.join(", ")}`,
+        );
         console.log("Fetching user profile data...");
       });
       setWalletData(wData);

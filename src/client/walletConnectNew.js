@@ -8,10 +8,11 @@ import { LedgerId } from "@hiero-ledger/sdk";
 
 let dAppConnector = null;
 
-async function walletConnectFcn() {
-  console.log(`\n=======================================`);
-  console.log("- Connecting wallet with Hedera Wallet Connect...");
-
+/**
+ * Initialize DAppConnector and restore any existing sessions
+ * @param {boolean} openModal - Whether to open the wallet modal
+ */
+async function initDAppConnector(openModal = true) {
   if (dAppConnector) {
     return dAppConnector;
   }
@@ -43,15 +44,29 @@ async function walletConnectFcn() {
     await dAppConnector.init({ logger: "error" });
     console.log("- DAppConnector initialized");
 
-    // Open modal to connect wallet
-    await dAppConnector.openModal();
-    console.log("- Wallet connected");
+    // Check if there are existing sessions (auto-reconnect)
+    if (dAppConnector.signers && dAppConnector.signers.length > 0) {
+      console.log("- Restored existing session");
+      return dAppConnector;
+    }
+
+    // Only open modal if requested and no existing session
+    if (openModal) {
+      await dAppConnector.openModal();
+      console.log("- Wallet connected");
+    }
 
     return dAppConnector;
   } catch (error) {
-    console.error("Error connecting wallet:", error);
+    console.error("Error initializing DAppConnector:", error);
     throw error;
   }
+}
+
+async function walletConnectFcn() {
+  console.log(`\n=======================================`);
+  console.log("- Connecting wallet with Hedera Wallet Connect...");
+  return initDAppConnector(true);
 }
 
 async function disconnectWallet() {
@@ -62,5 +77,5 @@ async function disconnectWallet() {
   }
 }
 
-export { walletConnectFcn, disconnectWallet };
+export { walletConnectFcn, disconnectWallet, initDAppConnector };
 export default walletConnectFcn;

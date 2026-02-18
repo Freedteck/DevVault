@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Clock, Code, Send, Coins } from "lucide-react";
+import toast from "react-hot-toast";
 import GlassCard from "../ui/GlassCard";
 import NeonButton from "../ui/NeonButton";
 import AnswerCardNew from "../features/AnswerCardNew";
@@ -13,7 +14,6 @@ import {
 } from "../../../services/fetchService";
 import { processArbitration } from "../../../services/aiArbiter";
 import { userWalletContext } from "../../../context/userWalletContext";
-import toast from "react-hot-toast";
 import styles from "./QuestionDetails.module.css";
 
 const QuestionDetailsNew = () => {
@@ -96,20 +96,17 @@ const QuestionDetailsNew = () => {
 
   const handleAcceptAnswer = async (answer) => {
     if (!accountId || !walletData) {
-      const toast = (await import("react-hot-toast")).default;
       toast.error("Please connect your wallet first");
       return;
     }
 
     // Check if user is question author
     if (accountId !== question.author.username) {
-      const toast = (await import("react-hot-toast")).default;
       toast.error("Only the question author can accept answers");
       return;
     }
 
     try {
-      const toast = (await import("react-hot-toast")).default;
       toast.loading("Accepting answer...");
 
       // 1. Submit acceptance to HCS
@@ -165,7 +162,6 @@ const QuestionDetailsNew = () => {
       }, 2000);
     } catch (error) {
       console.error("Error accepting answer:", error);
-      const toast = (await import("react-hot-toast")).default;
       toast.dismiss();
       toast.error("Failed to accept answer");
     }
@@ -315,13 +311,11 @@ const QuestionDetailsNew = () => {
                 icon={<Send size={16} />}
                 onClick={async () => {
                   if (!accountId || !walletData) {
-                    const toast = (await import("react-hot-toast")).default;
                     toast.error("Please connect your wallet first");
                     return;
                   }
 
                   if (!answerContent.trim()) {
-                    const toast = (await import("react-hot-toast")).default;
                     toast.error("Please enter your answer");
                     return;
                   }
@@ -342,7 +336,6 @@ const QuestionDetailsNew = () => {
                       accountId,
                     );
 
-                    const toast = (await import("react-hot-toast")).default;
                     toast.success("Answer submitted successfully!");
 
                     // Clear form
@@ -358,7 +351,6 @@ const QuestionDetailsNew = () => {
                     }, 2000);
                   } catch (err) {
                     console.error("Error submitting answer:", err);
-                    const toast = (await import("react-hot-toast")).default;
                     toast.error("Failed to submit answer");
                   } finally {
                     setIsSubmitting(false);
@@ -393,11 +385,37 @@ const QuestionDetailsNew = () => {
         isOpen={isTipModalOpen}
         onClose={() => setIsTipModalOpen(false)}
         targetName={tipTarget}
-        onConfirm={(amount) => {
-          import("react-hot-toast").then(({ default: toast }) => {
+        onConfirm={async (amount) => {
+          try {
+            if (!accountId || !walletData) {
+              toast.error("Please connect your wallet first");
+              return;
+            }
+
+            toast.loading(`Sending ${amount} HBAR to ${tipTarget}...`);
+
+            // Use DAppConnector for HBAR transfer
+            const { Hbar, TransferTransaction } =
+              await import("@hashgraph/sdk");
+            const { AccountId } = await import("@hashgraph/sdk");
+
+            const signer = walletData.getSigner(
+              AccountId.fromString(accountId),
+            );
+            const transaction = new TransferTransaction()
+              .addHbarTransfer(accountId, Hbar.from(-amount))
+              .addHbarTransfer(tipTarget, Hbar.from(amount));
+
+            await signer.call(transaction);
+
+            toast.dismiss();
             toast.success(`Successfully sent ${amount} HBAR to ${tipTarget}`);
-          });
-          setIsTipModalOpen(false);
+            setIsTipModalOpen(false);
+          } catch (error) {
+            console.error("Tip transfer error:", error);
+            toast.dismiss();
+            toast.error(`Failed to send tip: ${error.message}`);
+          }
         }}
       />
     </div>

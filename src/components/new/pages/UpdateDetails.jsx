@@ -1,19 +1,34 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Calendar, Share2, Coins, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Share2,
+  Coins,
+  Loader2,
+  Send,
+} from "lucide-react";
+import toast from "react-hot-toast";
 import GlassCard from "../ui/GlassCard";
 import NeonButton from "../ui/NeonButton";
 import TipModal from "../features/TipModal";
-import { fetchUpdates } from "../../../services/fetchService";
-import styles from "./QuestionDetails.module.css"; // Reusing layout styles
+import { fetchUpdates, fetchComments } from "../../../services/fetchService";
+import { submitComment } from "../../../services/hcsService";
+import { userWalletContext } from "../../../context/userWalletContext";
+import styles from "./QuestionDetails.module.css";
 
 const UpdateDetailsNew = () => {
   const { id: updateId } = useParams();
+  const { accountId, walletData } = useContext(userWalletContext);
   const [update, setUpdate] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [tipTarget, setTipTarget] = useState(null);
+  const [commentContent, setCommentContent] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
 
   const gateway = import.meta.env.VITE_PINATA_GATEWAY;
 
@@ -23,8 +38,6 @@ const UpdateDetailsNew = () => {
       try {
         setIsLoading(true);
 
-        // Fetch all updates and find the one we need
-        // In a production app, you'd want a dedicated endpoint for single update
         let allUpdates = [];
         let nextLink = null;
 
@@ -33,7 +46,6 @@ const UpdateDetailsNew = () => {
           allUpdates = [...allUpdates, ...result.updates];
           nextLink = result.nextLink;
 
-          // Check if we found our update
           const foundUpdate = allUpdates.find((u) => u.updateId === updateId);
           if (foundUpdate) {
             setUpdate(foundUpdate);
@@ -42,7 +54,6 @@ const UpdateDetailsNew = () => {
           }
         } while (nextLink);
 
-        // If we get here, update not found
         setError("Update not found");
       } catch (err) {
         console.error("Error loading update:", err);
@@ -57,9 +68,83 @@ const UpdateDetailsNew = () => {
     }
   }, [updateId, gateway]);
 
+  // Fetch comments for this update
+  useEffect(() => {
+    const loadComments = async () => {
+      if (!updateId || !gateway) return;
+
+      try {
+        setIsLoadingComments(true);
+        const fetchedComments = await fetchComments(updateId, gateway);
+        setComments(fetchedComments);
+      } catch (err) {
+        console.error("Error loading comments:", err);
+      } finally {
+        setIsLoadingComments(false);
+      }
+    };
+
+    loadComments();
+  }, [updateId, gateway]);
+
   const handleOpenTip = (authorName) => {
     setTipTarget(authorName);
     setIsTipModalOpen(true);
+  };
+
+  const handleSubmitComment = async () => {
+    if (!accountId || !walletData) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    if (!commentContent.trim()) {
+      toast.error("Please enter a comment");
+      return;
+    }
+
+    try {
+      setIsSubmittingComment(true);
+      toast.loading("Posting comment...");
+
+      const commentData = {
+        parentId: updateId,
+        parentType: "update",
+        content: commentContent.trim(),
+      };
+
+      const result = await submitComment(commentData, walletData, accountId);
+
+      toast.dismiss();
+      toast.success("Comment posted successfully!");
+
+      // Add comment to local state for instant feedback
+      const newComment = {
+        id: result.commentId,
+        content: commentContent.trim(),
+        author: {
+          username: accountId,
+          avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${accountId}`,
+        },
+        createdAt: new Date().toISOString(),
+        timestamp: Date.now(),
+      };
+
+      setComments([...comments, newComment]);
+      setCommentContent("");
+
+      // Refresh comments after delay for HCS confirmation
+      setTimeout(async () => {
+        const refreshedComments = await fetchComments(updateId, gateway);
+        setComments(refreshedComments);
+      }, 3000);
+    } catch (err) {
+      console.error("Error submitting comment:", err);
+      toast.dismiss();
+      toast.error("Failed to post comment");
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
   if (isLoading) {
@@ -90,7 +175,6 @@ const UpdateDetailsNew = () => {
     );
   }
 
-  // Handle author format
   const authorData =
     typeof update.author === "string"
       ? {
@@ -118,6 +202,14 @@ const UpdateDetailsNew = () => {
               >
                 News
               </span>
+              <span className={styles.dot}>•</span>
+              <div className={styles.tags}>
+                {update.tags.map((t) => (
+                  <span key={t} className={styles.tag}>
+                    #{t}
+                  </span>
+                ))}
+              </div>
             </div>
 
             <h1 className={styles.title}>{update.title}</h1>
@@ -151,16 +243,6 @@ const UpdateDetailsNew = () => {
               {update.content}
             </div>
 
-            {update.tags && update.tags.length > 0 && (
-              <div className={styles.tags} style={{ marginTop: "1rem" }}>
-                {update.tags.map((tag) => (
-                  <span key={tag} className={styles.tag}>
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
             <div
               className={styles.bountyBar}
               style={{
@@ -182,22 +264,159 @@ const UpdateDetailsNew = () => {
             </div>
           </GlassCard>
 
-          {/* Comments section removed for now - can be added later with COMMENTS topic */}
+          <div className={styles.divider} />
+
+          <h3 className={styles.sectionTitle}>
+            {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
+          </h3>
+
+          {isLoadingComments && comments.length === 0 && (
+            <div style={{ textAlign: "center", padding: "2rem" }}>
+              <Loader2
+                size={24}
+                className="animate-spin"
+                style={{ margin: "0 auto" }}
+              />
+              <p style={{ color: "rgba(255,255,255,0.6)", marginTop: "1rem" }}>
+                Loading comments...
+              </p>
+            </div>
+          )}
+
+          {comments.length > 0 && (
+            <div className={styles.answersList}>
+              {comments.map((comment) => (
+                <GlassCard key={comment.id} className={styles.answerCard}>
+                  <div className={styles.answerHeader}>
+                    <div className={styles.author}>
+                      <img
+                        src={comment.author.avatar}
+                        alt={comment.author.username}
+                        className={styles.avatar}
+                      />
+                      <div>
+                        <span className={styles.username}>
+                          {comment.author.username}
+                        </span>
+                        <span
+                          className={styles.date}
+                          style={{ marginLeft: "8px", fontSize: "0.875rem" }}
+                        >
+                          {new Date(comment.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className={styles.answerContent}
+                    style={{ marginTop: "12px" }}
+                  >
+                    {comment.content}
+                  </div>
+                </GlassCard>
+              ))}
+            </div>
+          )}
+
+          <GlassCard className={styles.postArea}>
+            <h3 className={styles.postTitle}>Post a Comment</h3>
+            <textarea
+              className={styles.textarea}
+              placeholder="Share your thoughts..."
+              rows={4}
+              value={commentContent}
+              onChange={(e) => setCommentContent(e.target.value)}
+            />
+            <div className={styles.postActions}>
+              <NeonButton
+                icon={<Send size={16} />}
+                onClick={handleSubmitComment}
+                disabled={isSubmittingComment || !commentContent.trim()}
+              >
+                {isSubmittingComment ? "Posting..." : "Post Comment"}
+              </NeonButton>
+            </div>
+          </GlassCard>
         </div>
 
-        {/* Sidebar removed for simplicity */}
+        <aside className={styles.sidebar}>
+          <GlassCard className={styles.sidebarCard}>
+            <h4>Related Updates</h4>
+            <ul className={styles.linkList}>
+              <li>
+                <a href="#">Hedera Council announces HIP-402</a>
+              </li>
+              <li>
+                <a href="#">New SDK features for Testnet</a>
+              </li>
+              <li>
+                <a href="#">HashPack Wallet Updates</a>
+              </li>
+            </ul>
+          </GlassCard>
+
+          <GlassCard
+            className={styles.sidebarCard}
+            style={{ marginTop: "1rem" }}
+          >
+            <h4>About the Author</h4>
+            <div className={styles.author} style={{ marginTop: "1rem" }}>
+              <img
+                src={authorData.avatar}
+                alt={authorData.username}
+                className={styles.avatar}
+              />
+              <div>
+                <div className={styles.username}>{authorData.username}</div>
+                <div
+                  style={{
+                    fontSize: "0.875rem",
+                    color: "rgba(255,255,255,0.6)",
+                    marginTop: "4px",
+                  }}
+                >
+                  Community Contributor
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+        </aside>
       </div>
 
-      {/* Tip Modal */}
       <TipModal
         isOpen={isTipModalOpen}
         onClose={() => setIsTipModalOpen(false)}
         targetName={tipTarget}
-        onConfirm={(amount) => {
-          import("react-hot-toast").then(({ default: toast }) => {
+        onConfirm={async (amount) => {
+          try {
+            if (!accountId || !walletData) {
+              toast.error("Please connect your wallet first");
+              return;
+            }
+
+            toast.loading(`Sending ${amount} HBAR to ${tipTarget}...`);
+
+            const { Hbar, TransferTransaction } =
+              await import("@hashgraph/sdk");
+            const { AccountId } = await import("@hashgraph/sdk");
+
+            const signer = walletData.getSigner(
+              AccountId.fromString(accountId),
+            );
+            const transaction = new TransferTransaction()
+              .addHbarTransfer(accountId, Hbar.from(-amount))
+              .addHbarTransfer(tipTarget, Hbar.from(amount));
+
+            await signer.call(transaction);
+
+            toast.dismiss();
             toast.success(`Successfully sent ${amount} HBAR to ${tipTarget}`);
-          });
-          setIsTipModalOpen(false);
+            setIsTipModalOpen(false);
+          } catch (error) {
+            console.error("Tip transfer error:", error);
+            toast.dismiss();
+            toast.error(`Failed to send tip: ${error.message}`);
+          }
         }}
       />
     </div>
