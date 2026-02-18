@@ -28,7 +28,9 @@ async function main() {
   // Get AI arbiter address from environment or use deployer's address
   let aiArbiterAddress;
   if (process.env.AI_ARBITER_ACCOUNT_ID) {
-    const aiArbiterAccountId = AccountId.fromString(process.env.AI_ARBITER_ACCOUNT_ID);
+    const aiArbiterAccountId = AccountId.fromString(
+      process.env.AI_ARBITER_ACCOUNT_ID,
+    );
     aiArbiterAddress = aiArbiterAccountId.toSolidityAddress();
     console.log(`AI Arbiter Account: ${process.env.AI_ARBITER_ACCOUNT_ID}`);
   } else {
@@ -59,11 +61,12 @@ async function main() {
   };
 
   try {
-    const [contractId, transactionId, contractAddress] = await deployBountyEscrow(
-      mockDAppConnector,
-      operatorId.toString(),
-      aiArbiterAddress
-    );
+    const [contractId, transactionId, contractAddress] =
+      await deployBountyEscrow(
+        mockDAppConnector,
+        operatorId.toString(),
+        aiArbiterAddress,
+      );
 
     console.log("\n===========================================");
     console.log("Deployment Summary:");
