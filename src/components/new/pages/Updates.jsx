@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Newspaper, RefreshCw, Loader2 } from "lucide-react";
 import FilterBar from "../features/FilterBar";
 import UpdateCardNew from "../features/UpdateCardNew";
@@ -95,7 +95,11 @@ const UpdatesNew = () => {
         </div>
       )}
 
-      <FilterBar onSearch={setSearchTerm} onFilterChange={setActiveFilter} />
+      <FilterBar
+        onSearch={setSearchTerm}
+        onFilterChange={setActiveFilter}
+        showBounty={false}
+      />
 
       <div className={styles.grid}>
         {filteredUpdates.length > 0 ? (

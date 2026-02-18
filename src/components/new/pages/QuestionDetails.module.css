@@ -171,29 +171,15 @@
 }
 
 /* Post Area */
+.postArea {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
 .postTitle {
   font-size: 1.125rem;
-  margin-bottom: var(--space-4);
-}
-
-.textarea {
-  width: 100%;
-  background: rgba(3, 7, 18, 0.4);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  padding: 16px;
   color: var(--apex-text-primary);
-  font-family: inherit;
-  font-size: 0.9375rem;
-  resize: vertical;
-  margin-bottom: var(--space-4);
-  transition: all 0.2s;
-}
-
-.textarea:focus {
-  outline: none;
-  border-color: var(--apex-primary-500);
-  background: rgba(3, 7, 18, 0.6);
 }
 
 .postActions {

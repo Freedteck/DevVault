@@ -13,12 +13,13 @@ import GlassCard from "../ui/GlassCard";
 import NeonButton from "../ui/NeonButton";
 import MarkdownEditor from "../ui/MarkdownEditor";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
-import ExpandableContent from "../ui/ExpandableContent";
+// import ExpandableContent from "../ui/ExpandableContent";
 import TipModal from "../features/TipModal";
 import { fetchUpdates, fetchComments } from "../../../services/fetchService";
 import { submitComment } from "../../../services/hcsService";
 import { userWalletContext } from "../../../context/userWalletContext";
 import styles from "./QuestionDetails.module.css";
+import AnswerCardNew from "../features/AnswerCardNew";
 
 const UpdateDetailsNew = () => {
   const { id: updateId } = useParams();
@@ -288,35 +289,7 @@ const UpdateDetailsNew = () => {
           {comments.length > 0 && (
             <div className={styles.answersList}>
               {comments.map((comment) => (
-                <GlassCard key={comment.id} className={styles.answerCard}>
-                  <div className={styles.answerHeader}>
-                    <div className={styles.author}>
-                      <img
-                        src={comment.author.avatar}
-                        alt={comment.author.username}
-                        className={styles.avatar}
-                      />
-                      <div>
-                        <span className={styles.username}>
-                          {comment.author.username}
-                        </span>
-                        <span
-                          className={styles.date}
-                          style={{ marginLeft: "8px", fontSize: "0.875rem" }}
-                        >
-                          {new Date(comment.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ marginTop: "12px" }}>
-                    <ExpandableContent
-                      content={comment.content}
-                      maxLength={400}
-                      className={styles.answerContent}
-                    />
-                  </div>
-                </GlassCard>
+                <AnswerCardNew key={comment.id} answer={comment} />
               ))}
             </div>
           )}

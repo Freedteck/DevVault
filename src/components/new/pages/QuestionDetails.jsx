@@ -358,7 +358,7 @@ const QuestionDetailsNew = () => {
                     setIsSubmitting(false);
                   }
                 }}
-                disabled={isSubmitting}
+                disabled={isSubmitting || !accountId || !answerContent.trim()}
               >
                 {isSubmitting ? "Submitting..." : "Submit Answer"}
               </NeonButton>

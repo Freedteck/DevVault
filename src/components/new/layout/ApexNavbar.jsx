@@ -1,6 +1,6 @@
-import React, { useContext, useState } from "react";
+import { useContext, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { Wallet, Search, Bot, LogOut } from "lucide-react";
+import { Wallet, Search, LogOut } from "lucide-react";
 import NeonButton from "../ui/NeonButton";
 import styles from "./ApexNavbar.module.css";
 import { userWalletContext } from "../../../context/userWalletContext";
@@ -56,14 +56,6 @@ const ApexNavbar = () => {
             }
           >
             Leaderboard
-          </NavLink>
-          <NavLink
-            to="/ai-agent"
-            className={({ isActive }) =>
-              `${styles.link} ${styles.aiLink} ${isActive ? styles.active : ""}`
-            }
-          >
-            <Bot size={16} /> AI Agent
           </NavLink>
         </div>
 
