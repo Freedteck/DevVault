@@ -191,7 +191,8 @@ export async function executeArbitration(
     );
 
     // Convert recipient to EVM address for contract call
-    const recipientAddress = AccountId.fromString(recipientAccountId).toSolidityAddress();
+    const recipientAddress =
+      AccountId.fromString(recipientAccountId).toSolidityAddress();
 
     // Call arbiterRelease on the contract
     const arbiterReleaseTx = new ContractExecuteTransaction()
@@ -251,8 +252,9 @@ export async function processArbitration(question, answers, acceptances) {
     }
 
     // Convert questionId to numeric for smart contract
-    const numericQuestionId = parseInt(question.questionId.split("-")[1]) || Date.now();
-    
+    const numericQuestionId =
+      parseInt(question.questionId.split("-")[1]) || Date.now();
+
     const transactionId = await executeArbitration(
       escrowContractId,
       numericQuestionId,
