@@ -67,11 +67,18 @@ const AnswerCardNew = ({
         </div>
         {isAI ? (
           <div className={styles.badgeRow}>
-            {isAI && confidence && (
+            {confidence && (
               <span className={styles.confidenceBadge}>
                 {confidence}% confidence
               </span>
             )}
+            <AnswerTypeBadge
+              isAccepted={isAccepted}
+              isAIAnswer={true}
+              isArbitrated={isArbitrated}
+              isCommunityVerified={false}
+              voteCount={likes}
+            />
           </div>
         ) : (
           <div className={styles.badgeRow}>

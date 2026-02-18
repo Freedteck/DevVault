@@ -84,7 +84,7 @@ async function main() {
     console.log("Step 2: Deploying smart contract...");
     const contractCreateTx = new ContractCreateTransaction()
       .setBytecodeFileId(bytecodeFileId)
-      .setGas(1000000)
+      .setGas(2000000) // Increased from 1000000
       .setConstructorParameters(
         new ContractFunctionParameters().addAddress(aiArbiterAddress),
       )

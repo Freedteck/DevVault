@@ -1,7 +1,36 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+interface IHederaTokenService {
+    function transferToken(address token, address sender, address receiver, int64 amount) external returns (int responseCode);
+    function cryptoTransfer(TransferList memory transferList, TokenTransferList[] memory tokenTransfers) external returns (int responseCode);
+}
+
+struct AccountAmount {
+    address accountID;
+    int64 amount;
+    bool isApproval;
+}
+
+struct TransferList {
+    AccountAmount[] transfers;
+}
+
+struct TokenTransferList {
+    address token;
+    AccountAmount[] transfers;
+    NftTransfer[] nftTransfers;
+}
+
+struct NftTransfer {
+    address senderAccountID;
+    address receiverAccountID;
+    int64 serialNumber;
+    bool isApproval;
+}
+
 contract BountyEscrow {
+    IHederaTokenService constant HTS = IHederaTokenService(0x0000000000000000000000000000000000000167);
     struct Escrow {
         address depositor;
         uint256 amount;
@@ -67,8 +96,9 @@ contract BountyEscrow {
         escrow.released = true;
         uint256 amount = escrow.amount;
 
+        // Transfer HBAR using direct transfer (contract already holds the HBAR)
         (bool success, ) = payable(recipient).call{value: amount}("");
-        require(success, "Transfer failed");
+        require(success, "HBAR transfer failed");
 
         emit Released(questionId, recipient, amount, false);
     }
@@ -89,8 +119,9 @@ contract BountyEscrow {
         escrow.arbitrated = true;
         uint256 amount = escrow.amount;
 
+        // Transfer HBAR using direct transfer (contract already holds the HBAR)
         (bool success, ) = payable(recipient).call{value: amount}("");
-        require(success, "Transfer failed");
+        require(success, "HBAR transfer failed");
 
         emit Released(questionId, recipient, amount, true);
     }

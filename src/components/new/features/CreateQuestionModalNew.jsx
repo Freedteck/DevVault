@@ -53,7 +53,7 @@ const CreateQuestionModalNew = ({ isOpen, onClose }) => {
       toast.success(`Question posted! ID: ${result.questionId}`);
 
       // Trigger AI processing in background (don't await - let it run async)
-      await processQuestion(questionData, result.questionId)
+      processQuestion(questionData, result.questionId)
         .then((aiResult) => {
           if (aiResult) {
             console.log(

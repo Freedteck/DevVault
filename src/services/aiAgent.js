@@ -12,10 +12,14 @@ import { TOPICS } from "./constants.js";
  * 1. Generate instant answers to questions
  * 2. Calculate confidence scores
  * 3. Post answers when confidence ≥50%
- * 4. Use Hedera Agent Kit for account identity
+ * 4. Use operator account as AI agent identity
+ *
+ * Note: AI Agent uses the platform operator account (VITE_MY_ACCOUNT_ID)
+ * This account receives bounties when AI answers are arbitrated as winners
  */
 
 // AI Agent account configuration
+// Uses operator account as AI agent identity
 const AI_AGENT_CONFIG = {
   accountId:
     import.meta.env.VITE_AGENT_ACCOUNT_ID || import.meta.env.VITE_MY_ACCOUNT_ID,

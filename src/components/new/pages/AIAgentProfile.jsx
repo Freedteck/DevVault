@@ -9,18 +9,19 @@ import {
 } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
 import styles from "./AIAgentProfile.module.css";
+import { getAIAgentAccountId } from "../../../services/aiAgent";
 
 /**
  * AIAgentProfile - Profile page for DevVault AI Assistant
- * Shows stats, performance, and ERC-8004 identity
+ * Shows stats, performance, and Hedera identity
  */
 const AIAgentProfile = () => {
   // Mock data - will be replaced with real Hedera Agent Kit data
   const agentStats = {
-    accountId: "0.0.AGENT_ACCOUNT_ID",
+    accountId: getAIAgentAccountId(),
     name: "DevVault Assistant",
     type: "AI Agent",
-    identityStandard: "ERC-8004",
+    identityStandard: "Hedera Account",
     totalAnswers: 1247,
     helpfulRatings: 892,
     notHelpfulRatings: 355,
