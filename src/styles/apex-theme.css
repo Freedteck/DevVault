@@ -1,0 +1,97 @@
+:root {
+  /* --- Color Palette: Deep Space & Neon --- */
+  --apex-bg-deep: #030712; /* Very dark blue/black */
+  --apex-bg-surface: #0f172a; /* Slate 900 */
+  
+  /* Primary Brand: Electric Violet */
+  --apex-primary-400: #818cf8;
+  --apex-primary-500: #6366f1;
+  --apex-primary-600: #4f46e5;
+  --apex-primary-glow: rgba(99, 102, 241, 0.5);
+
+  /* Secondary Brand: Cyber Cyan */
+  --apex-cyan-400: #22d3ee;
+  --apex-cyan-500: #06b6d4;
+  --apex-cyan-glow: rgba(34, 211, 238, 0.5);
+
+  /* Accent: Hot Pink (for "Live" or "Urgent") */
+  --apex-pink-500: #ec4899;
+  --apex-pink-glow: rgba(236, 72, 153, 0.5);
+
+  /* Success: Matrix Green */
+  --apex-green-500: #10b981;
+  --apex-green-glow: rgba(16, 185, 129, 0.5);
+
+  /* Text Colors */
+  --apex-text-primary: #f8fafc; /* Slate 50 */
+  --apex-text-secondary: #cbd5e1; /* Slate 300 (was 400) */
+  --apex-text-muted: #64748b; /* Slate 500 */
+
+  /* --- Glassmorphism Tokens --- */
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(148, 163, 184, 0.1);
+  --glass-border-light: rgba(255, 255, 255, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
+  --glass-blur: 12px;
+
+  /* --- Spacing System --- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+
+  /* --- Radius --- */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* --- Shadows (Glows) --- */
+  --shadow-neon-primary: 0 0 20px -5px var(--apex-primary-glow);
+  --shadow-neon-cyan: 0 0 20px -5px var(--apex-cyan-glow);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Base Reset/Setup for Apex Theme */
+body {
+  background-color: var(--apex-bg-deep);
+  color: var(--apex-text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Mesh Gradient Background Utility */
+.apex-mesh-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background: 
+    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--apex-bg-deep);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--apex-primary-500);
+}

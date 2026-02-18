@@ -1,0 +1,136 @@
+.card {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.accepted {
+  border: 1px solid var(--apex-green-500);
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.05) 0%, rgba(15, 23, 42, 0.4) 100%);
+}
+
+.acceptedBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--apex-green-500);
+  background: rgba(16, 185, 129, 0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-4);
+}
+
+.author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--glass-border);
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.username {
+  font-weight: 600;
+  color: var(--apex-text-primary);
+  font-size: 0.95rem;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  color: var(--apex-primary-400); /* Default fallback */
+}
+
+/* Specific Badge Colors handled by SVG currentColor, but can override here if needed */
+
+.date {
+  font-size: 0.75rem;
+  color: var(--apex-text-muted);
+}
+
+.content {
+  color: var(--apex-text-secondary); /* Now Slate 300 */
+  line-height: 1.6;
+  font-size: 0.95rem;
+  margin-bottom: var(--space-4);
+  white-space: pre-wrap;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--glass-border);
+  padding-top: var(--space-3);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.actionBtn, .tipBtn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--apex-text-muted);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actionBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--apex-text-primary);
+}
+
+.tipBtn {
+  color: var(--apex-primary-400);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.tipBtn:hover {
+   background: rgba(255, 255, 255, 0.08);
+  border-color: var(--apex-primary-400);
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+  transform: translateY(-1px);
+}
+
+.acceptBtn {
+  margin-left: auto;
+}
