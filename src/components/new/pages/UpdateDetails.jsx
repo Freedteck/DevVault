@@ -1,35 +1,95 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, MessageCircle, Share2, Coins, Send, Newspaper } from 'lucide-react';
+import { ArrowLeft, Calendar, Share2, Coins, Loader2 } from 'lucide-react';
 import GlassCard from '../ui/GlassCard';
 import NeonButton from '../ui/NeonButton';
-import AnswerCardNew from '../features/AnswerCardNew'; // Reusing for comments style
 import TipModal from '../features/TipModal';
-import { MOCK_UPDATES, MOCK_USERS } from '../data/mock';
+import { fetchUpdates } from '../../../services/fetchService';
 import styles from './QuestionDetails.module.css'; // Reusing layout styles
 
 const UpdateDetailsNew = () => {
-  const { id } = useParams();
-  const update = MOCK_UPDATES.find(u => u.id === id) || MOCK_UPDATES[0];
+  const { id: updateId } = useParams();
+  const [update, setUpdate] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [tipTarget, setTipTarget] = useState(null);
 
-  // Mock comments using reusing Answer structure
-  const comments = [
-    {
-      id: 201,
-      author: MOCK_USERS.users[1],
-      content: "This is huge for the ecosystem! Can't wait to see the implementation.",
-      createdAt: "2024-02-15T10:00:00Z",
-      likes: 8,
-      isAccepted: false
+  const gateway = import.meta.env.VITE_PINATA_GATEWAY;
+
+  // Fetch update by ID
+  useEffect(() => {
+    const loadUpdate = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch all updates and find the one we need
+        // In a production app, you'd want a dedicated endpoint for single update
+        let allUpdates = [];
+        let nextLink = null;
+        
+        do {
+          const result = await fetchUpdates(100, nextLink, gateway);
+          allUpdates = [...allUpdates, ...result.updates];
+          nextLink = result.nextLink;
+          
+          // Check if we found our update
+          const foundUpdate = allUpdates.find(u => u.updateId === updateId);
+          if (foundUpdate) {
+            setUpdate(foundUpdate);
+            setIsLoading(false);
+            return;
+          }
+        } while (nextLink);
+        
+        // If we get here, update not found
+        setError('Update not found');
+      } catch (err) {
+        console.error('Error loading update:', err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (updateId) {
+      loadUpdate();
     }
-  ];
+  }, [updateId, gateway]);
 
   const handleOpenTip = (authorName) => {
     setTipTarget(authorName);
     setIsTipModalOpen(true);
   };
+
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loading}>
+          <Loader2 size={32} className="animate-spin" style={{ margin: '0 auto' }} />
+          <p>Loading update...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !update) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.error}>
+          <p>Failed to load update: {error || 'Update not found'}</p>
+          <Link to="/updates">
+            <NeonButton>Back to Updates</NeonButton>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle author format
+  const authorData = typeof update.author === 'string'
+    ? { username: update.author, avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${update.author}` }
+    : update.author;
 
   return (
     <div className={styles.container}>
@@ -48,8 +108,8 @@ const UpdateDetailsNew = () => {
             
             <div className={styles.meta} style={{borderBottom: '1px solid var(--glass-border)', paddingBottom: '16px'}}>
               <div className={styles.author}>
-                <img src={update.author.avatar} alt={update.author.username} className={styles.avatar} />
-                <span className={styles.username}>{update.author.username}</span>
+                <img src={authorData.avatar} alt={authorData.username} className={styles.avatar} />
+                <span className={styles.username}>{authorData.username}</span>
               </div>
               <span className={styles.dot}>•</span>
               <span className={styles.date}>
@@ -57,11 +117,23 @@ const UpdateDetailsNew = () => {
               </span>
             </div>
 
-            <p className={styles.description} style={{fontSize: '1.1rem'}}>{update.description}</p>
+            <div className={styles.description} style={{fontSize: '1.1rem', whiteSpace: 'pre-wrap'}}>
+              {update.content}
+            </div>
+
+            {update.tags && update.tags.length > 0 && (
+              <div className={styles.tags} style={{marginTop: '1rem'}}>
+                {update.tags.map((tag) => (
+                  <span key={tag} className={styles.tag}>
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
 
             <div className={styles.bountyBar} style={{background: 'rgba(99, 102, 241, 0.05)', borderColor: 'var(--glass-border)'}}>
               <div className={styles.author} style={{gap: '16px'}}>
-                 <button className={styles.actionBtn} onClick={() => handleOpenTip(update.author.username)}>
+                 <button className={styles.actionBtn} onClick={() => handleOpenTip(authorData.username)}>
                     <Coins size={18} /> Tip Author
                  </button>
                  <button className={styles.actionBtn}>
@@ -71,48 +143,10 @@ const UpdateDetailsNew = () => {
             </div>
           </GlassCard>
 
-          <div className={styles.divider} />
-
-          <h3 className={styles.sectionTitle}>Comments</h3>
-          
-          <div className={styles.answersList}>
-            {comments.map(comment => (
-              <AnswerCardNew 
-                key={comment.id} 
-                answer={comment} 
-                onTip={() => handleOpenTip(comment.author.username)}
-              />
-            ))}
-          </div>
-
-          <GlassCard className={styles.postArea}>
-            <h3 className={styles.postTitle}>Leave a Comment</h3>
-            <textarea 
-              className={styles.textarea} 
-              placeholder="Join the discussion..." 
-              rows={4}
-            />
-            <div className={styles.postActions}>
-              <NeonButton icon={<Send size={16} />}>
-                Post Comment
-              </NeonButton>
-            </div>
-          </GlassCard>
+          {/* Comments section removed for now - can be added later with COMMENTS topic */}
         </div>
 
-        {/* Sidebar */}
-        <aside className={styles.sidebar}>
-          <GlassCard className={styles.sidebarCard}>
-             <h4 style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-               <Newspaper size={16} /> Trending Updates
-             </h4>
-             <ul className={styles.linkList}>
-               <li><a href="#">Hedera Governing Council adds new member</a></li>
-               <li><a href="#">Mirror Node v0.90 released</a></li>
-               <li><a href="#">SaucerSwap V2 audit complete</a></li>
-             </ul>
-          </GlassCard>
-        </aside>
+        {/* Sidebar removed for simplicity */}
       </div>
 
        {/* Tip Modal */}

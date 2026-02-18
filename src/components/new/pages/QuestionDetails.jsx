@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Clock, Code, Send } from "lucide-react";
+import { ArrowLeft, Clock, Code, Send, Coins } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
 import NeonButton from "../ui/NeonButton";
 import AnswerCardNew from "../features/AnswerCardNew";
@@ -227,7 +227,7 @@ const QuestionDetailsNew = () => {
             <div className={styles.bountyBar}>
               <span className={styles.bountyLabel}>Bounty Reward</span>
               <span className={styles.bountyValue}>
-                💎 {question.bounty} HBAR
+                <Coins size={18} /> {question.bounty} HBAR
               </span>
             </div>
           </GlassCard>

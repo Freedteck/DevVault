@@ -1,4 +1,4 @@
-import { ThumbsUp, Coins, Bot } from "lucide-react";
+import { Coins, Bot } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
 import NeonButton from "../ui/NeonButton";
 import { getBadgeComponent } from "../ui/BadgeIcons";
@@ -13,7 +13,7 @@ const AnswerCardNew = ({
   onTip,
   onAccept,
 }) => {
-  const { author, content, createdAt, likes, isAI, confidence } = answer;
+  const { author, content, createdAt, isAI, confidence } = answer;
   const date = new Date(createdAt).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
@@ -77,7 +77,6 @@ const AnswerCardNew = ({
               isAIAnswer={true}
               isArbitrated={isArbitrated}
               isCommunityVerified={false}
-              voteCount={likes}
             />
           </div>
         ) : (
@@ -87,7 +86,6 @@ const AnswerCardNew = ({
               isAIAnswer={false}
               isArbitrated={isArbitrated}
               isCommunityVerified={false}
-              voteCount={likes}
             />
           </div>
         )}
@@ -97,9 +95,6 @@ const AnswerCardNew = ({
 
       <div className={styles.footer}>
         <div className={styles.actions}>
-          <button className={styles.actionBtn}>
-            <ThumbsUp size={16} /> {likes}
-          </button>
           <button className={styles.tipBtn} onClick={onTip}>
             <Coins size={16} /> Tip
           </button>

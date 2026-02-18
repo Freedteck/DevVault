@@ -14,11 +14,11 @@ const WalletContext = ({ children }) => {
     if (!accountId) {
       const wData = await walletConnectFcn();
       wData[0].pairingEvent.once((pairingData) => {
-        pairingData.accountIds.forEach((id) => {
-          setAccountId(id);
-          console.log(`- Paired account ID: ${id}`);
-          console.log("Fetching user profile data...");
-        });
+        // Use the first account from the paired accounts
+        const pairedAccountId = pairingData.accountIds[0];
+        setAccountId(pairedAccountId);
+        console.log(`- Paired account ID: ${pairedAccountId}`);
+        console.log("Fetching user profile data...");
       });
       setWalletData(wData);
     }

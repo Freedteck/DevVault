@@ -20,6 +20,7 @@ const ArbitrationTimer = ({
   const [timeRemaining, setTimeRemaining] = useState(null);
 
   useEffect(() => {
+    // Don't show timer if no bounty or if answer already accepted (meaning bounty released)
     if (!hasBounty || hasAcceptedAnswer) return;
 
     const calculateTime = () => {

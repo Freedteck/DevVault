@@ -25,7 +25,7 @@ async function fetchFromPinata(cid, gateway) {
  * @param {number} limit - Number of questions per page
  * @param {string} nextLink - Next page link
  * @param {string} gateway - Pinata gateway URL
- * @returns {Promise<object>} - { questions, nextLink }
+ * @returns {Promise<object>} - { questions, nextLink, hasMore }
  */
 export async function fetchQuestions(limit = 10, nextLink = null, gateway) {
   // 1. Get metadata from HCS
@@ -34,6 +34,33 @@ export async function fetchQuestions(limit = 10, nextLink = null, gateway) {
     limit,
     nextLink,
   );
+
+  // 2. Fetch all answers to get counts
+  const { messages: answerMessages } = await getMessagesWithPagination(
+    TOPICS.ANSWERS,
+    1000, // Get all answers
+    null,
+  );
+  const answersByQuestion = {};
+  answerMessages.forEach((msg) => {
+    const answer = JSON.parse(msg.content);
+    if (!answersByQuestion[answer.questionId]) {
+      answersByQuestion[answer.questionId] = [];
+    }
+    answersByQuestion[answer.questionId].push(answer);
+  });
+
+  // 3. Fetch all acceptances to check solved status
+  const { messages: acceptanceMessages } = await getMessagesWithPagination(
+    TOPICS.ACCEPTANCES,
+    1000, // Get all acceptances
+    null,
+  );
+  const acceptedQuestions = new Set();
+  acceptanceMessages.forEach((msg) => {
+    const acceptance = JSON.parse(msg.content);
+    acceptedQuestions.add(acceptance.questionId);
+  });
 
   // 2. Parse and fetch full content from Pinata
   const questions = await Promise.all(
@@ -58,11 +85,9 @@ export async function fetchQuestions(limit = 10, nextLink = null, gateway) {
           rank: "Contributor", // Default rank
         },
         stats: {
-          views: 0, // TODO: Track views
-          answers: 0, // TODO: Fetch answer count
-          likes: 0, // TODO: Track likes
+          answers: answersByQuestion[metadata.questionId]?.length || 0,
         },
-        isSolved: false, // TODO: Check acceptances
+        isSolved: acceptedQuestions.has(metadata.questionId),
         timestamp: metadata.timestamp,
         createdAt: new Date(metadata.timestamp).toISOString(),
       };
@@ -72,6 +97,7 @@ export async function fetchQuestions(limit = 10, nextLink = null, gateway) {
   return {
     questions,
     nextLink: newNextLink,
+    hasMore: !!newNextLink,
   };
 }
 
@@ -142,6 +168,20 @@ export async function fetchAnswersForQuestion(questionId, gateway) {
     nextLink = newNextLink;
   } while (nextLink); // Keep fetching until no more pages
 
+  // 2. Fetch acceptances to check which answer is accepted
+  const { messages: acceptanceMessages } = await getMessagesWithPagination(
+    TOPICS.ACCEPTANCES,
+    1000,
+    null,
+  );
+  const acceptedAnswerIds = new Set();
+  acceptanceMessages.forEach((msg) => {
+    const acceptance = JSON.parse(msg.content);
+    if (acceptance.questionId === questionId) {
+      acceptedAnswerIds.add(acceptance.answerId);
+    }
+  });
+
   // 2. Fetch full content from Pinata for each answer
   const answers = await Promise.all(
     allAnswers.map(async (metadata) => {
@@ -160,8 +200,7 @@ export async function fetchAnswersForQuestion(questionId, gateway) {
         confidence: metadata.confidence,
         timestamp: metadata.timestamp,
         createdAt: new Date(metadata.timestamp).toISOString(),
-        likes: 0, // TODO: Calculate from separate likes topic if you add that
-        isAccepted: false, // TODO: Check acceptances topic
+        isAccepted: acceptedAnswerIds.has(metadata.answerId),
       };
     }),
   );
@@ -227,6 +266,7 @@ export async function fetchUpdates(limit = 10, nextLink = null, gateway) {
   return {
     updates,
     nextLink: newNextLink,
+    hasMore: !!newNextLink,
   };
 }
 

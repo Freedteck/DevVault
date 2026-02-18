@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, Eye, Heart } from "lucide-react";
+import { MessageSquare, Coins } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
 import styles from "./QuestionCardNew.module.css";
 import PropTypes from "prop-types";
@@ -69,20 +69,14 @@ const QuestionCardNew = ({ question }) => {
       <div className={styles.footer}>
         <div className={styles.stats}>
           <span className={styles.stat}>
-            <Eye size={16} /> {stats.views}
-          </span>
-          <span className={styles.stat}>
             <MessageSquare size={16} /> {stats.answers}
-          </span>
-          <span className={`${styles.stat} ${styles.likes}`}>
-            <Heart size={16} /> {stats.likes}
           </span>
         </div>
 
         <div className={styles.actions}>
           {bounty > 0 && (
             <span className={styles.bounty}>
-              <span className={styles.bountyIcon}>💎</span> {bounty} HBAR
+              <Coins size={16} /> {bounty} HBAR
             </span>
           )}
           {isSolved && <span className={styles.solved}>Solved ✓</span>}
