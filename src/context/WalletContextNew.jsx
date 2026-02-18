@@ -11,7 +11,7 @@ const WalletContextNew = ({ children }) => {
   const connectWallet = async () => {
     try {
       const dAppConnector = await walletConnectFcn();
-      
+
       // Get the connected account from signers
       const signers = dAppConnector.signers;
       if (signers && signers.length > 0) {
@@ -45,7 +45,7 @@ const WalletContextNew = ({ children }) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({ accountId: accountId, network: "testnet" }),
-          }
+          },
         );
 
         if (!request.ok) {
@@ -66,12 +66,12 @@ const WalletContextNew = ({ children }) => {
 
   return (
     <userWalletContext.Provider
-      value={{ 
-        walletData, 
-        accountId, 
-        connectWallet, 
+      value={{
+        walletData,
+        accountId,
+        connectWallet,
         disconnect,
-        userProfile 
+        userProfile,
       }}
     >
       {children}

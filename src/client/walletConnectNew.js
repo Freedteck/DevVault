@@ -25,7 +25,9 @@ async function walletConnectFcn() {
     name: "DevVault",
     description: "A decentralized resource sharing platform for developers.",
     url: window.location.origin,
-    icons: ["https://raw.githubusercontent.com/ed-marquez/hedera-dapp-days/testing/src/assets/hederaLogo.png"],
+    icons: [
+      "https://raw.githubusercontent.com/ed-marquez/hedera-dapp-days/testing/src/assets/hederaLogo.png",
+    ],
   };
 
   try {
@@ -35,7 +37,7 @@ async function walletConnectFcn() {
       projectId,
       Object.values(HederaJsonRpcMethod),
       [HederaSessionEvent.ChainChanged, HederaSessionEvent.AccountsChanged],
-      [HederaChainId.Testnet]
+      [HederaChainId.Testnet],
     );
 
     await dAppConnector.init({ logger: "error" });

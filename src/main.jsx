@@ -64,5 +64,5 @@ createRoot(document.getElementById("root")).render(
     <WalletContextNew>
       <AppNew />
     </WalletContextNew>
-  </StrictMode>
+  </StrictMode>,
 );

@@ -73,7 +73,11 @@ const ApexNavbar = () => {
 
           {accountId ? (
             <NavLink to="/profile" style={{ textDecoration: "none" }}>
-              <NeonButton variant="outline" size="sm" icon={<Wallet size={16} />}>
+              <NeonButton
+                variant="outline"
+                size="sm"
+                icon={<Wallet size={16} />}
+              >
                 {accountId}
               </NeonButton>
             </NavLink>
