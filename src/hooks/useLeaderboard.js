@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { getMessagesWithPagination } from "../services/getMessages";
 import { TOPICS } from "../services/constants";
@@ -34,12 +35,22 @@ export const useLeaderboard = () => {
           answerAuthors[answer.answerId] = answer.author;
         });
 
-        // Calculate reputation scores
+        // Calculate reputation scores - count unique accepted answers only
         const userScores = {};
+        const uniqueAcceptedAnswers = new Set(); // Track unique answer IDs per user
+
         acceptanceMessages.forEach((msg) => {
           const acceptance = JSON.parse(msg.content);
           const author = answerAuthors[acceptance.answerId];
+
           if (author) {
+            // Check if this answer was already counted for this user
+            const userAnswerKey = `${author}:${acceptance.answerId}`;
+            if (uniqueAcceptedAnswers.has(userAnswerKey)) {
+              return; // Skip duplicate acceptance
+            }
+            uniqueAcceptedAnswers.add(userAnswerKey);
+
             if (!userScores[author]) {
               userScores[author] = {
                 username: author,
@@ -48,7 +59,7 @@ export const useLeaderboard = () => {
               };
             }
             userScores[author].acceptedAnswers += 1;
-            userScores[author].score += 100; // 100 points per accepted answer
+            userScores[author].score += 100;
           }
         });
 

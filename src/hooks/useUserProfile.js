@@ -42,14 +42,22 @@ export const useUserProfile = (accountId) => {
         const userQuestions = questions.filter((q) => q.author === accountId);
         const userAnswers = answers.filter((a) => a.author === accountId);
 
-        // Find accepted answers
-        const acceptedAnswerIds = new Set(acceptances.map((a) => a.answerId));
-        const userAcceptedAnswers = userAnswers.filter((a) =>
-          acceptedAnswerIds.has(a.answerId),
-        );
+        // Count unique accepted answers only (ignore duplicate acceptances)
+        const acceptedAnswerIds = new Set();
 
-        // Calculate reputation score
-        const reputationScore = userAcceptedAnswers.length * 100;
+        acceptances.forEach((acceptance) => {
+          const answer = answers.find(
+            (a) => a.answerId === acceptance.answerId,
+          );
+          if (answer && answer.author === accountId) {
+            acceptedAnswerIds.add(answer.answerId);
+          }
+        });
+
+        const acceptedAnswersCount = acceptedAnswerIds.size;
+
+        // Calculate reputation score (100 points per accepted answer)
+        const reputationScore = acceptedAnswersCount * 100;
 
         // Determine tier
         let tier = "Helper";
@@ -99,7 +107,7 @@ export const useUserProfile = (accountId) => {
           username: accountId,
           questionsAsked: userQuestions.length,
           answersProvided: userAnswers.length,
-          acceptedAnswers: userAcceptedAnswers.length,
+          acceptedAnswers: acceptedAnswersCount,
           reputationScore,
           tier,
           recentActivity: recentActivity.slice(0, 10),
