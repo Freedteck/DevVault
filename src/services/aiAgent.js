@@ -7,7 +7,7 @@ import { TOPICS } from "./constants.js";
 
 /**
  * AI Agent Service - Generates answers using Groq via Hedera Agent Kit
- * 
+ *
  * Responsibilities:
  * 1. Generate instant answers to questions
  * 2. Calculate confidence scores
@@ -17,8 +17,11 @@ import { TOPICS } from "./constants.js";
 
 // AI Agent account configuration
 const AI_AGENT_CONFIG = {
-  accountId: import.meta.env.VITE_AGENT_ACCOUNT_ID || import.meta.env.VITE_MY_ACCOUNT_ID,
-  privateKey: import.meta.env.VITE_AGENT_PRIVATE_KEY || import.meta.env.VITE_MY_PRIVATE_KEY,
+  accountId:
+    import.meta.env.VITE_AGENT_ACCOUNT_ID || import.meta.env.VITE_MY_ACCOUNT_ID,
+  privateKey:
+    import.meta.env.VITE_AGENT_PRIVATE_KEY ||
+    import.meta.env.VITE_MY_PRIVATE_KEY,
   name: "DevVault AI Assistant",
   model: "llama-3.3-70b-versatile",
 };
@@ -31,13 +34,14 @@ let llm = null;
  * Initialize Hedera Agent Kit with Groq LLM
  */
 async function initializeHederaAgentKit() {
-  if (hederaClient && llm) return { client: hederaClient, toolkit: hederaToolkit, llm };
+  if (hederaClient && llm)
+    return { client: hederaClient, toolkit: hederaToolkit, llm };
 
   try {
     // Create Hedera client
     hederaClient = Client.forTestnet().setOperator(
       AI_AGENT_CONFIG.accountId,
-      PrivateKey.fromStringECDSA(AI_AGENT_CONFIG.privateKey)
+      PrivateKey.fromStringECDSA(AI_AGENT_CONFIG.privateKey),
     );
 
     // Initialize Groq LLM via LangChain
@@ -116,7 +120,9 @@ Please provide a comprehensive answer.`;
     const reasoningMatch = response.match(/Reasoning:\s*(.+?)(?:\n\n|$)/is);
 
     const confidence = confidenceMatch ? parseInt(confidenceMatch[1]) : 0;
-    const reasoning = reasoningMatch ? reasoningMatch[1].trim() : "No reasoning provided";
+    const reasoning = reasoningMatch
+      ? reasoningMatch[1].trim()
+      : "No reasoning provided";
 
     // Remove confidence and reasoning from answer
     const answer = response
@@ -182,9 +188,9 @@ export async function processQuestion(question, questionId) {
     const [status, transactionId] = await submitMessageOperator(
       client,
       TOPICS.ANSWERS,
-      hcsMetadata
+      hcsMetadata,
     );
-    
+
     console.log(`   ✅ AI answer posted to HCS (${confidence}% confidence)`);
     console.log(`   Transaction: ${transactionId}`);
     console.log(`   Answer ID: ${answerId}`);

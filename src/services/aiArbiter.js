@@ -1,8 +1,13 @@
-import { Client, PrivateKey, ContractExecuteTransaction, ContractFunctionParameters } from "@hashgraph/sdk";
+import {
+  Client,
+  PrivateKey,
+  ContractExecuteTransaction,
+  ContractFunctionParameters,
+} from "@hashgraph/sdk";
 
 /**
  * AI Arbiter Service - Handles automatic bounty releases after 7-day timeout
- * 
+ *
  * Responsibilities:
  * 1. Check for expired bounties (7 days with no acceptance)
  * 2. Evaluate answers and select best one
@@ -14,8 +19,11 @@ const ARBITRATION_TIMEOUT = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 // AI Arbiter account configuration
 const AI_ARBITER_CONFIG = {
-  accountId: import.meta.env.VITE_AGENT_ACCOUNT_ID || import.meta.env.VITE_MY_ACCOUNT_ID,
-  privateKey: import.meta.env.VITE_AGENT_PRIVATE_KEY || import.meta.env.VITE_MY_PRIVATE_KEY,
+  accountId:
+    import.meta.env.VITE_AGENT_ACCOUNT_ID || import.meta.env.VITE_MY_ACCOUNT_ID,
+  privateKey:
+    import.meta.env.VITE_AGENT_PRIVATE_KEY ||
+    import.meta.env.VITE_MY_PRIVATE_KEY,
 };
 
 /**
@@ -31,7 +39,9 @@ export function isEligibleForArbitration(question, acceptances) {
   }
 
   // Must not have been accepted
-  const hasAcceptance = acceptances.some((a) => a.questionId === question.questionId);
+  const hasAcceptance = acceptances.some(
+    (a) => a.questionId === question.questionId,
+  );
   if (hasAcceptance) {
     return false;
   }
@@ -95,15 +105,21 @@ export function selectBestAnswer(answers) {
  * @param {string} recipientAccountId - Winner's account ID
  * @returns {Promise<string>} - Transaction ID
  */
-export async function executeArbitration(contractId, questionId, recipientAccountId) {
+export async function executeArbitration(
+  contractId,
+  questionId,
+  recipientAccountId,
+) {
   try {
-    console.log(`🔨 AI Arbiter executing arbitration for question ${questionId}`);
+    console.log(
+      `🔨 AI Arbiter executing arbitration for question ${questionId}`,
+    );
     console.log(`   Winner: ${recipientAccountId}`);
 
     // Create Hedera client with AI arbiter credentials
     const client = Client.forTestnet().setOperator(
       AI_ARBITER_CONFIG.accountId,
-      PrivateKey.fromStringECDSA(AI_ARBITER_CONFIG.privateKey)
+      PrivateKey.fromStringECDSA(AI_ARBITER_CONFIG.privateKey),
     );
 
     // Convert recipient to EVM address for contract call
@@ -117,7 +133,7 @@ export async function executeArbitration(contractId, questionId, recipientAccoun
         "arbiterRelease",
         new ContractFunctionParameters()
           .addUint256(questionId)
-          .addAddress(recipientAddress)
+          .addAddress(recipientAddress),
       );
 
     const txResponse = await arbiterReleaseTx.execute(client);
@@ -151,7 +167,9 @@ export async function processArbitration(question, answers, acceptances) {
     // Select best answer
     const bestAnswer = selectBestAnswer(answers);
     if (!bestAnswer) {
-      console.log(`⚠️  No answers to arbitrate for question ${question.questionId}`);
+      console.log(
+        `⚠️  No answers to arbitrate for question ${question.questionId}`,
+      );
       return null;
     }
 
@@ -167,7 +185,7 @@ export async function processArbitration(question, answers, acceptances) {
     const transactionId = await executeArbitration(
       escrowContractId,
       question.escrowId,
-      bestAnswer.author
+      bestAnswer.author,
     );
 
     return {
@@ -199,12 +217,15 @@ export async function scanAndArbitrate(questions, allAnswers, acceptances) {
     try {
       const answers = allAnswers[question.questionId] || [];
       const result = await processArbitration(question, answers, acceptances);
-      
+
       if (result) {
         results.push(result);
       }
     } catch (error) {
-      console.error(`Error arbitrating question ${question.questionId}:`, error);
+      console.error(
+        `Error arbitrating question ${question.questionId}:`,
+        error,
+      );
     }
   }
 
