@@ -5,8 +5,6 @@ import GlassCard from "../ui/GlassCard";
 import NeonButton from "../ui/NeonButton";
 import AnswerCardNew from "../features/AnswerCardNew";
 import TipModal from "../features/TipModal";
-import BountyModal from "../features/BountyModal";
-import AIResponse from "../features/AIResponse";
 import ArbitrationTimer from "../features/ArbitrationTimer";
 import { MOCK_QUESTIONS, MOCK_USERS } from "../data/mock";
 import styles from "./QuestionDetails.module.css";
@@ -15,12 +13,31 @@ const QuestionDetailsNew = () => {
   const { id } = useParams();
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [tipTarget, setTipTarget] = useState(null);
-  const [showBountyForm, setShowBountyForm] = useState(false);
 
   const question = MOCK_QUESTIONS.find((q) => q.id === id) || MOCK_QUESTIONS[0];
 
+  // Mock AI response data (will be fetched from Groq via Agent Kit)
+  const aiResponse = {
+    answer: `The issue is related to how React Native handles crypto modules. Here's the solution:
+
+\`\`\`javascript
+// 1. Install the polyfill
+npm install react-native-get-random-values
+
+// 2. Import at the TOP of index.js (before anything else)
+import 'react-native-get-random-values';
+import { AppRegistry } from 'react-native';
+
+// 3. Then import Hedera SDK
+import { Client } from '@hashgraph/sdk';
+\`\`\`
+
+This ensures the crypto polyfill is loaded before the Hedera SDK tries to use it.`,
+    confidence: 85,
+  };
+
   // Mock answers logic (in reality comes from HCS)
-  const answers = [
+  const humanAnswers = [
     {
       id: 101,
       author: MOCK_USERS.users[1], // Expert
@@ -41,26 +58,29 @@ const QuestionDetailsNew = () => {
     },
   ];
 
-  const hasAcceptedAnswer = answers.some((a) => a.isAccepted);
+  // Combine AI answer with human answers (only if confidence >= 50)
+  const allAnswers = [];
 
-  // Mock AI response data (will be fetched from Groq via Agent Kit)
-  const [aiResponse] = useState({
-    answer: `<p>The issue is related to how React Native handles crypto modules. Here's the solution:</p>
-    <pre><code>// 1. Install the polyfill
-npm install react-native-get-random-values
+  if (aiResponse.confidence >= 50) {
+    allAnswers.push({
+      id: "ai-answer",
+      author: {
+        username: "DevVault Assistant",
+        rank: "AI Agent",
+        avatar: null, // Will use bot icon
+      },
+      content: aiResponse.answer,
+      createdAt: new Date().toISOString(),
+      likes: 0,
+      isAccepted: false,
+      isAI: true,
+      confidence: aiResponse.confidence,
+    });
+  }
 
-// 2. Import at the TOP of index.js (before anything else)
-import 'react-native-get-random-values';
-import { AppRegistry } from 'react-native';
+  allAnswers.push(...humanAnswers);
 
-// 3. Then import Hedera SDK
-import { Client } from '@hashgraph/sdk';
-    </code></pre>
-    <p>This ensures the crypto polyfill is loaded before the Hedera SDK tries to use it.</p>`,
-    confidence: 85, // Change to <50 to see "Needs Human" flow, 50-80 for caution, >80 for high confidence
-    reasoning:
-      "This appears to be a complex debugging issue that requires hands-on testing with your specific React Native setup and dependencies. A human expert familiar with Expo and Hedera SDK integration would provide better assistance.",
-  });
+  const hasAcceptedAnswer = allAnswers.some((a) => a.isAccepted);
 
   const handleOpenTip = (authorName) => {
     setTipTarget(authorName);
@@ -141,29 +161,14 @@ import { Client } from '@hashgraph/sdk';
             />
           )}
 
-          {/* AI Instant Answer */}
-          <AIResponse
-            questionId={question.id}
-            answer={aiResponse.answer}
-            confidence={aiResponse.confidence}
-            reasoning={aiResponse.reasoning}
-            isLoading={false}
-            onPostBounty={() => setShowBountyForm(true)}
-            onRate={(qId, helpful) => {
-              console.log(
-                `User rated AI answer for Q${qId}: ${helpful ? "helpful" : "not helpful"}`,
-              );
-            }}
-          />
-
           <div className={styles.divider} />
 
           <h3 className={styles.sectionTitle}>
-            {answers.length} Human {answers.length === 1 ? "Answer" : "Answers"}
+            {allAnswers.length} {allAnswers.length === 1 ? "Answer" : "Answers"}
           </h3>
 
           <div className={styles.answersList}>
-            {answers.map((ans) => (
+            {allAnswers.map((ans) => (
               <AnswerCardNew
                 key={ans.id}
                 answer={ans}
@@ -213,18 +218,6 @@ import { Client } from '@hashgraph/sdk';
             toast.success(`Successfully sent ${amount} HBAR to ${tipTarget}`);
           });
           setIsTipModalOpen(false);
-        }}
-      />
-
-      {/* Bounty Modal */}
-      <BountyModal
-        isOpen={showBountyForm}
-        onClose={() => setShowBountyForm(false)}
-        onConfirm={(amount) => {
-          import("react-hot-toast").then(({ default: toast }) => {
-            toast.success(`Question posted with ${amount} HBAR bounty!`);
-          });
-          setShowBountyForm(false);
         }}
       />
     </div>

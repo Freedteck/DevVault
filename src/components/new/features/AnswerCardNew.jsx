@@ -1,4 +1,4 @@
-import { ThumbsUp, Coins } from "lucide-react";
+import { ThumbsUp, Coins, Bot } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
 import NeonButton from "../ui/NeonButton";
 import { getBadgeComponent } from "../ui/BadgeIcons";
@@ -13,7 +13,7 @@ const AnswerCardNew = ({
   onTip,
   onAccept,
 }) => {
-  const { author, content, createdAt, likes } = answer;
+  const { author, content, createdAt, likes, isAI, confidence } = answer;
   const date = new Date(createdAt).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
@@ -28,20 +28,27 @@ const AnswerCardNew = ({
     Helper: "#ca8a04", // Bronze-ish
   };
 
-  const BadgeIcon = author.rank ? getBadgeComponent(author.rank) : null;
+  const BadgeIcon =
+    author.rank && !isAI ? getBadgeComponent(author.rank) : null;
   const badgeColor = badgeColors[author.rank] || "var(--apex-primary-400)";
 
   return (
     <GlassCard
-      className={`${styles.card} ${isAccepted ? styles.accepted : ""} ${isArbitrated ? styles.arbitrated : ""}`}
+      className={`${styles.card} ${isAccepted ? styles.accepted : ""} ${isArbitrated ? styles.arbitrated : ""} ${isAI ? styles.aiAnswer : ""}`}
     >
       <div className={styles.header}>
         <div className={styles.author}>
-          <img
-            src={author.avatar}
-            alt={author.username}
-            className={styles.avatar}
-          />
+          {isAI ? (
+            <div className={styles.aiAvatar}>
+              <Bot size={20} />
+            </div>
+          ) : (
+            <img
+              src={author.avatar}
+              alt={author.username}
+              className={styles.avatar}
+            />
+          )}
           <div className={styles.meta}>
             <div className={styles.nameRow}>
               <span className={styles.username}>{author.username}</span>
@@ -58,15 +65,25 @@ const AnswerCardNew = ({
             <span className={styles.date}>{date}</span>
           </div>
         </div>
-        <div className={styles.badgeRow}>
-          <AnswerTypeBadge
-            isAccepted={isAccepted}
-            isAIAnswer={false}
-            isArbitrated={isArbitrated}
-            isCommunityVerified={false}
-            voteCount={likes}
-          />
-        </div>
+        {isAI ? (
+          <div className={styles.badgeRow}>
+            {isAI && confidence && (
+              <span className={styles.confidenceBadge}>
+                {confidence}% confidence
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className={styles.badgeRow}>
+            <AnswerTypeBadge
+              isAccepted={isAccepted}
+              isAIAnswer={false}
+              isArbitrated={isArbitrated}
+              isCommunityVerified={false}
+              voteCount={likes}
+            />
+          </div>
+        )}
       </div>
 
       <div className={styles.content}>{content}</div>
