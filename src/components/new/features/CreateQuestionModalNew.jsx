@@ -51,43 +51,6 @@ const CreateQuestionModalNew = ({ isOpen, onClose }) => {
 
       toast.success(`Question posted! ID: ${result.questionId}`);
 
-      // Trigger AI analysis in background
-      try {
-        const { analyzeAndAnswer } =
-          await import("../../../services/aiQuestionAnalyzer");
-        const { submitAnswer } = await import("../../../services/hcsService");
-
-        console.log("🤖 Triggering AI analysis...");
-        const aiResult = await analyzeAndAnswer(
-          `${formData.title}\n\n${formData.description}`,
-        );
-
-        if (aiResult.shouldAnswer && aiResult.confidence >= 50) {
-          console.log(
-            `✅ AI providing answer (${aiResult.confidence}% confidence)`,
-          );
-
-          // Submit AI answer to HCS
-          await submitAnswer(
-            {
-              questionId: result.questionId,
-              content: aiResult.answer,
-              isAI: true,
-              confidence: aiResult.confidence,
-            },
-            walletData,
-            accountId,
-          );
-
-          toast.success("AI has provided an instant answer!");
-        } else {
-          console.log(`❌ AI routing to humans: ${aiResult.reasoning}`);
-        }
-      } catch (aiError) {
-        console.error("AI analysis error (non-blocking):", aiError);
-        // Don't show error to user - AI is optional
-      }
-
       // Reset form
       setFormData({
         title: "",

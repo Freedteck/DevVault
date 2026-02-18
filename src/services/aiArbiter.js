@@ -5,9 +5,6 @@ import {
   ContractExecuteTransaction,
   ContractFunctionParameters,
 } from "@hashgraph/sdk";
-import { HederaLangchainToolkit, AgentMode } from "hedera-agent-kit";
-import { createAgent } from "langchain";
-import { MemorySaver } from "@langchain/langgraph";
 import { ChatGroq } from "@langchain/groq";
 
 /**
@@ -23,45 +20,13 @@ import { ChatGroq } from "@langchain/groq";
 const ARBITRATION_TIMEOUT = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 /**
- * Create AI agent for answer evaluation
+ * Get Groq LLM instance for answer evaluation
  */
-function createEvaluationAgent() {
-  const accountId = import.meta.env.VITE_MY_ACCOUNT_ID;
-  const privateKey = import.meta.env.VITE_MY_PRIVATE_KEY;
-
-  if (!accountId || !privateKey) {
-    throw new Error("Missing VITE_MY_ACCOUNT_ID or VITE_MY_PRIVATE_KEY");
-  }
-
-  const client = Client.forTestnet().setOperator(
-    accountId,
-    PrivateKey.fromStringECDSA(privateKey),
-  );
-
-  const hederaToolkit = new HederaLangchainToolkit({
-    client,
-    configuration: {
-      tools: [],
-      plugins: [],
-      context: {
-        mode: AgentMode.AUTONOMOUS,
-      },
-    },
-  });
-
-  const tools = hederaToolkit.getTools();
-
-  const llm = new ChatGroq({
+function getGroqLLM() {
+  return new ChatGroq({
     model: "llama-3.3-70b-versatile",
     apiKey: import.meta.env.VITE_GROQ_API_KEY,
     temperature: 0.3,
-  });
-
-  return createAgent({
-    model: llm,
-    tools: tools,
-    systemPrompt: "You are an expert code reviewer evaluating answer quality.",
-    checkpointer: new MemorySaver(),
   });
 }
 
@@ -113,7 +78,7 @@ export function getTimeUntilArbitration(questionTimestamp) {
  */
 async function evaluateAnswerQuality(questionContent, answerContent) {
   try {
-    const agent = createEvaluationAgent();
+    const llm = getGroqLLM();
 
     const prompt = `You are evaluating the quality of a developer's answer to a technical question.
 
@@ -129,12 +94,16 @@ Score this answer from 0-100 based on:
 
 Return ONLY a number between 0-100. No explanation needed.`;
 
-    const response = await agent.invoke(
-      { messages: [{ role: "user", content: prompt }] },
-      { configurable: { thread_id: Date.now().toString() } },
-    );
+    const response = await llm.invoke([
+      {
+        role: "system",
+        content:
+          "You are an expert code reviewer. Return only a numeric score.",
+      },
+      { role: "user", content: prompt },
+    ]);
 
-    const content = response.messages[response.messages.length - 1].content;
+    const content = response.content;
     const score = parseInt(content.trim());
 
     // Validate score
