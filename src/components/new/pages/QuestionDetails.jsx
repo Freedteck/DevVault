@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Clock, Code, Send, Coins } from "lucide-react";
 import toast from "react-hot-toast";
@@ -12,9 +12,7 @@ import ArbitrationTimer from "../features/ArbitrationTimer";
 import {
   fetchQuestionBySequenceNumber,
   fetchAnswersForQuestion,
-  fetchAcceptances,
 } from "../../../services/fetchService";
-import { processArbitration } from "../../../services/aiArbiter";
 import { userWalletContext } from "../../../context/userWalletContext";
 import styles from "./QuestionDetails.module.css";
 
@@ -30,7 +28,6 @@ const QuestionDetailsNew = () => {
   const [tipTarget, setTipTarget] = useState(null);
   const [answerContent, setAnswerContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isArbitratingRef = useRef(false);
 
   const gateway = import.meta.env.VITE_PINATA_GATEWAY;
 
@@ -239,49 +236,14 @@ const QuestionDetailsNew = () => {
               hasBounty={question.bounty > 0}
               hasAcceptedAnswer={hasAcceptedAnswer}
               arbitrationDelay={7 * 24 * 60 * 60 * 1000} // 7 days
-              onArbitrationTrigger={async () => {
-                // Prevent concurrent/repeated arbitration calls
-                if (isArbitratingRef.current) return;
-                isArbitratingRef.current = true;
-                try {
-                  toast.loading("AI Arbiter analyzing answers...");
-
-                  // Get acceptances to check eligibility
-                  const acceptances = await fetchAcceptances();
-
-                  // Process arbitration
-                  const result = await processArbitration(
-                    question,
-                    answers,
-                    acceptances,
-                  );
-
-                  if (result) {
-                    toast.dismiss();
-                    toast.success(
-                      `AI Arbiter released ${question.bounty} HBAR to ${result.winnerAccountId}`,
-                    );
-
-                    // Mark bounty as released so the timer stops
-                    setQuestion((q) => ({ ...q, bounty: 0 }));
-
-                    // Reload answers to show arbitration badge
-                    const answersData = await fetchAnswersForQuestion(
-                      question.questionId,
-                      gateway,
-                    );
-                    setAnswers(answersData);
-                  } else {
-                    toast.dismiss();
-                    toast.error("Question not eligible for arbitration yet");
-                  }
-                } catch (error) {
-                  console.error("Arbitration error:", error);
-                  toast.dismiss();
-                  toast.error(`Arbitration failed: ${error.message}`);
-                } finally {
-                  isArbitratingRef.current = false;
-                }
+              onArbitrationTrigger={() => {
+                // The AI Arbiter runs server-side via GitHub Actions daily cron.
+                // This callback fires when the timer hits zero in this browser tab —
+                // just surface the information to the user; no client-side execution needed.
+                toast(
+                  "⚖️ Arbitration window reached. The AI Arbiter will evaluate all answers and release the bounty automatically.",
+                  { duration: 6000 },
+                );
               }}
             />
           )}
@@ -417,9 +379,10 @@ const QuestionDetailsNew = () => {
             const signer = walletData.getSigner(
               AccountId.fromString(accountId),
             );
+            const hbarAmount = new Hbar(Number(amount));
             const transaction = new TransferTransaction()
-              .addHbarTransfer(accountId, Hbar.from(-amount))
-              .addHbarTransfer(tipTarget, Hbar.from(amount));
+              .addHbarTransfer(accountId, hbarAmount.negated())
+              .addHbarTransfer(tipTarget, hbarAmount);
 
             await signer.call(transaction);
 

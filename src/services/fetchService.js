@@ -387,37 +387,6 @@ export async function fetchComments(parentId, gateway) {
 }
 
 /**
- * Calculate reputation for an account
- * @param {string} accountId - Account to calculate reputation for
- * @returns {Promise<object>} - { acceptanceCount, tier, score }
- */
-export async function calculateReputation(accountId) {
-  const acceptances = await fetchAcceptances();
-
-  // Count acceptances where this account's answer was accepted
-  const userAcceptances = acceptances.filter((acc) => {
-    // We need to match answerId to this user's answers
-    // This requires fetching answers to check authors
-    // For now, simplified version
-    return acc.answerId && acc.answerId.includes(accountId.split(".")[2]);
-  });
-
-  const acceptanceCount = userAcceptances.length;
-
-  // Determine tier
-  let tier = "Helper";
-  if (acceptanceCount >= 10) tier = "Legend";
-  else if (acceptanceCount >= 5) tier = "Expert";
-  else if (acceptanceCount >= 3) tier = "Contributor";
-
-  return {
-    acceptanceCount,
-    tier,
-    score: acceptanceCount * 15, // 15 points per acceptance (like Stack Overflow)
-  };
-}
-
-/**
  * Update topic IDs (call this on app init)
  * @param {object} topicIds - { QUESTIONS, ANSWERS, UPDATES, ACCEPTANCES, COMMENTS }
  */

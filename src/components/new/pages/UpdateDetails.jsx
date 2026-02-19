@@ -380,9 +380,10 @@ const UpdateDetailsNew = () => {
             const signer = walletData.getSigner(
               AccountId.fromString(accountId),
             );
+            const hbarAmount = new Hbar(Number(amount));
             const transaction = new TransferTransaction()
-              .addHbarTransfer(accountId, Hbar.from(-amount))
-              .addHbarTransfer(tipTarget, Hbar.from(amount));
+              .addHbarTransfer(accountId, hbarAmount.negated())
+              .addHbarTransfer(tipTarget, hbarAmount);
 
             await signer.call(transaction);
 

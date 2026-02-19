@@ -1,9 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, ExternalLink, Share2 } from "lucide-react";
+import { Calendar, Share2 } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
-import MarkdownRenderer from "../ui/MarkdownRenderer";
 import styles from "./UpdateCardNew.module.css";
+import bannerSrc from "../../../assets/update-banner.svg";
 
 const UpdateCardNew = ({ update }) => {
   const navigate = useNavigate();
@@ -40,6 +40,15 @@ const UpdateCardNew = ({ update }) => {
       className={styles.card}
       onClick={() => navigate(`/updates/${updateId}`)}
     >
+      <div className={styles.banner} aria-hidden="true">
+        <img
+          src={bannerSrc}
+          alt=""
+          className={styles.bannerImg}
+          draggable={false}
+        />
+      </div>
+
       <div className={styles.metaRow}>
         <div className={styles.categoryBadge}>News</div>
         <span className={styles.date}>
