@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Clock, Code, Send, Coins } from "lucide-react";
 import toast from "react-hot-toast";
@@ -30,6 +30,7 @@ const QuestionDetailsNew = () => {
   const [tipTarget, setTipTarget] = useState(null);
   const [answerContent, setAnswerContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isArbitratingRef = useRef(false);
 
   const gateway = import.meta.env.VITE_PINATA_GATEWAY;
 
@@ -239,6 +240,9 @@ const QuestionDetailsNew = () => {
               hasAcceptedAnswer={hasAcceptedAnswer}
               arbitrationDelay={7 * 24 * 60 * 60 * 1000} // 7 days
               onArbitrationTrigger={async () => {
+                // Prevent concurrent/repeated arbitration calls
+                if (isArbitratingRef.current) return;
+                isArbitratingRef.current = true;
                 try {
                   toast.loading("AI Arbiter analyzing answers...");
 
@@ -258,6 +262,9 @@ const QuestionDetailsNew = () => {
                       `AI Arbiter released ${question.bounty} HBAR to ${result.winnerAccountId}`,
                     );
 
+                    // Mark bounty as released so the timer stops
+                    setQuestion((q) => ({ ...q, bounty: 0 }));
+
                     // Reload answers to show arbitration badge
                     const answersData = await fetchAnswersForQuestion(
                       question.questionId,
@@ -272,6 +279,8 @@ const QuestionDetailsNew = () => {
                   console.error("Arbitration error:", error);
                   toast.dismiss();
                   toast.error(`Arbitration failed: ${error.message}`);
+                } finally {
+                  isArbitratingRef.current = false;
                 }
               }}
             />
@@ -369,14 +378,15 @@ const QuestionDetailsNew = () => {
         {/* Sidebar */}
         <aside className={styles.sidebar}>
           <GlassCard className={styles.sidebarCard}>
-            <h4>Similar Questions</h4>
+            <h4>Browse by Tag</h4>
             <ul className={styles.linkList}>
-              <li>
-                <a href="#">HTS Token Transfers failing</a>
-              </li>
-              <li>
-                <a href="#">Smart Contract verify on Mirror Node</a>
-              </li>
+              {question.tags.map((tag) => (
+                <li key={tag}>
+                  <Link to={`/questions`} style={{ color: "var(--apex-primary-400)" }}>
+                    #{tag}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </GlassCard>
         </aside>

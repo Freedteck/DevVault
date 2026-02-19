@@ -1,4 +1,4 @@
-import { Client, PrivateKey } from "@hashgraph/sdk";
+import { Client, PrivateKey, TopicMessageSubmitTransaction } from "@hashgraph/sdk";
 import { HederaLangchainToolkit, AgentMode } from "hedera-agent-kit";
 import { ChatGroq } from "@langchain/groq";
 import { uploadJsonToPinata } from "./pinata.js";
@@ -12,20 +12,24 @@ import { TOPICS } from "./constants.js";
  * 1. Generate instant answers to questions
  * 2. Calculate confidence scores
  * 3. Post answers when confidence ≥50%
- * 4. Use operator account as AI agent identity
+ * 4. Use HOL-registered agent identity (VITE_AGENT_ACCOUNT_ID) when available,
+ *    falling back to operator account for local dev
  *
- * Note: AI Agent uses the platform operator account (VITE_MY_ACCOUNT_ID)
- * This account receives bounties when AI answers are arbitrated as winners
+ * After running scripts/register-hol-agent.cjs, set in .env.local:
+ *   VITE_AGENT_ACCOUNT_ID, VITE_AGENT_PRIVATE_KEY,
+ *   VITE_AGENT_INBOUND_TOPIC_ID, VITE_AGENT_OUTBOUND_TOPIC_ID
  */
 
-// AI Agent account configuration
-// Uses operator account as AI agent identity
+// AI Agent account configuration — prefers the HOL-registered dedicated account
 const AI_AGENT_CONFIG = {
   accountId:
     import.meta.env.VITE_AGENT_ACCOUNT_ID || import.meta.env.VITE_MY_ACCOUNT_ID,
   privateKey:
     import.meta.env.VITE_AGENT_PRIVATE_KEY ||
     import.meta.env.VITE_MY_PRIVATE_KEY,
+  // HOL outbound topic — empty string means logging is skipped
+  outboundTopicId: import.meta.env.VITE_AGENT_OUTBOUND_TOPIC_ID || "",
+  inboundTopicId: import.meta.env.VITE_AGENT_INBOUND_TOPIC_ID || "",
   name: "DevVault AI Assistant",
   model: "llama-3.3-70b-versatile",
 };
@@ -198,6 +202,41 @@ export async function processQuestion(question, questionId) {
     console.log(`   ✅ AI answer posted to HCS (${confidence}% confidence)`);
     console.log(`   Transaction: ${transactionId}`);
     console.log(`   Answer ID: ${answerId}`);
+
+    // Log activity to HOL outbound topic (HCS-10 protocol) — runs if configured
+    if (AI_AGENT_CONFIG.outboundTopicId) {
+      try {
+        const operatorId = AI_AGENT_CONFIG.inboundTopicId
+          ? `${AI_AGENT_CONFIG.inboundTopicId}@${AI_AGENT_CONFIG.accountId}`
+          : AI_AGENT_CONFIG.accountId;
+
+        const holMessage = {
+          p: "hcs-10",
+          op: "message",
+          operator_id: operatorId,
+          data: JSON.stringify({
+            event: "answer_published",
+            questionId,
+            answerId,
+            confidence,
+            platform: "DevVault",
+          }),
+          m: `DevVault AI: answered question ${questionId} (${confidence}% confidence)`,
+        };
+
+        const outboundTx = await new TopicMessageSubmitTransaction()
+          .setTopicId(AI_AGENT_CONFIG.outboundTopicId)
+          .setMessage(JSON.stringify(holMessage))
+          .setTransactionMemo("hcs-10:op:6:2")
+          .execute(client);
+
+        await outboundTx.getReceipt(client);
+        console.log(`   📡 HOL activity logged to outbound topic`);
+      } catch (holErr) {
+        // Non-critical — don't fail the whole answer over this
+        console.warn("   ⚠️  Could not log to HOL outbound topic:", holErr.message);
+      }
+    }
 
     return {
       answerId,

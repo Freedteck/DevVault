@@ -1,13 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Share2 } from "lucide-react";
+import { Calendar, ExternalLink, Share2 } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
 import MarkdownRenderer from "../ui/MarkdownRenderer";
 import styles from "./UpdateCardNew.module.css";
 
 const UpdateCardNew = ({ update }) => {
   const navigate = useNavigate();
-  const { updateId, title, content, tags, author, createdAt, timestamp } =
+  const { updateId, title, content, tags, author, createdAt, timestamp, url } =
     update;
 
   // Use timestamp if available, otherwise createdAt

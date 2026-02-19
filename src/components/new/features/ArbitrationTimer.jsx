@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Clock, Shield, AlertCircle } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
 import styles from "./ArbitrationTimer.module.css";
@@ -18,10 +18,15 @@ const ArbitrationTimer = ({
   onArbitrationTrigger,
 }) => {
   const [timeRemaining, setTimeRemaining] = useState(null);
+  const hasTriggeredRef = useRef(false);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     // Don't show timer if no bounty or if answer already accepted (meaning bounty released)
     if (!hasBounty || hasAcceptedAnswer) return;
+
+    // Reset trigger flag when dependencies change (e.g. new question)
+    hasTriggeredRef.current = false;
 
     const calculateTime = () => {
       const now = Date.now();
@@ -30,20 +35,25 @@ const ArbitrationTimer = ({
       const remaining = arbitrationTime - now;
 
       if (remaining <= 0) {
-        onArbitrationTrigger?.();
+        // Only trigger once — stop the interval and call the handler
+        if (!hasTriggeredRef.current) {
+          hasTriggeredRef.current = true;
+          clearInterval(timerRef.current);
+          onArbitrationTrigger?.();
+        }
         return 0;
       }
 
       return remaining;
     };
 
-    const timer = setInterval(() => {
+    timerRef.current = setInterval(() => {
       setTimeRemaining(calculateTime());
     }, 1000);
 
     setTimeRemaining(calculateTime());
 
-    return () => clearInterval(timer);
+    return () => clearInterval(timerRef.current);
   }, [
     questionCreatedAt,
     hasBounty,

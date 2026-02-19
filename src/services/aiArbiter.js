@@ -3,8 +3,9 @@ import {
   Client,
   PrivateKey,
   ContractExecuteTransaction,
+  ContractCallQuery,
   ContractFunctionParameters,
-  AccountId,
+  ContractId,
 } from "@hashgraph/sdk";
 import { ChatGroq } from "@langchain/groq";
 
@@ -156,8 +157,12 @@ export async function selectBestAnswer(answers, questionContent) {
   // Sort by score and return best
   scored.sort((a, b) => b.arbitrationScore - a.arbitrationScore);
 
+  const authorLabel =
+    scored[0].author?.username ||
+    scored[0].author?.toString() ||
+    scored[0].author;
   console.log(
-    `   ✅ Best answer: ${scored[0].author} (score: ${scored[0].arbitrationScore})`,
+    `   ✅ Best answer: ${authorLabel} (score: ${scored[0].arbitrationScore})`,
   );
 
   return scored[0];
@@ -190,14 +195,56 @@ export async function executeArbitration(
       PrivateKey.fromStringECDSA(privateKey),
     );
 
-    // Convert recipient to EVM address for contract call
-    const recipientAddress =
-      AccountId.fromString(recipientAccountId).toSolidityAddress();
+    // Get the actual EVM address from mirror node (same as escrowService.js)
+    const mirrorNodeUrl = `https://testnet.mirrornode.hedera.com/api/v1/accounts/${recipientAccountId}`;
+    const accountResponse = await fetch(mirrorNodeUrl);
+    const accountData = await accountResponse.json();
+    const recipientAddress = accountData.evm_address;
+    console.log(`   Recipient EVM address: ${recipientAddress}`);
+
+    // Pre-flight: query the escrow to confirm it exists and is eligible before executing
+    try {
+      const checkQuery = new ContractCallQuery()
+        .setContractId(ContractId.fromString(contractId))
+        .setGas(100000)
+        .setFunction(
+          "isEligibleForArbitration",
+          new ContractFunctionParameters().addUint256(questionId),
+        );
+      const checkResult = await checkQuery.execute(client);
+      const isEligible = checkResult.getBool(0);
+      if (!isEligible) {
+        // Also fetch escrow details to explain why
+        const escrowQuery = new ContractCallQuery()
+          .setContractId(ContractId.fromString(contractId))
+          .setGas(100000)
+          .setFunction(
+            "getEscrow",
+            new ContractFunctionParameters().addUint256(questionId),
+          );
+        const escrowResult = await escrowQuery.execute(client);
+        const amount = escrowResult.getUint256(1);
+        const released = escrowResult.getBool(3);
+        const createdAt = escrowResult.getUint256(4);
+        throw new Error(
+          `Escrow not eligible for arbitration. amount=${amount}, released=${released}, createdAt=${createdAt}, questionId=${questionId}`,
+        );
+      }
+    } catch (preflightError) {
+      // Re-throw informative errors; ignore query errors caused by non-existent escrow
+      if (preflightError.message?.startsWith("Escrow not eligible")) {
+        throw preflightError;
+      }
+      console.warn(
+        "Pre-flight check failed (proceeding anyway):",
+        preflightError.message,
+      );
+    }
 
     // Call arbiterRelease on the contract
     const arbiterReleaseTx = new ContractExecuteTransaction()
       .setContractId(contractId)
-      .setGas(1000000)
+      .setGas(300000)
       .setFunction(
         "arbiterRelease",
         new ContractFunctionParameters()
@@ -242,7 +289,11 @@ export async function processArbitration(question, answers, acceptances) {
       return null;
     }
 
-    console.log(`🔨 AI Arbiter selected answer from ${bestAnswer.author}`);
+    const authorLabel =
+      bestAnswer.author?.username ||
+      bestAnswer.author?.toString() ||
+      bestAnswer.author;
+    console.log(`🔨 AI Arbiter selected answer from ${authorLabel}`);
     console.log(`   Score: ${bestAnswer.arbitrationScore}`);
 
     // Execute arbitration on smart contract
@@ -251,9 +302,17 @@ export async function processArbitration(question, answers, acceptances) {
       throw new Error("Escrow contract ID not configured");
     }
 
-    // Convert questionId to numeric for smart contract
+    // Convert questionId to the same numeric key used during escrow deposit.
+    // escrowService.js deposits with: parseInt(questionId.split("-")[1])
+    // questionId format: "q-<timestamp>-<accountNum>" → segment [1] is the timestamp.
+    const rawId = question.questionId.toString();
+    const segments = rawId.split("-");
+    // Use segment [1] if it exists and is numeric, otherwise fall back to the whole string
     const numericQuestionId =
-      parseInt(question.questionId.split("-")[1]) || Date.now();
+      segments.length >= 2 && /^\d+$/.test(segments[1])
+        ? segments[1]
+        : rawId.replace(/\D/g, "");
+    console.log(`   Numeric escrow key: ${numericQuestionId} (from ${rawId})`);
 
     const transactionId = await executeArbitration(
       escrowContractId,

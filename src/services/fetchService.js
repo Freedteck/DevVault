@@ -6,6 +6,52 @@ import { TOPICS } from "./constants.js";
  */
 
 /**
+ * Build a map of accountId → rank label from all answer + acceptance messages.
+ * Mirrors the same thresholds used in useLeaderboard and useUserProfile.
+ * @param {Array} answerMessages - Raw HCS messages from TOPICS.ANSWERS
+ * @param {Array} acceptanceMessages - Raw HCS messages from TOPICS.ACCEPTANCES
+ * @returns {Object} { [accountId]: "Helper"|"Contributor"|"Expert"|"Legend" }
+ */
+function computeAuthorRankMap(answerMessages, acceptanceMessages) {
+  // Map answerId → author account
+  const answerAuthors = {};
+  answerMessages.forEach((msg) => {
+    const answer = JSON.parse(msg.content);
+    if (answer.answerId && answer.author) {
+      answerAuthors[answer.answerId] = answer.author;
+    }
+  });
+
+  // Count unique accepted answers per author
+  const authorScores = {};
+  const seen = new Set();
+  acceptanceMessages.forEach((msg) => {
+    const acceptance = JSON.parse(msg.content);
+    const author = answerAuthors[acceptance.answerId];
+    if (!author) return;
+    const key = `${author}:${acceptance.answerId}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    authorScores[author] = (authorScores[author] || 0) + 100;
+  });
+
+  // Convert scores → rank labels
+  const rankMap = {};
+  Object.entries(authorScores).forEach(([author, score]) => {
+    if (score >= 1000) rankMap[author] = "Legend";
+    else if (score >= 500) rankMap[author] = "Expert";
+    else if (score >= 200) rankMap[author] = "Contributor";
+    else rankMap[author] = "Helper";
+  });
+  return rankMap;
+}
+
+/** Look up an author's rank, defaulting to "Helper". */
+function getAuthorRank(accountId, rankMap) {
+  return rankMap[accountId] || "Helper";
+}
+
+/**
  * Fetch content from Pinata using CID
  * @param {string} cid - IPFS CID
  * @param {string} gateway - Pinata gateway URL
@@ -62,6 +108,9 @@ export async function fetchQuestions(limit = 10, nextLink = null, gateway) {
     acceptedQuestions.add(acceptance.questionId);
   });
 
+  // Build author rank map from all answers + acceptances (zero extra HCS calls)
+  const authorRankMap = computeAuthorRankMap(answerMessages, acceptanceMessages);
+
   // 2. Parse and fetch full content from Pinata
   const questions = await Promise.all(
     messages.map(async (msg) => {
@@ -82,7 +131,7 @@ export async function fetchQuestions(limit = 10, nextLink = null, gateway) {
         author: {
           username: metadata.author,
           avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${metadata.author}`,
-          rank: "Contributor", // Default rank
+          rank: getAuthorRank(metadata.author, authorRankMap),
         },
         stats: {
           answers: answersByQuestion[metadata.questionId]?.length || 0,
@@ -110,15 +159,25 @@ export async function fetchQuestions(limit = 10, nextLink = null, gateway) {
 export async function fetchQuestionBySequenceNumber(sequenceNumber, gateway) {
   const { getMessageBySequenceNumber } = await import("./getMessages.js");
 
-  // 1. Get message from HCS by sequence number
-  const msg = await getMessageBySequenceNumber(
-    TOPICS.QUESTIONS,
-    sequenceNumber,
-  );
+  // 1. Fetch the question message + all answer/acceptance metadata in parallel
+  const [msg, { messages: allAnswerMsgs }, { messages: allAcceptanceMsgs }] =
+    await Promise.all([
+      getMessageBySequenceNumber(TOPICS.QUESTIONS, sequenceNumber),
+      getMessagesWithPagination(TOPICS.ANSWERS, 1000, null),
+      getMessagesWithPagination(TOPICS.ACCEPTANCES, 1000, null),
+    ]);
   const metadata = JSON.parse(msg.content);
 
   // 2. Fetch full content from Pinata
   const fullContent = await fetchFromPinata(metadata.cid, gateway);
+
+  // 3. Build rank map for the question author
+  const authorRankMap = computeAuthorRankMap(allAnswerMsgs, allAcceptanceMsgs);
+
+  // 4. Derive solved status
+  const acceptedQIds = new Set(
+    allAcceptanceMsgs.map((m) => JSON.parse(m.content).questionId),
+  );
 
   return {
     sequenceNumber: msg.sequenceNumber,
@@ -131,14 +190,14 @@ export async function fetchQuestionBySequenceNumber(sequenceNumber, gateway) {
     author: {
       username: metadata.author,
       avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${metadata.author}`,
-      rank: "Contributor",
+      rank: getAuthorRank(metadata.author, authorRankMap),
     },
     stats: {
       views: 0,
       answers: 0,
       likes: 0,
     },
-    isSolved: false,
+    isSolved: acceptedQIds.has(metadata.questionId),
     timestamp: metadata.timestamp,
     createdAt: new Date(metadata.timestamp).toISOString(),
   };
@@ -154,6 +213,7 @@ export async function fetchAnswersForQuestion(questionId, gateway) {
   // 1. Get all answers from HCS (we'll filter client-side for now)
   let allAnswers = [];
   let nextLink = null;
+  const allAnswerMessages = []; // all raw HCS messages for rank-map building
 
   do {
     const { messages, nextLink: newNextLink } = await getMessagesWithPagination(
@@ -162,6 +222,7 @@ export async function fetchAnswersForQuestion(questionId, gateway) {
       nextLink,
     );
 
+    allAnswerMessages.push(...messages);
     const parsed = messages.map((msg) => JSON.parse(msg.content));
     allAnswers.push(...parsed.filter((a) => a.questionId === questionId));
 
@@ -182,7 +243,10 @@ export async function fetchAnswersForQuestion(questionId, gateway) {
     }
   });
 
-  // 2. Fetch full content from Pinata for each answer
+  // Build author rank map from ALL answers + ALL acceptances
+  const authorRankMap = computeAuthorRankMap(allAnswerMessages, acceptanceMessages);
+
+  // 3. Fetch full content from Pinata for each answer
   const answers = await Promise.all(
     allAnswers.map(async (metadata) => {
       const fullContent = await fetchFromPinata(metadata.cid, gateway);
@@ -194,7 +258,7 @@ export async function fetchAnswersForQuestion(questionId, gateway) {
         author: {
           username: metadata.author,
           avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${metadata.author}`,
-          rank: "Contributor",
+          rank: getAuthorRank(metadata.author, authorRankMap),
         },
         isAI: metadata.isAI || false,
         confidence: metadata.confidence,
@@ -256,6 +320,7 @@ export async function fetchUpdates(limit = 10, nextLink = null, gateway) {
         title: metadata.title,
         content: fullContent.content,
         tags: metadata.tags,
+        url: metadata.url || null,
         author: metadata.author,
         timestamp: metadata.timestamp,
         createdAt: new Date(metadata.timestamp).toISOString(),

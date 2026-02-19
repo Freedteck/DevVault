@@ -17,6 +17,8 @@
     "@dicebear/core": "^9.3.1",
     "@hashgraph/hedera-wallet-connect": "^2.0.6",
     "@hashgraph/sdk": "^2.14.2",
+    "@hashgraphonline/hashinal-wc": "^2.0.61",
+    "@hashgraphonline/standards-sdk": "^0.1.159",
     "@hiero-ledger/sdk": "2.79.0",
     "@langchain/core": "^1.1.18",
     "@langchain/groq": "^1.0.4",

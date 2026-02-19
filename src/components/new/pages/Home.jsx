@@ -1,4 +1,5 @@
-import { ArrowRight, Code, Zap, Trophy } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowRight, Code, Trophy } from "lucide-react";
 import NeonButton from "../ui/NeonButton";
 import GlassCard from "../ui/GlassCard";
 import QuestionCardNew from "../features/QuestionCardNew";
@@ -7,8 +8,41 @@ import styles from "./Home.module.css";
 import { Link } from "react-router-dom";
 
 const HomeNew = () => {
-  // Fetch recent questions (limit to 3 for trending section)
   const { questions, isLoading } = useQuestions(3);
+  const [stats, setStats] = useState({ questions: null, answers: null, acceptances: null });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const base = "https://testnet.mirrornode.hedera.com/api/v1/topics";
+        const q = import.meta.env.VITE_NEW_QUESTION_TOPIC_ID;
+        const a = import.meta.env.VITE_NEW_ANSWER_TOPIC_ID;
+        const acc = import.meta.env.VITE_NEW_ACCEPTANCE_TOPIC_ID;
+
+        // Fetch latest message from each topic — sequence_number equals total count
+        const [qRes, aRes, accRes] = await Promise.all([
+          fetch(`${base}/${q}/messages?limit=1&order=desc`),
+          fetch(`${base}/${a}/messages?limit=1&order=desc`),
+          fetch(`${base}/${acc}/messages?limit=1&order=desc`),
+        ]);
+
+        const [qData, aData, accData] = await Promise.all([
+          qRes.json(),
+          aRes.json(),
+          accRes.json(),
+        ]);
+
+        setStats({
+          questions: qData.messages?.[0]?.sequence_number ?? 0,
+          answers: aData.messages?.[0]?.sequence_number ?? 0,
+          acceptances: accData.messages?.[0]?.sequence_number ?? 0,
+        });
+      } catch {
+        // silently fail — stats are non-critical
+      }
+    };
+    fetchStats();
+  }, []);
 
   return (
     <div className={styles.home}>
@@ -29,28 +63,38 @@ const HomeNew = () => {
           </p>
 
           <div className={styles.heroActions}>
-            <NeonButton size="lg" icon={<Code size={20} />}>
-              Start Solving
-            </NeonButton>
-            <NeonButton variant="ghost" size="lg" icon={<Zap size={20} />}>
-              Get Live Help
-            </NeonButton>
+            <Link to="/questions" style={{ textDecoration: "none" }}>
+              <NeonButton size="lg" icon={<Code size={20} />}>
+                Start Solving
+              </NeonButton>
+            </Link>
+            <Link to="/updates" style={{ textDecoration: "none" }}>
+              <NeonButton variant="ghost" size="lg" icon={<ArrowRight size={20} />}>
+                Developer News
+              </NeonButton>
+            </Link>
           </div>
 
           <div className={styles.statsBar}>
             <div className={styles.statItem}>
-              <span className={styles.statValue}>$125k+</span>
-              <span className={styles.statLabel}>Bounties Paid</span>
+              <span className={styles.statValue}>
+                {stats.questions !== null ? stats.questions : "—"}
+              </span>
+              <span className={styles.statLabel}>Questions Asked</span>
             </div>
             <div className={styles.divider} />
             <div className={styles.statItem}>
-              <span className={styles.statValue}>1,250</span>
-              <span className={styles.statLabel}>Active Solvers</span>
+              <span className={styles.statValue}>
+                {stats.answers !== null ? stats.answers : "—"}
+              </span>
+              <span className={styles.statLabel}>Answers Given</span>
             </div>
             <div className={styles.divider} />
             <div className={styles.statItem}>
-              <span className={styles.statValue}>4.8s</span>
-              <span className={styles.statLabel}>Avg. Finality</span>
+              <span className={styles.statValue}>
+                {stats.acceptances !== null ? stats.acceptances : "—"}
+              </span>
+              <span className={styles.statLabel}>Solutions Accepted</span>
             </div>
           </div>
         </div>
@@ -128,12 +172,12 @@ const HomeNew = () => {
               className={styles.featureIcon}
               style={{ color: "var(--apex-cyan-400)" }}
             >
-              <Zap size={32} />
+              <ArrowRight size={32} />
             </div>
-            <h3>Live Help</h3>
+            <h3>AI Instant Answers</h3>
             <p>
-              Real-time pair programming sessions streaming flow payments via
-              x402.
+              Questions get an instant AI response. Complex problems are routed
+              to human experts with bounties.
             </p>
           </GlassCard>
 

@@ -48,18 +48,16 @@ const WalletContextNew = ({ children }) => {
   const disconnect = async () => {
     try {
       await disconnectWalletFcn();
+      console.log("- Wallet disconnected");
+    } catch (error) {
+      console.warn("Disconnect error (ignored):", error);
+    } finally {
       setWalletData(null);
       setAccountId(null);
       setUserProfile(null);
       setBalance(null);
-
-      // Clear stored connection state
       localStorage.removeItem("devvault_wallet_connected");
       localStorage.removeItem("devvault_account_id");
-
-      console.log("- Wallet disconnected");
-    } catch (error) {
-      console.error("Failed to disconnect wallet:", error);
     }
   };
 

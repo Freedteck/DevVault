@@ -71,7 +71,11 @@ async function walletConnectFcn() {
 
 async function disconnectWallet() {
   if (dAppConnector) {
-    await dAppConnector.disconnectAll();
+    try {
+      await dAppConnector.disconnectAll();
+    } catch (e) {
+      console.warn("- disconnectAll error (ignored):", e);
+    }
     dAppConnector = null;
     console.log("- Wallet disconnected");
   }

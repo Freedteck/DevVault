@@ -5,6 +5,7 @@ import {
   Calendar,
   Share2,
   Coins,
+  ExternalLink,
   Loader2,
   Send,
 } from "lucide-react";
@@ -246,6 +247,25 @@ const UpdateDetailsNew = () => {
               style={{ fontSize: "1.1rem" }}
             />
 
+            {update.url && (
+              <a
+                href={update.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  color: "var(--apex-primary-400)",
+                  textDecoration: "none",
+                  fontSize: "0.9rem",
+                  marginBottom: "1rem",
+                }}
+              >
+                <ExternalLink size={14} /> Read original source
+              </a>
+            )}
+
             <div
               className={styles.bountyBar}
               style={{
@@ -316,24 +336,6 @@ const UpdateDetailsNew = () => {
 
         <aside className={styles.sidebar}>
           <GlassCard className={styles.sidebarCard}>
-            <h4>Related Updates</h4>
-            <ul className={styles.linkList}>
-              <li>
-                <a href="#">Hedera Council announces HIP-402</a>
-              </li>
-              <li>
-                <a href="#">New SDK features for Testnet</a>
-              </li>
-              <li>
-                <a href="#">HashPack Wallet Updates</a>
-              </li>
-            </ul>
-          </GlassCard>
-
-          <GlassCard
-            className={styles.sidebarCard}
-            style={{ marginTop: "1rem" }}
-          >
             <h4>About the Author</h4>
             <div className={styles.author} style={{ marginTop: "1rem" }}>
               <img

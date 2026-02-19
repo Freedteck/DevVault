@@ -141,7 +141,7 @@ export async function submitAnswer(answerData, dAppConnector, accountId) {
  * @returns {Promise<object>} - { updateId, transactionId, cid }
  */
 export async function submitUpdate(updateData, dAppConnector, accountId) {
-  const { title, content, tags } = updateData;
+  const { title, content, tags, url } = updateData;
 
   // 1. Upload full content to Pinata
   const contentForPinata = {
@@ -159,6 +159,7 @@ export async function submitUpdate(updateData, dAppConnector, accountId) {
     title,
     author: accountId,
     tags: tags || [],
+    url: url || null,
     cid,
     timestamp: Date.now(),
   };
