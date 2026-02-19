@@ -57,6 +57,14 @@ const ApexNavbar = () => {
           >
             Leaderboard
           </NavLink>
+          <NavLink
+            to="/agent"
+            className={({ isActive }) =>
+              `${styles.link} ${isActive ? styles.active : ""}`
+            }
+          >
+            AI Agent
+          </NavLink>
         </div>
 
         {/* Actions */}

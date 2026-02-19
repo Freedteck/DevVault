@@ -15,6 +15,7 @@ import UpdatesNew from "./components/new/pages/Updates";
 import UpdateDetailsNew from "./components/new/pages/UpdateDetails";
 import LeaderboardNew from "./components/new/pages/Leaderboard";
 import ProfileNew from "./components/new/pages/Profile";
+import AgentPage from "./components/new/pages/AgentPage";
 
 const router = createBrowserRouter([
   {
@@ -48,6 +49,10 @@ const router = createBrowserRouter([
       {
         path: "profile",
         element: <ProfileNew />,
+      },
+      {
+        path: "agent",
+        element: <AgentPage />,
       },
     ],
   },
