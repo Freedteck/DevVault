@@ -109,7 +109,10 @@ export async function fetchQuestions(limit = 10, nextLink = null, gateway) {
   });
 
   // Build author rank map from all answers + acceptances (zero extra HCS calls)
-  const authorRankMap = computeAuthorRankMap(answerMessages, acceptanceMessages);
+  const authorRankMap = computeAuthorRankMap(
+    answerMessages,
+    acceptanceMessages,
+  );
 
   // 2. Parse and fetch full content from Pinata
   const questions = await Promise.all(
@@ -244,7 +247,10 @@ export async function fetchAnswersForQuestion(questionId, gateway) {
   });
 
   // Build author rank map from ALL answers + ALL acceptances
-  const authorRankMap = computeAuthorRankMap(allAnswerMessages, acceptanceMessages);
+  const authorRankMap = computeAuthorRankMap(
+    allAnswerMessages,
+    acceptanceMessages,
+  );
 
   // 3. Fetch full content from Pinata for each answer
   const answers = await Promise.all(

@@ -382,7 +382,10 @@ const QuestionDetailsNew = () => {
             <ul className={styles.linkList}>
               {question.tags.map((tag) => (
                 <li key={tag}>
-                  <Link to={`/questions`} style={{ color: "var(--apex-primary-400)" }}>
+                  <Link
+                    to={`/questions`}
+                    style={{ color: "var(--apex-primary-400)" }}
+                  >
                     #{tag}
                   </Link>
                 </li>

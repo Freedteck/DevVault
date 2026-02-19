@@ -43,7 +43,9 @@ const ACCOUNT_ID = process.env.VITE_MY_ACCOUNT_ID;
 const PRIVATE_KEY = process.env.VITE_MY_PRIVATE_KEY;
 
 if (!ACCOUNT_ID || !PRIVATE_KEY) {
-  console.error("ERROR: VITE_MY_ACCOUNT_ID or VITE_MY_PRIVATE_KEY missing in .env.local");
+  console.error(
+    "ERROR: VITE_MY_ACCOUNT_ID or VITE_MY_PRIVATE_KEY missing in .env.local",
+  );
   process.exit(1);
 }
 
@@ -52,13 +54,16 @@ if (!ACCOUNT_ID || !PRIVATE_KEY) {
 // ---------------------------------------------------------------------------
 const sdkPath = path.resolve(
   __dirname,
-  "../node_modules/@hashgraphonline/standards-sdk/dist/cjs/standards-sdk.cjs"
+  "../node_modules/@hashgraphonline/standards-sdk/dist/cjs/standards-sdk.cjs",
 );
 let sdk;
 try {
   sdk = require(sdkPath);
 } catch (e) {
-  console.error("ERROR: Could not load @hashgraphonline/standards-sdk CJS build:", e.message);
+  console.error(
+    "ERROR: Could not load @hashgraphonline/standards-sdk CJS build:",
+    e.message,
+  );
   process.exit(1);
 }
 
@@ -86,7 +91,7 @@ async function main() {
     .setName("DevVault AI Assistant")
     .setDescription(
       "AI-powered Q&A assistant for the DevVault developer community on Hedera. " +
-      "Answers developer questions submitted via HCS topics using LLaMA 3.3-70B."
+        "Answers developer questions submitted via HCS topics using LLaMA 3.3-70B.",
     )
     .setAgentType("autonomous")
     .setModel("llama-3.3-70b-versatile")
@@ -107,12 +112,18 @@ async function main() {
     });
 
   console.log("Creating and registering agent with HOL registry...\n");
-  console.log("(This may take 30–60 seconds — creating account, topics, and profile)\n");
+  console.log(
+    "(This may take 30–60 seconds — creating account, topics, and profile)\n",
+  );
 
   const result = await client.createAndRegisterAgent(agentBuilder, {
     progressCallback: (progress) => {
-      const bar = "█".repeat(Math.round(progress.progressPercent / 5)).padEnd(20, "░");
-      process.stdout.write(`\r[${bar}] ${progress.progressPercent}%  ${progress.stage}            `);
+      const bar = "█"
+        .repeat(Math.round(progress.progressPercent / 5))
+        .padEnd(20, "░");
+      process.stdout.write(
+        `\r[${bar}] ${progress.progressPercent}%  ${progress.stage}            `,
+      );
     },
   });
 
@@ -131,7 +142,9 @@ async function main() {
   console.log("Outbound Topic ID   :", m.outboundTopicId);
   console.log("Profile Topic ID    :", m.profileTopicId);
   console.log("────────────────────────────────────────\n");
-  console.log("⚠️  IMPORTANT: Store the private key securely — it is shown only once!\n");
+  console.log(
+    "⚠️  IMPORTANT: Store the private key securely — it is shown only once!\n",
+  );
   console.log("Agent Private Key   :", m.privateKey);
   console.log("\n────────────────────────────────────────");
   console.log("Add these lines to .env.local:\n");

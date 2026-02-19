@@ -27,19 +27,21 @@ for (const line of envRaw.split("\n")) {
   if (!process.env[key]) process.env[key] = val;
 }
 
-const AGENT_ACCOUNT_ID  = process.env.VITE_AGENT_ACCOUNT_ID;
+const AGENT_ACCOUNT_ID = process.env.VITE_AGENT_ACCOUNT_ID;
 const AGENT_PRIVATE_KEY = process.env.VITE_AGENT_PRIVATE_KEY;
-const INBOUND_TOPIC_ID  = process.env.VITE_AGENT_INBOUND_TOPIC_ID;
+const INBOUND_TOPIC_ID = process.env.VITE_AGENT_INBOUND_TOPIC_ID;
 const OUTBOUND_TOPIC_ID = process.env.VITE_AGENT_OUTBOUND_TOPIC_ID;
 
 if (!AGENT_ACCOUNT_ID || !AGENT_PRIVATE_KEY || !INBOUND_TOPIC_ID) {
-  console.error("ERROR: VITE_AGENT_* vars missing in .env.local. Run register-hol-agent.cjs first.");
+  console.error(
+    "ERROR: VITE_AGENT_* vars missing in .env.local. Run register-hol-agent.cjs first.",
+  );
   process.exit(1);
 }
 
 const sdkPath = path.resolve(
   __dirname,
-  "../node_modules/@hashgraphonline/standards-sdk/dist/cjs/standards-sdk.cjs"
+  "../node_modules/@hashgraphonline/standards-sdk/dist/cjs/standards-sdk.cjs",
 );
 const { HCS10Client } = require(sdkPath);
 
@@ -71,7 +73,7 @@ async function main() {
       },
       maxAttempts: 60,
       delayMs: 3000,
-    }
+    },
   );
 
   process.stdout.write("\n\n");

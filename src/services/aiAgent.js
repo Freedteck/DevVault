@@ -1,4 +1,8 @@
-import { Client, PrivateKey, TopicMessageSubmitTransaction } from "@hashgraph/sdk";
+import {
+  Client,
+  PrivateKey,
+  TopicMessageSubmitTransaction,
+} from "@hashgraph/sdk";
 import { HederaLangchainToolkit, AgentMode } from "hedera-agent-kit";
 import { ChatGroq } from "@langchain/groq";
 import { uploadJsonToPinata } from "./pinata.js";
@@ -234,7 +238,10 @@ export async function processQuestion(question, questionId) {
         console.log(`   📡 HOL activity logged to outbound topic`);
       } catch (holErr) {
         // Non-critical — don't fail the whole answer over this
-        console.warn("   ⚠️  Could not log to HOL outbound topic:", holErr.message);
+        console.warn(
+          "   ⚠️  Could not log to HOL outbound topic:",
+          holErr.message,
+        );
       }
     }
 

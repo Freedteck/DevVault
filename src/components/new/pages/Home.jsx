@@ -9,7 +9,11 @@ import { Link } from "react-router-dom";
 
 const HomeNew = () => {
   const { questions, isLoading } = useQuestions(3);
-  const [stats, setStats] = useState({ questions: null, answers: null, acceptances: null });
+  const [stats, setStats] = useState({
+    questions: null,
+    answers: null,
+    acceptances: null,
+  });
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -69,7 +73,11 @@ const HomeNew = () => {
               </NeonButton>
             </Link>
             <Link to="/updates" style={{ textDecoration: "none" }}>
-              <NeonButton variant="ghost" size="lg" icon={<ArrowRight size={20} />}>
+              <NeonButton
+                variant="ghost"
+                size="lg"
+                icon={<ArrowRight size={20} />}
+              >
                 Developer News
               </NeonButton>
             </Link>
