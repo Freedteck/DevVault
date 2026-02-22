@@ -35,10 +35,10 @@ function loadEnv() {
 const env = loadEnv();
 
 async function testMintBadge() {
-  const myAccountId = AccountId.fromString(env.VITE_MY_ACCOUNT_ID);
-  const myPrivateKey = PrivateKey.fromStringECDSA(env.VITE_MY_PRIVATE_KEY);
+  const myAccountId = AccountId.fromString(env.NEXT_PUBLIC_MY_ACCOUNT_ID);
+  const myPrivateKey = PrivateKey.fromStringECDSA(env.NEXT_PUBLIC_MY_PRIVATE_KEY);
   const userAccountId = AccountId.fromString("0.0.4612578");
-  const nftCollectionId = env.VITE_NFT_BADGE_COLLECTION_ID;
+  const nftCollectionId = env.NEXT_PUBLIC_NFT_BADGE_COLLECTION_ID;
 
   const client = Client.forTestnet().setOperator(myAccountId, myPrivateKey);
 

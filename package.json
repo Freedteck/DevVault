@@ -4,13 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "test": "vitest",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "compile:escrow": "node compile-escrow.cjs",
-    "deploy:escrow": "node compile-escrow.cjs && node deploy-escrow.cjs"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "compile:escrow": "node scripts/compile-escrow.cjs",
+    "deploy:escrow": "node scripts/compile-escrow.cjs && node scripts/deploy-escrow.cjs"
   },
   "dependencies": {
     "@dicebear/collection": "^9.3.1",
@@ -28,7 +27,6 @@
     "@reown/walletkit": "^1.2.8",
     "@walletconnect/modal": "^2.7.0",
     "@walletconnect/utils": "^2.17.2",
-    "binary-loader": "^0.0.1",
     "buffer": "^6.0.3",
     "dotenv": "^17.2.3",
     "ethers": "^6.13.5",
@@ -36,30 +34,22 @@
     "hedera-agent-kit": "^3.7.1",
     "langchain": "^1.2.16",
     "lucide-react": "^0.460.0",
+    "next": "^16.1.6",
     "pinata": "^2.5.1",
-    "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.6.0",
-    "react-router-dom": "^6.26.1",
     "solc": "^0.8.30"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
-    "@testing-library/jest-dom": "^6.5.0",
-    "@testing-library/react": "^16.0.0",
-    "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^20.11.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
     "eslint": "^9.9.0",
+    "eslint-config-next": "^16.1.6",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-react": "^7.35.0",
-    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
-    "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
-    "jsdom": "^25.0.0",
-    "vite": "^5.4.1",
-    "vitest": "^2.0.5"
+    "typescript": "^5.9.3"
   }
 }

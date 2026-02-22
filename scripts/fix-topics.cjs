@@ -18,13 +18,13 @@ envContent.split("\n").forEach((line) => {
 });
 
 async function fixTopics() {
-  const myAccountId = process.env.VITE_MY_ACCOUNT_ID;
-  let myPrivateKey = process.env.VITE_MY_PRIVATE_KEY;
+  const myAccountId = process.env.NEXT_PUBLIC_MY_ACCOUNT_ID;
+  let myPrivateKey = process.env.NEXT_PUBLIC_MY_PRIVATE_KEY;
 
   if (!myAccountId || !myPrivateKey) {
-    throw new Error(
-      "Environment variables VITE_MY_ACCOUNT_ID and VITE_MY_PRIVATE_KEY must be present"
-    );
+      throw new Error(
+        "Environment variables NEXT_PUBLIC_MY_ACCOUNT_ID and NEXT_PUBLIC_MY_PRIVATE_KEY must be present"
+      );
   }
 
   // Remove 0x prefix if present
@@ -66,14 +66,14 @@ async function fixTopics() {
     console.log("=============================\n");
 
     console.log("📝 UPDATE YOUR .env.local FILE WITH THESE NEW VALUES:\n");
-    console.log(`VITE_QUESTIONS_TOPIC_ID=${newQuestionsTopicId}`);
-    console.log(`VITE_ANSWERS_TOPIC_ID=${newAnswersTopicId}`);
+    console.log(`NEXT_PUBLIC_QUESTIONS_TOPIC_ID=${newQuestionsTopicId}`);
+    console.log(`NEXT_PUBLIC_ANSWERS_TOPIC_ID=${newAnswersTopicId}`);
     console.log("\n❌ OLD TOPIC IDs (with submit key restrictions):");
     console.log(
-      `OLD VITE_QUESTIONS_TOPIC_ID=${process.env.VITE_QUESTIONS_TOPIC_ID}`
+      `OLD NEXT_PUBLIC_QUESTIONS_TOPIC_ID=${process.env.NEXT_PUBLIC_QUESTIONS_TOPIC_ID}`
     );
     console.log(
-      `OLD VITE_ANSWERS_TOPIC_ID=${process.env.VITE_ANSWERS_TOPIC_ID}`
+      `OLD NEXT_PUBLIC_ANSWERS_TOPIC_ID=${process.env.NEXT_PUBLIC_ANSWERS_TOPIC_ID}`
     );
     console.log(
       "\n⚠️  IMPORTANT: After updating .env.local, restart your dev server!"

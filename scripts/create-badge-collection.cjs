@@ -31,8 +31,8 @@ function loadEnv() {
 const env = loadEnv();
 
 async function createBadgeCollection() {
-  const accountId = AccountId.fromString(env.VITE_MY_ACCOUNT_ID);
-  const privateKey = PrivateKey.fromStringECDSA(env.VITE_MY_PRIVATE_KEY);
+  const accountId = AccountId.fromString(env.NEXT_PUBLIC_MY_ACCOUNT_ID);
+  const privateKey = PrivateKey.fromStringECDSA(env.NEXT_PUBLIC_MY_PRIVATE_KEY);
 
   const client = Client.forTestnet().setOperator(accountId, privateKey);
 
@@ -63,7 +63,7 @@ async function createBadgeCollection() {
     console.log(`Token ID: ${tokenId}`);
     console.log(`Treasury: ${accountId}`);
     console.log("\nUpdate your .env.local with:");
-    console.log(`VITE_NFT_BADGE_COLLECTION_ID=${tokenId}`);
+    console.log(`NEXT_PUBLIC_NFT_BADGE_COLLECTION_ID=${tokenId}`);
     console.log("\n=======================================\n");
 
     client.close();

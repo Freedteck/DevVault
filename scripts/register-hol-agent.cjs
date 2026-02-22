@@ -39,12 +39,12 @@ for (const line of envRaw.split("\n")) {
   if (!process.env[key]) process.env[key] = val;
 }
 
-const ACCOUNT_ID = process.env.VITE_MY_ACCOUNT_ID;
-const PRIVATE_KEY = process.env.VITE_MY_PRIVATE_KEY;
+const ACCOUNT_ID = process.env.NEXT_PUBLIC_MY_ACCOUNT_ID;
+const PRIVATE_KEY = process.env.NEXT_PUBLIC_MY_PRIVATE_KEY;
 
 if (!ACCOUNT_ID || !PRIVATE_KEY) {
   console.error(
-    "ERROR: VITE_MY_ACCOUNT_ID or VITE_MY_PRIVATE_KEY missing in .env.local",
+    "ERROR: NEXT_PUBLIC_MY_ACCOUNT_ID or NEXT_PUBLIC_MY_PRIVATE_KEY missing in .env.local",
   );
   process.exit(1);
 }
@@ -105,8 +105,8 @@ async function main() {
       version: "1.0.0",
       properties: {
         platform: "DevVault",
-        questionTopicId: process.env.VITE_NEW_QUESTION_TOPIC_ID || "",
-        acceptanceTopicId: process.env.VITE_NEW_ACCEPTANCE_TOPIC_ID || "",
+        questionTopicId: process.env.NEXT_PUBLIC_NEW_QUESTION_TOPIC_ID || "",
+        acceptanceTopicId: process.env.NEXT_PUBLIC_NEW_ACCEPTANCE_TOPIC_ID || "",
         repository: "https://github.com/freedtek/DevVault",
       },
     });
@@ -148,11 +148,11 @@ async function main() {
   console.log("Agent Private Key   :", m.privateKey);
   console.log("\n────────────────────────────────────────");
   console.log("Add these lines to .env.local:\n");
-  console.log(`VITE_AGENT_ACCOUNT_ID=${m.accountId}`);
-  console.log(`VITE_AGENT_PRIVATE_KEY=${m.privateKey}`);
-  console.log(`VITE_AGENT_INBOUND_TOPIC_ID=${m.inboundTopicId}`);
-  console.log(`VITE_AGENT_OUTBOUND_TOPIC_ID=${m.outboundTopicId}`);
-  console.log(`VITE_AGENT_PROFILE_TOPIC_ID=${m.profileTopicId}`);
+  console.log(`NEXT_PUBLIC_AGENT_ACCOUNT_ID=${m.accountId}`);
+  console.log(`NEXT_PUBLIC_AGENT_PRIVATE_KEY=${m.privateKey}`);
+  console.log(`NEXT_PUBLIC_AGENT_INBOUND_TOPIC_ID=${m.inboundTopicId}`);
+  console.log(`NEXT_PUBLIC_AGENT_OUTBOUND_TOPIC_ID=${m.outboundTopicId}`);
+  console.log(`NEXT_PUBLIC_AGENT_PROFILE_TOPIC_ID=${m.profileTopicId}`);
   console.log("────────────────────────────────────────\n");
 
   // Also write to a local credentials file for safety

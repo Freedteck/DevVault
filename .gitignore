@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 agent-credentials.json
+
+# ...
+.next
+next-env.d.ts

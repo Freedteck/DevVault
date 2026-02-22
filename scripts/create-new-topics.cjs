@@ -34,8 +34,8 @@ function loadEnv() {
 const env = loadEnv();
 
 async function createNewTopics() {
-  const myAccountId = AccountId.fromString(env.VITE_MY_ACCOUNT_ID);
-  const myPrivateKey = PrivateKey.fromStringECDSA(env.VITE_MY_PRIVATE_KEY);
+  const myAccountId = AccountId.fromString(env.NEXT_PUBLIC_MY_ACCOUNT_ID);
+  const myPrivateKey = PrivateKey.fromStringECDSA(env.NEXT_PUBLIC_MY_PRIVATE_KEY);
 
   const client = Client.forTestnet().setOperator(myAccountId, myPrivateKey);
 
@@ -71,11 +71,11 @@ async function createNewTopics() {
     console.log("=======================================\n");
 
     console.log("Update your .env.local file with:\n");
-    console.log(`VITE_QUESTIONS_TOPIC_ID=${questionsTopicId}`);
-    console.log(`VITE_ANSWERS_TOPIC_ID=${answersTopicId}`);
+    console.log(`NEXT_PUBLIC_QUESTIONS_TOPIC_ID=${questionsTopicId}`);
+    console.log(`NEXT_PUBLIC_ANSWERS_TOPIC_ID=${answersTopicId}`);
     console.log("\nOld topic IDs:");
-    console.log(`OLD Questions: ${env.VITE_QUESTIONS_TOPIC_ID}`);
-    console.log(`OLD Answers: ${env.VITE_ANSWERS_TOPIC_ID}`);
+    console.log(`OLD Questions: ${env.NEXT_PUBLIC_QUESTIONS_TOPIC_ID}`);
+    console.log(`OLD Answers: ${env.NEXT_PUBLIC_ANSWERS_TOPIC_ID}`);
     console.log("\n=======================================\n");
 
     client.close();
