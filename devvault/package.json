@@ -1,0 +1,42 @@
+{
+  "name": "devvault",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "agent": "node scripts/ai-agent.mjs",
+    "deploy:contracts": "node scripts/deploy-contracts.mjs",
+    "setup:hedera": "node scripts/setup-hedera.mjs"
+  },
+  "dependencies": {
+    "@hashgraph/hedera-wallet-connect": "^2.0.6",
+    "@hashgraph/sdk": "^2.80.0",
+    "@hashgraphonline/standards-sdk": "^0.1.163",
+    "@hiero-did-sdk/registrar": "^0.1.8",
+    "@hiero-ledger/sdk": "2.79.0",
+    "@langchain/core": "^1.1.29",
+    "@langchain/groq": "^1.1.3",
+    "@langchain/langgraph": "^1.2.0",
+    "dotenv": "^17.3.1",
+    "groq-sdk": "^0.37.0",
+    "hedera-agent-kit": "^3.8.0",
+    "langchain": "^1.2.28",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "solc": "0.8.28",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
