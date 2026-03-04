@@ -1,41 +1,52 @@
-import React from "react";
-import { Metadata } from "next";
-import { Toaster } from "react-hot-toast";
-import Layout from "../components/layout/Layout";
-import WalletContextNew from "../context/WalletContextNew";
-import "../styles/globals.css";
-import "../styles/theme.css";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import NextTopLoader from "nextjs-toploader";
+import { ScrollToTop } from "@/components/navigation/ScrollToTop";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: "DevVault",
+  title: "DevVault — Developer Knowledge Network",
   description:
-    "A platform for developers to showcase their skills and earn rewards through hackathons and challenges.",
+    "A decentralised knowledge-sharing platform for developers. Ask questions, share insights, and earn DVT for your contributions.",
 };
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body>
-        <WalletContextNew>
-          <Layout>
-            {children}
-            <Toaster
-              position="bottom-right"
-              toastOptions={{
-                style: {
-                  background: "rgba(15, 15, 20, 0.95)",
-                  color: "#f1f5f9",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  backdropFilter: "blur(12px)",
-                },
-              }}
-            />
-          </Layout>
-        </WalletContextNew>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        suppressHydrationWarning
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{
+          backgroundColor: "var(--bg-base)",
+          color: "var(--text-primary)",
+        }}
+      >
+        <NextTopLoader
+          color="#10b981"
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={4}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #10b981, 0 0 5px #10b981"
+        />
+        <ScrollToTop />
+        <DashboardLayout>{children}</DashboardLayout>
       </body>
     </html>
   );

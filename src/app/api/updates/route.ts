@@ -1,28 +1,63 @@
-export const revalidate = 60; // Revalidate every 60 seconds
+import { NextRequest, NextResponse } from "next/server";
+import { createDiscussionTopic } from "@/lib/hedera-sdk";
+import { uploadToIPFS } from "@/lib/ipfs";
 
-import { NextRequest } from "next/server";
-export const dynamic = "force-dynamic";
+/**
+ * POST /api/updates
+ *
+ * Platform coordination for new community updates.
+ *
+ * What the platform does here (operator signs):
+ *   1. Creates a dedicated HCS discussion topic for this update's comments.
+ *   2. Uploads the update body to IPFS via Pinata (if configured),
+ *      returning bodyCid for the HCS payload.
+ *
+ * What the platform does NOT do:
+ *   - Sign the HCS UPDATE message — that's the user's wallet (hedera-client-tx.ts).
+ */
+export async function POST(req: NextRequest) {
+  const updatesTopicId = process.env.NEXT_PUBLIC_UPDATES_TOPIC_ID;
+  if (!updatesTopicId) {
+    return NextResponse.json(
+      { error: "Updates topic not configured" },
+      { status: 500 },
+    );
+  }
 
-import { fetchUpdates } from "../../../services/fetchService";
-
-export const GET = async (request: NextRequest) => {
   try {
-    const gateway = process.env.NEXT_PUBLIC_PINATA_GATEWAY;
-    if (!gateway) {
-      throw new Error("PINATA_GATEWAY is not defined");
+    let bodyCid: string | undefined;
+
+    try {
+      const json = await req.json();
+      if (json?.body && typeof json.body === "string" && json.body.length > 0) {
+        bodyCid = await uploadToIPFS(json.body, `update-${Date.now()}`).catch(
+          (err) => {
+            console.warn(
+              "[POST /api/updates] IPFS upload skipped:",
+              err.message,
+            );
+            return undefined;
+          },
+        );
+      }
+    } catch {
+      // No body or not JSON — skip IPFS upload
     }
 
-    const searchParams = request.nextUrl.searchParams;
-    const limit = searchParams.get("limit");
-    let nextLink = searchParams.get("nextLink");
+    // Platform creates a discussion topic for comments on this update
+    const discussionTopicId = await createDiscussionTopic();
 
-    // Handle "null" string from frontend
-    if (nextLink === "null") nextLink = null;
-
-    const result = await fetchUpdates(Number(limit) || 10, nextLink, gateway);
-    return Response.json(result);
+    return NextResponse.json({
+      success: true,
+      updatesTopicId,
+      discussionTopicId,
+      ...(bodyCid && { bodyCid }),
+    });
   } catch (err) {
-    console.error("Error fetching updates:", err);
-    return Response.json({ error: "Failed to fetch updates" }, { status: 500 });
+    console.error("[POST /api/updates]", err);
+    return NextResponse.json(
+      { error: "Failed to set up update resources", details: String(err) },
+      { status: 500 },
+    );
   }
-};
+}
