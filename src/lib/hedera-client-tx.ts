@@ -28,6 +28,7 @@ import type {
   HCSQuestionPayload,
   HCSAnswerPayload,
   HCSCommentPayload,
+  HCSReplyPayload,
   HCSUpdatePayload,
   HCSAcceptPayload,
   HCSProfilePayload,
@@ -132,28 +133,44 @@ export interface PostAnswerInput {
   author: HCSAuthor;
 }
 
+/** Max chars kept inline in HCS (matches /api/answers INLINE_LIMIT). */
+const ANSWER_INLINE_LIMIT = 280;
+
 /**
  * Post an ANSWER to a question's discussion topic.
- * The user's wallet signs and submits the message.
+ *
+ * Flow:
+ *   1. POST /api/answers → server uploads body to IPFS if > INLINE_LIMIT,
+ *      returns { bodyCid? }
+ *   2. User's wallet signs and submits the HCS message with:
+ *      - body = first 280 chars (excerpt) when bodyCid is present
+ *      - bodyCid = IPFS CID for the full Markdown
+ *      - body = full text when short enough to stay inline
  */
 export async function userPostAnswer(
   connector: DAppConnector,
   input: PostAnswerInput,
 ): Promise<{ transactionId: string }> {
-  // Validate via API (can add rate limiting, auth checks here later)
   const res = await fetch("/api/answers", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ discussionTopicId: input.discussionTopicId }),
+    body: JSON.stringify({
+      discussionTopicId: input.discussionTopicId,
+      body: input.body,
+    }),
   });
   const data = await res.json();
   if (!res.ok)
     throw new Error(data.error ?? "Failed to validate answer submission");
 
+  const bodyCid: string | undefined = data.bodyCid;
+
   const payload: HCSAnswerPayload = {
     type: "ANSWER",
     questionSequenceNumber: input.questionSequenceNumber,
-    body: input.body,
+    // If full body was uploaded to IPFS, store only the excerpt inline
+    body: bodyCid ? input.body.slice(0, ANSWER_INLINE_LIMIT) : input.body,
+    ...(bodyCid && { bodyCid }),
     author: input.author,
   };
 
@@ -179,6 +196,34 @@ export async function userPostComment(
 ): Promise<{ transactionId: string }> {
   const payload: HCSCommentPayload = {
     type: "COMMENT",
+    body: input.body,
+    author: input.author,
+  };
+
+  return userSubmitHCSMessage(
+    connector,
+    input.author.accountId,
+    input.discussionTopicId,
+    payload,
+  );
+}
+
+// ─── Replies ─────────────────────────────────────────────────────────────────
+
+export interface PostReplyInput {
+  discussionTopicId: string;
+  replyToSequence: number;
+  body: string;
+  author: HCSAuthor;
+}
+
+export async function userPostReply(
+  connector: DAppConnector,
+  input: PostReplyInput,
+): Promise<{ transactionId: string }> {
+  const payload: HCSReplyPayload = {
+    type: "REPLY",
+    replyToSequence: input.replyToSequence,
     body: input.body,
     author: input.author,
   };

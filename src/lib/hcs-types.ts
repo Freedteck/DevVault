@@ -48,6 +48,15 @@ export interface HCSCommentPayload {
   [key: string]: unknown;
 }
 
+export interface HCSReplyPayload {
+  type: "REPLY";
+  /** Sequence number of the ANSWER this is replying to */
+  replyToSequence: number;
+  body: string;
+  author: HCSAuthor;
+  [key: string]: unknown;
+}
+
 // ─── Updates Topic ──────────────────────────────────────────────────────────
 
 export interface HCSUpdatePayload {

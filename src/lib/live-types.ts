@@ -52,3 +52,11 @@ export interface LiveComment {
   body: string;
   author: LiveAuthor;
 }
+
+export interface LiveReply {
+  sequenceNumber: number;
+  consensusTimestamp: string;
+  replyToSequence: number;
+  body: string;
+  author: LiveAuthor;
+}

@@ -5,9 +5,9 @@ import type {
   HCSQuestionPayload,
   HCSAnswerPayload,
   HCSAcceptPayload,
-  HCSCommentPayload,
+  HCSReplyPayload,
 } from "@/lib/hcs-types";
-import type { LiveQuestion, LiveAnswer, LiveComment } from "@/lib/live-types";
+import type { LiveQuestion, LiveAnswer, LiveReply } from "@/lib/live-types";
 import { QuestionDetailClient } from "./QuestionDetailClient";
 import { Metadata } from "next";
 
@@ -75,7 +75,7 @@ export default async function QuestionDetailPage({ params }: PageProps) {
     };
 
     let answers: LiveAnswer[] = [];
-    let comments: LiveComment[] = [];
+    let repliesMap: Record<number, LiveReply[]> = {};
     if (question.discussionTopicId) {
       // Gracefully catch errors if the discussion topic has no messages yet
       try {
@@ -83,7 +83,7 @@ export default async function QuestionDetailPage({ params }: PageProps) {
         const allMessages = await getTopicMessages<
           | HCSAnswerPayload
           | HCSAcceptPayload
-          | HCSCommentPayload
+          | HCSReplyPayload
           | Record<string, unknown>
         >(question.discussionTopicId, 100);
 
@@ -124,23 +124,22 @@ export default async function QuestionDetailPage({ params }: PageProps) {
         );
         answers = answers.reverse();
 
-        // Collect COMMENT, AI_COMMENT, and AI_FEEDBACK messages
-        comments = allMessages
-          .filter(
-            (msg) =>
-              msg.data?.type === "COMMENT" ||
-              msg.data?.type === "AI_COMMENT" ||
-              msg.data?.type === "AI_FEEDBACK",
-          )
-          .map((msg) => {
-            const cData = msg.data as unknown as HCSCommentPayload;
-            return {
-              sequenceNumber: msg.sequenceNumber,
-              consensusTimestamp: msg.consensusTimestamp,
-              body: cData.body,
-              author: cData.author,
-            };
+        // Build replies grouped by the answer sequence they target
+        const replyMessages = allMessages.filter(
+          (msg) => msg.data?.type === "REPLY",
+        );
+        for (const msg of replyMessages) {
+          const rData = msg.data as HCSReplyPayload;
+          const key = rData.replyToSequence;
+          if (!repliesMap[key]) repliesMap[key] = [];
+          repliesMap[key].push({
+            sequenceNumber: msg.sequenceNumber,
+            consensusTimestamp: msg.consensusTimestamp,
+            replyToSequence: key,
+            body: rData.body,
+            author: rData.author,
           });
+        }
       } catch (err) {
         console.warn("Could not fetch answers or no answers found yet:", err);
       }
@@ -150,7 +149,7 @@ export default async function QuestionDetailPage({ params }: PageProps) {
       <QuestionDetailClient
         question={question}
         answers={answers}
-        comments={comments}
+        repliesMap={repliesMap}
       />
     );
   } catch (err) {

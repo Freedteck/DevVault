@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Tag, Timestamp, StatPill, Avatar } from "@/components/ui/primitives";
+import { Tag, Timestamp, Avatar } from "@/components/ui/primitives";
 import { AnswerCard } from "@/components/cards/AnswerCard";
 import { MarkdownBody } from "@/components/ui/MarkdownBody";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { TipModal } from "@/components/ui/TipModal";
 import { useToast } from "@/components/ui/ToastContext";
 import { useWallet } from "@/components/wallet/WalletProvider";
@@ -13,23 +13,22 @@ import {
   userSendVRSTip,
   userSendHBARTip,
   userAcceptAnswer,
+  userPostReply,
 } from "@/lib/hedera-client-tx";
 import { releaseBounty } from "@/lib/hedera-contracts";
-import { CommentCard } from "@/components/cards/CommentCard";
-import { CommentForm } from "@/components/forms/CommentForm";
-import type { LiveQuestion, LiveAnswer, LiveComment } from "@/lib/live-types";
+import type { LiveQuestion, LiveAnswer, LiveReply } from "@/lib/live-types";
 import { useRouter } from "next/navigation";
 
 interface QuestionDetailClientProps {
   question: LiveQuestion;
   answers: LiveAnswer[];
-  comments: LiveComment[];
+  repliesMap: Record<number, LiveReply[]>;
 }
 
 export function QuestionDetailClient({
   question,
   answers,
-  comments,
+  repliesMap,
 }: QuestionDetailClientProps) {
   const ANSWERS_PER_PAGE = 10;
   const [visibleAnswers, setVisibleAnswers] = useState(ANSWERS_PER_PAGE);
@@ -48,6 +47,34 @@ export function QuestionDetailClient({
     amountVRS: number;
   } | null>(null);
   const [isRetryingVrs, setIsRetryingVrs] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [replyBody, setReplyBody] = useState("");
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+
+  const insertMarkdown = (
+    before: string,
+    after: string = "",
+    placeholder: string = "text",
+  ) => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selected = el.value.slice(start, end) || placeholder;
+    const newValue =
+      el.value.slice(0, start) +
+      before +
+      selected +
+      after +
+      el.value.slice(end);
+    setAnswerBody(newValue);
+    requestAnimationFrame(() => {
+      el.focus();
+      const cursor = start + before.length + selected.length;
+      el.setSelectionRange(cursor, cursor);
+    });
+  };
 
   const { showToast } = useToast();
   const { accountId, connector, profile } = useWallet();
@@ -289,6 +316,48 @@ export function QuestionDetailClient({
     }
   };
 
+  const handleSubmitReply = async (answerSequenceNumber: number) => {
+    if (!accountId || !connector) {
+      showToast("Please connect your wallet first.", "error");
+      return;
+    }
+    if (!replyBody.trim()) {
+      showToast("Reply cannot be empty.", "error");
+      return;
+    }
+    setIsSubmittingReply(true);
+    try {
+      await userPostReply(connector, {
+        discussionTopicId: question.discussionTopicId,
+        replyToSequence: answerSequenceNumber,
+        body: replyBody.trim(),
+        author: {
+          accountId,
+          displayName: profile?.displayName ?? accountId,
+        },
+      });
+      showToast("Reply posted!", "success");
+      setReplyBody("");
+      setReplyingTo(null);
+      try {
+        await fetch("/api/revalidate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            path: window.location.pathname,
+            secret: process.env.NEXT_PUBLIC_REVALIDATION_SECRET,
+          }),
+        });
+      } catch {}
+      router.refresh();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`Reply failed: ${msg}`, "error");
+    } finally {
+      setIsSubmittingReply(false);
+    }
+  };
+
   const handleSubmitAnswer = async () => {
     if (!accountId || !connector) {
       showToast("Please connect your wallet first.", "error");
@@ -436,22 +505,6 @@ export function QuestionDetailClient({
         ))}
       </div>
 
-      {/* Comments / AI Notes */}
-      <section className="space-y-3 pt-2">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-text-muted">
-          Notes & Analysis
-        </h2>
-        <div className="space-y-3">
-          {comments.map((comment) => (
-            <CommentCard key={comment.sequenceNumber} comment={comment} />
-          ))}
-          <CommentForm
-            discussionTopicId={question.discussionTopicId}
-            placeholder="Add a clarifying note or question..."
-          />
-        </div>
-      </section>
-
       {/* Answers Section */}
       <section className="space-y-6 pt-4">
         <div className="flex items-center justify-between border-b border-border-main pb-2">
@@ -479,6 +532,21 @@ export function QuestionDetailClient({
                       answer.author.accountId,
                     )
                   }
+                  replies={repliesMap[answer.sequenceNumber] ?? []}
+                  replyingTo={replyingTo === answer.sequenceNumber}
+                  replyBody={
+                    replyingTo === answer.sequenceNumber ? replyBody : ""
+                  }
+                  isSubmittingReply={isSubmittingReply}
+                  onToggleReply={() =>
+                    setReplyingTo((prev) =>
+                      prev === answer.sequenceNumber
+                        ? null
+                        : answer.sequenceNumber,
+                    )
+                  }
+                  onReplyBodyChange={setReplyBody}
+                  onSubmitReply={() => handleSubmitReply(answer.sequenceNumber)}
                 />
               ))}
               {visibleAnswers < answers.length && (
@@ -504,37 +572,76 @@ export function QuestionDetailClient({
           Your Contribution
         </h3>
         {accountId ? (
-          <div className="rounded-lg border border-border-main bg-bg-panel p-4">
+          <div className="rounded-md border border-border-main overflow-hidden bg-bg-panel">
+            {/* Markdown toolbar */}
+            <div className="flex items-center gap-1 px-2 py-1.5 bg-bg-subtle border-b border-border-main">
+              <button
+                onClick={() => insertMarkdown("**", "**", "bold")}
+                type="button"
+                title="Bold"
+                className="px-2 py-0.5 rounded hover:bg-bg-hover text-[11px] font-bold text-text-secondary transition-colors"
+              >
+                B
+              </button>
+              <button
+                onClick={() => insertMarkdown("_", "_", "italic")}
+                type="button"
+                title="Italic"
+                className="px-2 py-0.5 rounded hover:bg-bg-hover text-[11px] italic text-text-secondary transition-colors"
+              >
+                I
+              </button>
+              <button
+                onClick={() => insertMarkdown("`", "`", "code")}
+                type="button"
+                title="Inline code"
+                className="px-2 py-0.5 rounded hover:bg-bg-hover text-[11px] font-mono text-text-secondary transition-colors"
+              >
+                &lt;&gt;
+              </button>
+              <button
+                onClick={() => insertMarkdown("```\n", "\n```", "code here")}
+                type="button"
+                title="Code block"
+                className="px-2 py-0.5 rounded hover:bg-bg-hover text-[11px] font-mono text-text-secondary transition-colors"
+              >
+                {"{}"}
+              </button>
+              <button
+                onClick={() => insertMarkdown("[", "](url)", "link text")}
+                type="button"
+                title="Link"
+                className="px-2 py-0.5 rounded hover:bg-bg-hover text-[11px] text-text-secondary transition-colors"
+              >
+                Link
+              </button>
+              <button
+                onClick={() => insertMarkdown("- ", "", "item")}
+                type="button"
+                title="List item"
+                className="px-2 py-0.5 rounded hover:bg-bg-hover text-[11px] text-text-secondary transition-colors"
+              >
+                List
+              </button>
+              <span className="ml-auto text-[10px] text-text-muted pr-1">
+                Markdown
+              </span>
+            </div>
             <textarea
+              ref={bodyRef}
               placeholder="Write your technical answer or suggestion here..."
               value={answerBody}
               onChange={(e) => setAnswerBody(e.target.value)}
               disabled={isSubmitting}
-              className="w-full h-32 bg-transparent border-none outline-none text-sm text-text-primary resize-none font-mono disabled:opacity-50"
+              className="w-full h-40 p-4 bg-transparent outline-none text-sm text-text-secondary font-mono resize-none leading-relaxed disabled:opacity-50"
             />
-            <div className="flex items-center justify-between mt-4 border-t border-border-main pt-4">
-              <div className="flex gap-2">
-                <button className="p-1.5 rounded hover:bg-bg-subtle text-text-muted transition-colors">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                  </svg>
-                </button>
-              </div>
+            <div className="flex items-center justify-end px-4 py-3 border-t border-border-main bg-bg-subtle">
               <button
                 onClick={handleSubmitAnswer}
                 disabled={isSubmitting || !answerBody.trim()}
                 className="px-4 py-2 rounded-md text-sm font-medium bg-primary-600 hover:bg-primary-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "Signing..." : "Post Contribution"}
+                {isSubmitting ? "Signing…" : "Post Contribution"}
               </button>
             </div>
           </div>
