@@ -18,9 +18,8 @@ export interface LiveQuestion {
   tags: string[];
   author: LiveAuthor;
   bountyAmount: number;
-  bountyCurrency: "DVT" | "HBAR";
+  bountyCurrency: "VRS" | "HBAR";
   discussionTopicId: string;
-  tipTotal?: number;
   // Derived / estimated from answers (not available in HCS message itself)
   answerCount?: number;
   accepted?: boolean;
@@ -37,7 +36,6 @@ export interface LiveUpdate {
   author: LiveAuthor;
   discussionTopicId?: string;
   commentCount?: number;
-  tipTotal?: number;
 }
 
 export interface LiveAnswer {

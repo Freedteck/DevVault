@@ -35,10 +35,10 @@ export function OnboardingBanner() {
             </div>
             <div>
               <h3 className="text-sm font-bold text-text-main group-hover:text-primary-400 transition-colors">
-                Activate Your DevVault Identity
+                Activate Your Vurso Identity
               </h3>
               <p className="text-xs text-text-secondary">
-                Set up your HCS-11 profile to enable automatic DVT rewards and
+                Set up your HCS-11 profile to enable automatic VRS rewards and
                 reputation.
               </p>
             </div>

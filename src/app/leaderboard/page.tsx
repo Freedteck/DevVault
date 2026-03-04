@@ -4,8 +4,8 @@ import { AuthorBadge, Avatar } from "@/components/ui/primitives";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Leaderboard | DevVault",
-  description: "Top contributors in the DevVault ecosystem.",
+  title: "Leaderboard | Vurso",
+  description: "Top contributors in the Vurso ecosystem.",
 };
 
 // Revalidate every 2 minutes — leaderboard is expensive to compute
@@ -15,8 +15,8 @@ interface LeaderboardEntry {
   rank: number;
   accountId: string;
   displayName: string;
-  /** Total DVT received as bounty payouts — never decreases when DVT is spent */
-  dvtEarned: number;
+  /** Total VRS received as bounty payouts — never decreases when VRS is spent */
+  vrsEarned: number;
   acceptedAnswers: number;
   questionsAsked: number;
 }
@@ -39,7 +39,7 @@ export default async function LeaderboardPage() {
     const questionsAskedMap = new Map<string, number>();
     const displayNameMap = new Map<string, string>();
 
-    // discussion topic → bounty info (for DVT earned lookup)
+    // discussion topic → bounty info (for VRS earned lookup)
     const topicBountyMap = new Map<
       string,
       { amount: number; currency: string }
@@ -66,7 +66,7 @@ export default async function LeaderboardPage() {
     // 2. Fetch all discussion topics in parallel — find ACCEPT messages
     const uniqueTopics = [...topicBountyMap.keys()];
     const acceptedAnswersMap = new Map<string, number>();
-    const dvtEarnedMap = new Map<string, number>();
+    const vrsEarnedMap = new Map<string, number>();
 
     const topicResults = await Promise.allSettled(
       uniqueTopics.map((topicId) =>
@@ -88,12 +88,12 @@ export default async function LeaderboardPage() {
           (acceptedAnswersMap.get(answerer) ?? 0) + 1,
         );
 
-        // tally DVT earned only from DVT-denominated bounties
+        // tally VRS earned only from VRS-denominated bounties
         const bounty = topicBountyMap.get(topicId);
-        if (bounty && bounty.currency === "DVT" && bounty.amount > 0) {
-          dvtEarnedMap.set(
+        if (bounty && bounty.currency === "VRS" && bounty.amount > 0) {
+          vrsEarnedMap.set(
             answerer,
-            (dvtEarnedMap.get(answerer) ?? 0) + bounty.amount,
+            (vrsEarnedMap.get(answerer) ?? 0) + bounty.amount,
           );
         }
       }
@@ -110,14 +110,14 @@ export default async function LeaderboardPage() {
         rank: 0,
         accountId,
         displayName: displayNameMap.get(accountId) ?? accountId.slice(0, 12),
-        dvtEarned: dvtEarnedMap.get(accountId) ?? 0,
+        vrsEarned: vrsEarnedMap.get(accountId) ?? 0,
         acceptedAnswers: acceptedAnswersMap.get(accountId) ?? 0,
         questionsAsked: questionsAskedMap.get(accountId) ?? 0,
       }))
-      // Sort: DVT earned → accepted answers → questions asked
+      // Sort: VRS earned → accepted answers → questions asked
       .sort(
         (a, b) =>
-          b.dvtEarned - a.dvtEarned ||
+          b.vrsEarned - a.vrsEarned ||
           b.acceptedAnswers - a.acceptedAnswers ||
           b.questionsAsked - a.questionsAsked,
       )
@@ -135,7 +135,7 @@ export default async function LeaderboardPage() {
         </h1>
         <p className="text-sm text-text-secondary max-w-lg mx-auto">
           Recognizing the developers who have built the most value in the Hedera
-          ecosystem. Ranked by total DVT earned from bounties and solutions
+          ecosystem. Ranked by total VRS earned from bounties and solutions
           accepted.
         </p>
       </div>
@@ -192,10 +192,10 @@ export default async function LeaderboardPage() {
                 <p
                   className={`font-mono font-bold text-primary-400 text-[12px] sm:text-xl ${isFirst ? "text-[14px] sm:text-2xl" : ""}`}
                 >
-                  {Math.floor(entry.dvtEarned).toLocaleString()}
+                  {Math.floor(entry.vrsEarned).toLocaleString()}
                 </p>
                 <p className="text-[8px] sm:text-[10px] uppercase tracking-widest text-text-muted font-bold">
-                  DVT
+                  VRS
                 </p>
               </div>
             </div>
@@ -205,7 +205,7 @@ export default async function LeaderboardPage() {
 
       {leaderboard.length === 0 && (
         <div className="text-center py-12 text-text-muted">
-          <p>No DVT holders found on-chain yet. Be the first to earn DVT!</p>
+          <p>No VRS holders found on-chain yet. Be the first to earn VRS!</p>
         </div>
       )}
 
@@ -229,7 +229,7 @@ export default async function LeaderboardPage() {
                     Questions
                   </th>
                   <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-text-muted text-right">
-                    DVT Earned
+                    VRS Earned
                   </th>
                 </tr>
               </thead>
@@ -257,12 +257,12 @@ export default async function LeaderboardPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <span className="font-mono text-sm font-bold text-text-main">
-                        {entry.dvtEarned.toLocaleString(undefined, {
+                        {entry.vrsEarned.toLocaleString(undefined, {
                           maximumFractionDigits: 2,
                         })}
                       </span>
                       <span className="ml-1 text-[10px] text-text-muted">
-                        DVT
+                        VRS
                       </span>
                     </td>
                   </tr>

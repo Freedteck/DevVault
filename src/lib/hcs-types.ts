@@ -1,5 +1,5 @@
 /**
- * Canonical HCS message payload types for DevVault.
+ * Canonical HCS message payload types for Vurso.
  *
  * These types define what gets stored on-chain in each HCS topic.
  * All payloads MUST include [key: string]: unknown for SDK compatibility.
@@ -25,7 +25,7 @@ export interface HCSQuestionPayload {
   tags: string[];
   author: HCSAuthor;
   bountyAmount: number;
-  bountyCurrency: "DVT" | "HBAR";
+  bountyCurrency: "VRS" | "HBAR";
   discussionTopicId: string; // created by platform before user signs
   [key: string]: unknown;
 }

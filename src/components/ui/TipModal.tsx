@@ -8,7 +8,7 @@ interface TipModalProps {
   onClose: () => void;
   recipientName: string;
   /** Called when user confirms — parent is responsible for executing the transaction */
-  onConfirm: (amount: number, currency: "DVT" | "HBAR") => void;
+  onConfirm: (amount: number, currency: "VRS" | "HBAR") => void;
   isSubmitting?: boolean;
 }
 
@@ -20,7 +20,7 @@ export function TipModal({
   isSubmitting = false,
 }: TipModalProps) {
   const [amount, setAmount] = useState<string>("5");
-  const [currency, setCurrency] = useState<"DVT" | "HBAR">("DVT");
+  const [currency, setCurrency] = useState<"VRS" | "HBAR">("VRS");
 
   const quickAmounts = ["5", "10", "25", "50"];
 
@@ -61,7 +61,7 @@ export function TipModal({
             Token
           </label>
           <div className="flex gap-2">
-            {(["DVT", "HBAR"] as const).map((c) => (
+            {(["VRS", "HBAR"] as const).map((c) => (
               <button
                 key={c}
                 onClick={() => setCurrency(c)}
@@ -115,7 +115,7 @@ export function TipModal({
         </div>
 
         <p className="text-[11px] text-text-muted leading-relaxed">
-          {currency === "DVT"
+          {currency === "VRS"
             ? "Tips are sent directly on-chain via Hedera Token Service. A small HBAR network fee applies."
             : "HBAR is sent directly on-chain via Hedera. A small network fee applies."}
         </p>

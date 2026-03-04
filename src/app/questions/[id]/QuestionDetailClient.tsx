@@ -10,7 +10,7 @@ import { useToast } from "@/components/ui/ToastContext";
 import { useWallet } from "@/components/wallet/WalletProvider";
 import {
   userPostAnswer,
-  userSendDVTTip,
+  userSendVRSTip,
   userSendHBARTip,
   userAcceptAnswer,
 } from "@/lib/hedera-client-tx";
@@ -43,11 +43,11 @@ export function QuestionDetailClient({
   const [isAccepting, setIsAccepting] = useState(false);
   const [answerBody, setAnswerBody] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pendingDvtRelease, setPendingDvtRelease] = useState<{
+  const [pendingVrsRelease, setPendingVrsRelease] = useState<{
     answererAccountId: string;
-    amountDVT: number;
+    amountVRS: number;
   } | null>(null);
-  const [isRetryingDvt, setIsRetryingDvt] = useState(false);
+  const [isRetryingVrs, setIsRetryingVrs] = useState(false);
 
   const { showToast } = useToast();
   const { accountId, connector, profile } = useWallet();
@@ -69,13 +69,13 @@ export function QuestionDetailClient({
     setIsTipModalOpen(true);
   };
 
-  const confirmTip = async (amount: number, currency: "DVT" | "HBAR") => {
+  const confirmTip = async (amount: number, currency: "VRS" | "HBAR") => {
     if (!accountId || !connector || !selectedRecipient) return;
     setIsTipping(true);
     try {
       let txId: string;
-      if (currency === "DVT") {
-        const result = await userSendDVTTip(
+      if (currency === "VRS") {
+        const result = await userSendVRSTip(
           connector,
           accountId,
           selectedRecipient.accountId,
@@ -149,41 +149,41 @@ export function QuestionDetailClient({
         "success",
       );
 
-      // If there's a DVT bounty, release it server-side (operator → answerer)
-      if (question.bountyAmount > 0 && question.bountyCurrency === "DVT") {
+      // If there's a VRS bounty, release it server-side (operator → answerer)
+      if (question.bountyAmount > 0 && question.bountyCurrency === "VRS") {
         try {
-          const dvtRes = await fetch("/api/bounty/release-dvt", {
+          const vrsRes = await fetch("/api/bounty/release-vrs", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               answererAccountId,
-              amountDVT: question.bountyAmount,
+              amountVRS: question.bountyAmount,
               discussionTopicId: question.discussionTopicId,
             }),
           });
-          const dvtData = await dvtRes.json();
-          if (!dvtRes.ok && dvtData.error === "ANSWERER_NOT_ASSOCIATED") {
-            setPendingDvtRelease({
+          const vrsData = await vrsRes.json();
+          if (!vrsRes.ok && vrsData.error === "ANSWERER_NOT_ASSOCIATED") {
+            setPendingVrsRelease({
               answererAccountId,
-              amountDVT: question.bountyAmount,
+              amountVRS: question.bountyAmount,
             });
             showToast(
-              `DVT release pending: ${answererAccountId} must associate with DVT first. Ask them to visit the Swap page, then use the Retry button.`,
+              `VRS release pending: ${answererAccountId} must associate with VRS first. Ask them to visit the Swap page, then use the Retry button.`,
               "error",
             );
             return;
           }
-          if (!dvtRes.ok)
+          if (!vrsRes.ok)
             throw new Error(
-              dvtData.details ?? dvtData.error ?? "Release failed",
+              vrsData.details ?? vrsData.error ?? "Release failed",
             );
           showToast(
-            `${question.bountyAmount} DVT bounty released to ${answererAccountId}!`,
+            `${question.bountyAmount} VRS bounty released to ${answererAccountId}!`,
             "success",
           );
-        } catch (dvtErr: unknown) {
-          const msg = dvtErr instanceof Error ? dvtErr.message : String(dvtErr);
-          showToast(`Answer accepted but DVT release failed: ${msg}`, "error");
+        } catch (vrsErr: unknown) {
+          const msg = vrsErr instanceof Error ? vrsErr.message : String(vrsErr);
+          showToast(`Answer accepted but VRS release failed: ${msg}`, "error");
         }
       }
 
@@ -253,23 +253,23 @@ export function QuestionDetailClient({
     }
   };
 
-  const handleRetryDvtRelease = async () => {
-    if (!pendingDvtRelease) return;
-    setIsRetryingDvt(true);
+  const handleRetryVrsRelease = async () => {
+    if (!pendingVrsRelease) return;
+    setIsRetryingVrs(true);
     try {
-      const res = await fetch("/api/bounty/release-dvt", {
+      const res = await fetch("/api/bounty/release-vrs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          answererAccountId: pendingDvtRelease.answererAccountId,
-          amountDVT: pendingDvtRelease.amountDVT,
+          answererAccountId: pendingVrsRelease.answererAccountId,
+          amountVRS: pendingVrsRelease.amountVRS,
           discussionTopicId: question.discussionTopicId,
         }),
       });
       const data = await res.json();
       if (!res.ok && data.error === "ANSWERER_NOT_ASSOCIATED") {
         showToast(
-          `Still not associated. Ask ${pendingDvtRelease.answererAccountId} to visit the Swap page and associate with DVT first.`,
+          `Still not associated. Ask ${pendingVrsRelease.answererAccountId} to visit the Swap page and associate with VRS first.`,
           "error",
         );
         return;
@@ -277,15 +277,15 @@ export function QuestionDetailClient({
       if (!res.ok)
         throw new Error(data.details ?? data.error ?? "Release failed");
       showToast(
-        `${pendingDvtRelease.amountDVT} DVT bounty released to ${pendingDvtRelease.answererAccountId}!`,
+        `${pendingVrsRelease.amountVRS} VRS bounty released to ${pendingVrsRelease.answererAccountId}!`,
         "success",
       );
-      setPendingDvtRelease(null);
+      setPendingVrsRelease(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      showToast(`DVT release failed: ${msg}`, "error");
+      showToast(`VRS release failed: ${msg}`, "error");
     } finally {
-      setIsRetryingDvt(false);
+      setIsRetryingVrs(false);
     }
   };
 
@@ -359,22 +359,22 @@ export function QuestionDetailClient({
         Back to Den
       </Link>
 
-      {/* Pending DVT release banner — shown when association blocked the first attempt */}
-      {pendingDvtRelease && (
+      {/* Pending VRS release banner — shown when association blocked the first attempt */}
+      {pendingVrsRelease && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3">
           <div className="text-sm text-amber-300">
-            <span className="font-semibold">DVT bounty not yet released.</span>{" "}
-            {pendingDvtRelease.answererAccountId} needs to associate with DVT
+            <span className="font-semibold">VRS bounty not yet released.</span>{" "}
+            {pendingVrsRelease.answererAccountId} needs to associate with VRS
             first (ask them to visit the Swap page), then click Retry.
           </div>
           <button
-            onClick={handleRetryDvtRelease}
-            disabled={isRetryingDvt}
+            onClick={handleRetryVrsRelease}
+            disabled={isRetryingVrs}
             className="self-start sm:self-auto shrink-0 px-4 py-2 rounded-md text-sm font-medium bg-amber-500 hover:bg-amber-400 text-black transition-colors disabled:opacity-50"
           >
-            {isRetryingDvt
+            {isRetryingVrs
               ? "Retrying…"
-              : `Retry — Release ${pendingDvtRelease.amountDVT} DVT`}
+              : `Retry — Release ${pendingVrsRelease.amountVRS} VRS`}
           </button>
         </div>
       )}

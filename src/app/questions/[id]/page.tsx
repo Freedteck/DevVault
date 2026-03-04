@@ -11,7 +11,7 @@ import type { LiveQuestion, LiveAnswer, LiveComment } from "@/lib/live-types";
 import { QuestionDetailClient } from "./QuestionDetailClient";
 import { Metadata } from "next";
 
-export const revalidate = 3600; // Cache for 1 hour, manually revalidated on activity
+export const revalidate = 0;
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -30,9 +30,9 @@ export async function generateMetadata({
       questionsTopicId,
       sequenceNumber,
     );
-    return { title: `${qMessage.data?.title || "Question"} | DevVault` };
+    return { title: `${qMessage.data?.title || "Question"} | Vurso` };
   } catch {
-    return { title: "DevVault Question" };
+    return { title: "Vurso Question" };
   }
 }
 
@@ -68,7 +68,7 @@ export default async function QuestionDetailPage({ params }: PageProps) {
       tags: qMessage.data.tags || [],
       author: qMessage.data.author,
       bountyAmount: qMessage.data.bountyAmount || 0,
-      bountyCurrency: qMessage.data.bountyCurrency || "DVT",
+      bountyCurrency: qMessage.data.bountyCurrency || "VRS",
       discussionTopicId: qMessage.data.discussionTopicId,
       accepted: false,
       acceptedAnswerSequence: undefined,
@@ -103,8 +103,7 @@ export default async function QuestionDetailPage({ params }: PageProps) {
 
         // Build answer list, marking the accepted one, resolving IPFS bodies
         const answerMessages = allMessages.filter(
-          (msg) =>
-            msg.data?.type === "ANSWER" || msg.data?.type === "AI_ANSWER",
+          (msg) => msg.data?.type === "ANSWER",
         );
         answers = await Promise.all(
           answerMessages.map(async (msg) => {
@@ -128,9 +127,7 @@ export default async function QuestionDetailPage({ params }: PageProps) {
         comments = allMessages
           .filter(
             (msg) =>
-              msg.data?.type === "COMMENT" ||
-              msg.data?.type === "AI_COMMENT" ||
-              msg.data?.type === "AI_FEEDBACK",
+              msg.data?.type === "COMMENT" || msg.data?.type === "AI_COMMENT",
           )
           .map((msg) => {
             const cData = msg.data as unknown as HCSCommentPayload;

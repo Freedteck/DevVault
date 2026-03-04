@@ -55,14 +55,14 @@ async function main() {
   const envUpdates = {};
 
   try {
-    // 1. Create DevVault Token (DVT)
-    console.log("\n🪙 Creating DevVault Token (DVT)...");
+    // 1. Create Vurso Token (VRS)
+    console.log("\n🪙 Creating Vurso Token (VRS)...");
     const tokenCreateTx = await new TokenCreateTransaction()
-      .setTokenName("DevVault Token")
-      .setTokenSymbol("DVT")
+      .setTokenName("Vurso Token")
+      .setTokenSymbol("VRS")
       .setTokenType(TokenType.FungibleCommon)
       .setDecimals(2)
-      .setInitialSupply(100000000) // 1,000,000.00 DVT
+      .setInitialSupply(100000000) // 1,000,000.00 VRS
       .setTreasuryAccountId(operatorId)
       .setSupplyType(TokenSupplyType.Infinite)
       .setSupplyKey(operatorKey)
@@ -73,8 +73,8 @@ async function main() {
     const tokenCreateSubmit = await tokenCreateSign.execute(client);
     const tokenCreateRx = await tokenCreateSubmit.getReceipt(client);
     const tokenId = tokenCreateRx.tokenId;
-    console.log(`✅ DVT Token Created! ID: ${tokenId}`);
-    envUpdates["NEXT_PUBLIC_DVT_TOKEN_ID"] = tokenId.toString();
+    console.log(`✅ VRS Token Created! ID: ${tokenId}`);
+    envUpdates["NEXT_PUBLIC_VRS_TOKEN_ID"] = tokenId.toString();
 
     // 2. Create Registry Topic
     console.log("\n📚 Creating Registry Topic...");

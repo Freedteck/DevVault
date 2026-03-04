@@ -2,7 +2,7 @@ import Link from "next/link";
 import { QuestionCard } from "@/components/cards/QuestionCard";
 import { UpdateCard } from "@/components/cards/UpdateCard";
 import { formatNumber } from "@/lib/utils";
-import { getTopicMessagesPaged, getTopicInfo } from "@/lib/hedera-mirror";
+import { getTopicMessages, getTopicInfo } from "@/lib/hedera-mirror";
 import type { HCSQuestionPayload, HCSUpdatePayload } from "@/lib/hcs-types";
 import type { LiveQuestion, LiveUpdate } from "@/lib/live-types";
 
@@ -11,7 +11,7 @@ const MIRROR_NODE_BASE =
     ? "https://mainnet.mirrornode.hedera.com/api/v1"
     : "https://testnet.mirrornode.hedera.com/api/v1";
 
-async function getDVTCirculatingSupply(tokenId: string): Promise<number> {
+async function getVRSCirculatingSupply(tokenId: string): Promise<number> {
   try {
     const res = await fetch(`${MIRROR_NODE_BASE}/tokens/${tokenId}`, {
       next: { revalidate: 120 },
@@ -29,48 +29,38 @@ export const revalidate = 10;
 export default async function HomePage() {
   const questionsTopicId = process.env.NEXT_PUBLIC_QUESTIONS_TOPIC_ID!;
   const updatesTopicId = process.env.NEXT_PUBLIC_UPDATES_TOPIC_ID!;
-  const dvtTokenId = process.env.NEXT_PUBLIC_DVT_TOKEN_ID!;
+  const vrsTokenId = process.env.NEXT_PUBLIC_VRS_TOKEN_ID!;
 
   let recentQuestions: LiveQuestion[] = [];
   let recentUpdates: LiveUpdate[] = [];
   let totalQuestions = 0;
   let totalUpdates = 0;
   let totalContributors = 0;
-  let dvtCirculating = 0;
+  let vrsCirculating = 0;
 
   try {
-    const [qInfo, uInfo, qPage, uPage, dvtSupply] = await Promise.all([
+    const [qInfo, uInfo, qMessages, uMessages, vrsSupply] = await Promise.all([
       getTopicInfo(questionsTopicId),
       getTopicInfo(updatesTopicId),
-      getTopicMessagesPaged<HCSQuestionPayload>(
-        questionsTopicId,
-        50,
-        undefined,
-        true,
-      ),
-      getTopicMessagesPaged<HCSUpdatePayload>(
-        updatesTopicId,
-        5,
-        undefined,
-        true,
-      ),
-      getDVTCirculatingSupply(dvtTokenId),
+      getTopicMessages<HCSQuestionPayload>(questionsTopicId, 500),
+      getTopicMessages<HCSUpdatePayload>(updatesTopicId, 5),
+      getVRSCirculatingSupply(vrsTokenId),
     ]);
 
     totalQuestions = qInfo.sequenceNumber;
     totalUpdates = uInfo.sequenceNumber;
-    dvtCirculating = dvtSupply;
+    vrsCirculating = vrsSupply;
 
     // Count unique contributors from all question authors
     const authorSet = new Set<string>();
-    for (const msg of qPage.messages) {
+    for (const msg of qMessages) {
       if (msg.data?.author?.accountId) {
         authorSet.add(msg.data.author.accountId);
       }
     }
     totalContributors = authorSet.size;
 
-    recentQuestions = qPage.messages
+    recentQuestions = qMessages
       .filter((msg) => msg.data?.type === "QUESTION")
       .map((msg) => ({
         sequenceNumber: msg.sequenceNumber,
@@ -81,15 +71,16 @@ export default async function HomePage() {
         tags: msg.data!.tags || [],
         author: msg.data!.author,
         bountyAmount: msg.data!.bountyAmount || 0,
-        bountyCurrency: msg.data!.bountyCurrency || "DVT",
+        bountyCurrency: msg.data!.bountyCurrency || "VRS",
         discussionTopicId: msg.data!.discussionTopicId,
-        answerCount: msg.answerCount ?? 0,
+        answerCount: 0,
         accepted: false,
         tipTotal: 0,
       }))
+      .reverse()
       .slice(0, 3);
 
-    recentUpdates = uPage.messages
+    recentUpdates = uMessages
       .filter((msg) => msg.data?.type === "UPDATE")
       .map((msg) => ({
         sequenceNumber: msg.sequenceNumber,
@@ -99,9 +90,10 @@ export default async function HomePage() {
           msg.data!.shortDescription || msg.data!.body?.slice(0, 160) || "",
         tags: msg.data!.tags || [],
         author: msg.data!.author,
-        commentCount: msg.answerCount ?? 0,
+        commentCount: 0,
         tipTotal: 0,
       }))
+      .reverse()
       .slice(0, 2);
   } catch (error) {
     console.error("Failed to fetch live home feed", error);
@@ -168,8 +160,8 @@ export default async function HomePage() {
       ),
     },
     {
-      label: "DVT Circulating",
-      value: formatNumber(dvtCirculating),
+      label: "VRS Circulating",
+      value: formatNumber(vrsCirculating),
       icon: (
         <svg
           width="16"

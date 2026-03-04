@@ -4,10 +4,10 @@ import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { useWallet } from "@/components/wallet/WalletProvider";
 import { useToast } from "@/components/ui/ToastContext";
-import { swapHbarForDVT } from "@/lib/hedera-contracts";
-import { isDVTAssociated, userAssociateDVT } from "@/lib/hedera-client-tx";
+import { swapHbarForVRS } from "@/lib/hedera-contracts";
+import { isVRSAssociated, userAssociateVRS } from "@/lib/hedera-client-tx";
 
-const DVT_PER_HBAR = 92;
+const VRS_PER_HBAR = 92;
 
 interface SwapModalProps {
   isOpen: boolean;
@@ -22,7 +22,7 @@ export function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const [isSwapping, setIsSwapping] = useState(false);
 
   const parsedHbar = parseFloat(hbarAmount) || 0;
-  const expectedDVT = parsedHbar * DVT_PER_HBAR;
+  const expectedVRS = parsedHbar * VRS_PER_HBAR;
 
   const handleSwap = async () => {
     if (!isConnected || !accountId || !connector) {
@@ -40,20 +40,20 @@ export function SwapModal({ isOpen, onClose }: SwapModalProps) {
 
     setIsSwapping(true);
     try {
-      // Step 1: Associate DVT token if not already associated
-      const associated = await isDVTAssociated(accountId);
+      // Step 1: Associate VRS token if not already associated
+      const associated = await isVRSAssociated(accountId);
       if (!associated) {
-        showToast("Associating DVT token with your account…", "success");
-        await userAssociateDVT(connector, accountId);
+        showToast("Associating VRS token with your account…", "success");
+        await userAssociateVRS(connector, accountId);
       }
 
       // Step 2: Submit the swap
-      const { transactionId, expectedDVT: dvt } = await swapHbarForDVT(
+      const { transactionId, expectedVRS: vrs } = await swapHbarForVRS(
         connector,
         { accountId, hbarAmount: parsedHbar },
       );
       showToast(
-        `Swap submitted! Expect ~${dvt} DVT to arrive shortly. TX: ${transactionId.slice(0, 20)}…`,
+        `Swap submitted! Expect ~${vrs} VRS to arrive shortly. TX: ${transactionId.slice(0, 20)}…`,
         "success",
       );
       setHbarAmount("");
@@ -66,10 +66,10 @@ export function SwapModal({ isOpen, onClose }: SwapModalProps) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Swap HBAR → DVT">
+    <Modal isOpen={isOpen} onClose={onClose} title="Swap HBAR → VRS">
       <div className="space-y-6">
         <p className="text-sm text-text-secondary">
-          Exchange HBAR for DevVault Token (DVT) at a fixed rate. DVT is used
+          Exchange HBAR for Vurso Token (VRS) at a fixed rate. VRS is used
           for tipping, bounties, and reputation.
         </p>
 
@@ -78,7 +78,7 @@ export function SwapModal({ isOpen, onClose }: SwapModalProps) {
             Rate
           </span>
           <span className="font-mono text-sm font-bold text-primary-400">
-            1 ℏ = {DVT_PER_HBAR} DVT
+            1 ℏ = {VRS_PER_HBAR} VRS
           </span>
         </div>
 
@@ -101,19 +101,19 @@ export function SwapModal({ isOpen, onClose }: SwapModalProps) {
           </div>
         </div>
 
-        {/* DVT output preview */}
+        {/* VRS output preview */}
         <div className="space-y-2">
           <label className="text-[11px] font-bold uppercase tracking-widest text-text-muted">
             You Receive (~)
           </label>
           <div className="flex items-center gap-2 px-3 py-2.5 rounded-md border border-border-main/50 bg-bg-subtle">
             <span className="flex-1 text-sm font-mono font-bold text-primary-400">
-              {expectedDVT > 0 ? expectedDVT.toLocaleString() : "0"}
+              {expectedVRS > 0 ? expectedVRS.toLocaleString() : "0"}
             </span>
-            <span className="text-xs font-bold text-text-muted">DVT</span>
+            <span className="text-xs font-bold text-text-muted">VRS</span>
           </div>
           <p className="text-[11px] text-text-muted">
-            DVT will be transferred to your Hedera account after the swap is
+            VRS will be transferred to your Hedera account after the swap is
             confirmed on-chain.
           </p>
         </div>

@@ -7,20 +7,20 @@ import {
 import type { HCSQuestionPayload } from "@/lib/hcs-types";
 
 export async function GET(req: NextRequest) {
-  const dvtTokenId = process.env.NEXT_PUBLIC_DVT_TOKEN_ID!;
+  const vrsTokenId = process.env.NEXT_PUBLIC_VRS_TOKEN_ID!;
   const questionsTopicId = process.env.NEXT_PUBLIC_QUESTIONS_TOPIC_ID!;
   const registryTopicId = process.env.NEXT_PUBLIC_REGISTRY_TOPIC_ID!;
 
   try {
     const [tokenInfo, registryInfo, questionMsgs] = await Promise.all([
-      getTokenInfo(dvtTokenId).catch(() => ({ totalSupply: "0", decimals: 2 })),
+      getTokenInfo(vrsTokenId).catch(() => ({ totalSupply: "0", decimals: 2 })),
       getTopicInfo(registryTopicId).catch(() => ({ sequenceNumber: 0 })),
       getTopicMessages<HCSQuestionPayload>(questionsTopicId, 50).catch(
         () => [],
       ),
     ]);
 
-    // DVT Circulation
+    // VRS Circulation
     const circulation =
       Number(tokenInfo.totalSupply) / Math.pow(10, tokenInfo.decimals);
 

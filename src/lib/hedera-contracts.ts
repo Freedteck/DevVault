@@ -7,8 +7,8 @@
  * signs contract calls — not the platform operator.
  *
  * Contracts deployed on Hedera testnet:
- *   DevVaultBounty: NEXT_PUBLIC_BOUNTY_CONTRACT_ID
- *   DevVaultSwap:   NEXT_PUBLIC_SWAP_CONTRACT_ID
+ *   VursoBounty: NEXT_PUBLIC_BOUNTY_CONTRACT_ID
+ *   VursoSwap:   NEXT_PUBLIC_SWAP_CONTRACT_ID
  */
 
 import { DAppConnector } from "@hashgraph/hedera-wallet-connect";
@@ -80,7 +80,7 @@ export interface LockBountyInput {
 }
 
 /**
- * Lock HBAR as a bounty in the DevVaultBounty contract.
+ * Lock HBAR as a bounty in the VursoBounty contract.
  * The user's wallet signs the ContractExecuteTransaction with a payable HBAR value.
  */
 export async function lockBounty(
@@ -157,19 +157,19 @@ export async function releaseBounty(
 // ─── Swap Contract ────────────────────────────────────────────────────────────
 
 export interface SwapInput {
-  accountId: string; // Hedera native account ID (for DVT delivery)
+  accountId: string; // Hedera native account ID (for VRS delivery)
   hbarAmount: number; // HBAR to send
 }
 
 /**
- * Swap HBAR for DVT via the DevVaultSwap contract.
+ * Swap HBAR for VRS via the VursoSwap contract.
  * Emits SwapRequested event; platform monitors events via Mirror Node
- * and delivers DVT to the user's Hedera account.
+ * and delivers VRS to the user's Hedera account.
  */
-export async function swapHbarForDVT(
+export async function swapHbarForVRS(
   connector: DAppConnector,
   input: SwapInput,
-): Promise<{ transactionId: string; expectedDVT: number }> {
+): Promise<{ transactionId: string; expectedVRS: number }> {
   const contractId = process.env.NEXT_PUBLIC_SWAP_CONTRACT_ID!;
   const signer = getSigner(connector, input.accountId);
 
@@ -188,11 +188,11 @@ export async function swapHbarForDVT(
 
   const result = await tx.executeWithSigner(signer);
 
-  // Expected DVT = hbarAmount * 92 (at default rate)
-  const expectedDVT = input.hbarAmount * 92;
+  // Expected VRS = hbarAmount * 92 (at default rate)
+  const expectedVRS = input.hbarAmount * 92;
 
   return {
     transactionId: result.transactionId?.toString() ?? "",
-    expectedDVT,
+    expectedVRS,
   };
 }

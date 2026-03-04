@@ -1,4 +1,4 @@
-import { getTopicMessagesPaged, getTopicInfo } from "@/lib/hedera-mirror";
+import { getTopicMessagesPaged } from "@/lib/hedera-mirror";
 import type { HCSQuestionPayload } from "@/lib/hcs-types";
 import type { LiveQuestion } from "@/lib/live-types";
 import { QuestionCard } from "@/components/cards/QuestionCard";
@@ -6,8 +6,8 @@ import Link from "next/link";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Questions | DevVault",
-  description: "Browse the latest developer questions on DevVault.",
+  title: "Questions | Vurso",
+  description: "Browse the latest developer questions on Vurso.",
 };
 
 export const revalidate = 3600; // Cache for 1 hour, manually revalidated on post
@@ -47,7 +47,7 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
         tags: msg.data!.tags || [],
         author: msg.data!.author,
         bountyAmount: msg.data!.bountyAmount || 0,
-        bountyCurrency: msg.data!.bountyCurrency || "DVT",
+        bountyCurrency: msg.data!.bountyCurrency || "VRS",
         discussionTopicId: msg.data!.discussionTopicId,
         answerCount: msg.answerCount ?? 0,
         accepted: false,

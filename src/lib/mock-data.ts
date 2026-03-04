@@ -1,4 +1,4 @@
-// Mock data for DevVault UI development
+// Mock data for Vurso UI development
 // Replace with real Hedera Mirror Node + IPFS fetches later
 
 export type Tag = string;
@@ -6,7 +6,7 @@ export type Tag = string;
 export interface Author {
   accountId: string;
   displayName: string;
-  dvtEarned: number;
+  vrsEarned: number;
   skills: string[];
 }
 
@@ -19,9 +19,9 @@ export interface Question {
   author: Author;
   timestamp: string;
   answerCount: number;
-  tipTotal: number; // total DVT tips received
+  tipTotal: number; // total VRS tips received
   bountyAmount?: number;
-  bountyCurrency?: "HBAR" | "DVT";
+  bountyCurrency?: "HBAR" | "VRS";
   accepted: boolean;
   discussionTopicId: string;
 }
@@ -60,7 +60,7 @@ export interface LeaderboardEntry {
   author: Author;
   acceptedAnswers: number;
   questionsAsked: number;
-  score: number; // dvtEarned * 1 + acceptedAnswers * 10
+  score: number; // vrsEarned * 1 + acceptedAnswers * 10
 }
 
 // ─── Authors ──────────────────────────────────────────────────────
@@ -69,31 +69,31 @@ export const MOCK_AUTHORS: Author[] = [
   {
     accountId: "0.0.1234567",
     displayName: "freed.dev",
-    dvtEarned: 4280,
+    vrsEarned: 4280,
     skills: ["Hedera", "React", "TypeScript", "Solidity"],
   },
   {
     accountId: "0.0.2345678",
     displayName: "hbarbuilder",
-    dvtEarned: 3150,
+    vrsEarned: 3150,
     skills: ["Solidity", "EVM", "DeFi", "Python"],
   },
   {
     accountId: "0.0.3456789",
     displayName: "nodematrix",
-    dvtEarned: 2740,
+    vrsEarned: 2740,
     skills: ["Node.js", "Rust", "Systems", "APIs"],
   },
   {
     accountId: "0.0.4567890",
     displayName: "chaincraft",
-    dvtEarned: 1920,
+    vrsEarned: 1920,
     skills: ["Hedera", "HCS", "Next.js", "Go"],
   },
   {
     accountId: "0.0.5678901",
     displayName: "solveshift",
-    dvtEarned: 890,
+    vrsEarned: 890,
     skills: ["React", "CSS", "UX", "Testing"],
   },
 ];
@@ -114,7 +114,7 @@ I've read that Hedera's architecture provides some inherent protections but I'm 
     answerCount: 4,
     tipTotal: 320,
     bountyAmount: 100,
-    bountyCurrency: "DVT",
+    bountyCurrency: "VRS",
     accepted: true,
     discussionTopicId: "0.0.9876501",
   },
@@ -273,7 +273,7 @@ export const MOCK_STATS = {
   totalQuestions: 148,
   totalUpdates: 63,
   totalAnswers: 412,
-  dvtCirculating: 184_200,
+  vrsCirculating: 184_200,
   hbarInBounties: 312.5,
   activeContributors: 94,
 };

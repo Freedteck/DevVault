@@ -7,6 +7,8 @@ import {
 } from "hedera-agent-kit";
 import { ChatGroq } from "@langchain/groq";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import fs from "fs";
+import path from "path";
 
 const NETWORK = process.env.NEXT_PUBLIC_HEDERA_NETWORK || "testnet";
 const OPERATOR_ID = process.env.OPERATOR_ACCOUNT_ID;
@@ -17,8 +19,38 @@ const QUESTIONS_TOPIC = process.env.NEXT_PUBLIC_QUESTIONS_TOPIC_ID;
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 const RECONNECT_INTERVAL_MS = 10_000;
 
+const CURSOR_FILE = path.join(process.cwd(), ".vurso-agent-cursor.json");
+
 let lastProcessedSequence = 0;
+let cursorLoaded = false;
 const questionCache = new Map();
+
+function loadAgentCursor() {
+  try {
+    if (fs.existsSync(CURSOR_FILE)) {
+      const data = JSON.parse(fs.readFileSync(CURSOR_FILE, "utf8"));
+      lastProcessedSequence = data.lastProcessedSequence || 0;
+      cursorLoaded = true;
+      console.log(
+        `🤖  AI Agent loaded cursor at sequence: ${lastProcessedSequence}`,
+      );
+    }
+  } catch (err) {
+    // Ignore read errors
+  }
+}
+
+function saveAgentCursor() {
+  try {
+    fs.writeFileSync(
+      CURSOR_FILE,
+      JSON.stringify({ lastProcessedSequence }),
+      "utf8",
+    );
+  } catch (err) {
+    // Ignore write errors
+  }
+}
 
 /**
  * AI Agent Background Service
@@ -57,6 +89,8 @@ export async function startAIAgent() {
     .getTools()
     .find((t) => t.name === "submit_topic_message_tool");
 
+  loadAgentCursor();
+
   // Warm up cache from Mirror Node first
   await bootstrapCache();
 
@@ -64,7 +98,7 @@ export async function startAIAgent() {
     console.log(`📡  Subscribing to HCS Topic: ${QUESTIONS_TOPIC}`);
     new TopicMessageQuery()
       .setTopicId(TopicId.fromString(QUESTIONS_TOPIC!))
-      .setStartTime(0)
+      .setStartTime(cursorLoaded ? 0 : new Date()) // fresh deploy: only new messages
       .subscribe(
         hederaClient,
         (err) => {
@@ -75,6 +109,7 @@ export async function startAIAgent() {
           const seq = msg.sequenceNumber.toNumber();
           if (seq <= lastProcessedSequence) return;
           lastProcessedSequence = Math.max(lastProcessedSequence, seq);
+          saveAgentCursor();
 
           const content = Buffer.from(msg.contents).toString("utf8");
           try {
@@ -97,7 +132,9 @@ async function bootstrapCache() {
     const json = await res.json();
     for (const m of json.messages || []) {
       const seq = m.sequence_number;
-      lastProcessedSequence = Math.max(lastProcessedSequence, seq);
+      if (seq > lastProcessedSequence) {
+        lastProcessedSequence = seq;
+      }
       try {
         const payload = JSON.parse(
           Buffer.from(m.message, "base64").toString("utf8"),
@@ -113,6 +150,7 @@ async function bootstrapCache() {
     console.log(
       `✅  AI Agent warmed up: ${questionCache.size} questions cached.`,
     );
+    saveAgentCursor();
   } catch (err: any) {
     console.warn("⚠️  Failed to bootstrap AI agent cache:", err.message);
   }
@@ -161,7 +199,7 @@ async function processQuestion(
         message: JSON.stringify({
           type: "AI_COMMENT",
           body: `> 🤖 **Duplicate detected** — similar to [question #${result.matchSeq}](/questions/${result.matchSeq})\n\n${result.explanation}`,
-          author: { accountId: OPERATOR_ID, displayName: "🤖 DevVault AI" },
+          author: { accountId: OPERATOR_ID, displayName: "🤖 Vurso AI" },
           isAgentComment: true,
           timestamp: Date.now(),
         }),

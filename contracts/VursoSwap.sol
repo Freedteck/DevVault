@@ -2,12 +2,12 @@
 pragma solidity ^0.8.28;
 
 /**
- * DevVault DVT Swap Contract
+ * Vurso VRS Swap Contract
  *
  * Deployed on Hedera Smart Contract Service (HSCS).
  *
- * Allows users to swap HBAR for DVT at a fixed rate set by the platform.
- * The contract is pre-loaded with DVT token balance by the treasury.
+ * Allows users to swap HBAR for VRS at a fixed rate set by the platform.
+ * The contract is pre-loaded with VRS token balance by the treasury.
  *
  * IMPORTANT: On Hedera, HTS token transfers via HSCS require the
  * IHederaTokenService precompile (0x167). This contract uses the
@@ -16,21 +16,21 @@ pragma solidity ^0.8.28;
  * For the hackathon testnet, we use a simplified model:
  *   - Users send HBAR to this contract
  *   - Off-chain: the platform monitors SwapRequested events and manually
- *     transfers DVT to the user (server-side with operator key)
+ *     transfers VRS to the user (server-side with operator key)
  *   - HBAR is held in contract until the platform sweeps it
  *
  * This avoids the complexity of HTS precompile calls while demonstrating
  * the economic model during the hackathon demo.
  *
  * Note: A production version would use the IHederaTokenService precompile
- * to atomically swap HBAR → DVT on-chain.
+ * to atomically swap HBAR → VRS on-chain.
  */
-contract DevVaultSwap {
+contract VursoSwap {
     address public owner;
 
-    /// @notice Exchange rate: DVT per 1 HBAR (at 8 decimal HBAR precision)
-    /// Default: 92 DVT per 1 HBAR (1 DVT ≈ 0.0109 HBAR)
-    uint256 public dvtPerHbar = 92;
+    /// @notice Exchange rate: VRS per 1 HBAR (at 8 decimal HBAR precision)
+    /// Default: 92 VRS per 1 HBAR (1 VRS ≈ 0.0109 HBAR)
+    uint256 public vrsPerHbar = 92;
 
     /// @notice Minimum swap: 0.1 HBAR (in tinybars: 10_000_000)
     uint256 public minSwapTinybars = 10_000_000;
@@ -38,8 +38,8 @@ contract DevVaultSwap {
     event SwapRequested(
         address indexed user,
         uint256 hbarAmount, // tinybars
-        uint256 dvtAmount,  // whole DVT units (2 decimals)
-        string hederaAccountId // Hedera native account ID for DVT transfer
+        uint256 vrsAmount,  // whole VRS units (2 decimals)
+        string hederaAccountId // Hedera native account ID for VRS transfer
     );
 
     event RateUpdated(uint256 newRate);
@@ -54,31 +54,31 @@ contract DevVaultSwap {
         _;
     }
 
-    /// @notice Swap HBAR for DVT.
+    /// @notice Swap HBAR for VRS.
     /// @param hederaAccountId The user's Hedera account ID (e.g. "0.0.12345")
-    ///        so the platform knows where to send DVT off-chain.
+    ///        so the platform knows where to send VRS off-chain.
     function swap(string calldata hederaAccountId) external payable {
         require(msg.value >= minSwapTinybars, "Below minimum swap");
         require(bytes(hederaAccountId).length > 0, "No account ID");
 
-        // Calculate DVT amount (msg.value is in tinybars = 1e-8 HBAR)
-        // dvtAmount (2 decimals) = (tinybars / 1e8) * dvtPerHbar * 100
-        uint256 dvtAmount = (msg.value * dvtPerHbar * 100) / 1e8;
-        require(dvtAmount > 0, "DVT amount too small");
+        // Calculate VRS amount (msg.value is in tinybars = 1e-8 HBAR)
+        // vrsAmount (2 decimals) = (tinybars / 1e8) * vrsPerHbar * 100
+        uint256 vrsAmount = (msg.value * vrsPerHbar * 100) / 1e8;
+        require(vrsAmount > 0, "VRS amount too small");
 
-        emit SwapRequested(msg.sender, msg.value, dvtAmount, hederaAccountId);
+        emit SwapRequested(msg.sender, msg.value, vrsAmount, hederaAccountId);
     }
 
-    /// @notice Preview DVT amount for a given HBAR input.
+    /// @notice Preview VRS amount for a given HBAR input.
     /// @param tinybars Amount in tinybars (1 HBAR = 1e8 tinybars)
-    function quote(uint256 tinybars) external view returns (uint256 dvtAmount) {
-        return (tinybars * dvtPerHbar * 100) / 1e8;
+    function quote(uint256 tinybars) external view returns (uint256 vrsAmount) {
+        return (tinybars * vrsPerHbar * 100) / 1e8;
     }
 
-    /// @notice Update the DVT/HBAR rate.
+    /// @notice Update the VRS/HBAR rate.
     function setRate(uint256 newRate) external onlyOwner {
         require(newRate > 0, "Zero rate");
-        dvtPerHbar = newRate;
+        vrsPerHbar = newRate;
         emit RateUpdated(newRate);
     }
 

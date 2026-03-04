@@ -1,5 +1,5 @@
 /**
- * Deploy DevVault smart contracts to Hedera testnet using HSCS.
+ * Deploy Vurso smart contracts to Hedera testnet using HSCS.
  *
  * Usage:
  *   node scripts/deploy-contracts.mjs
@@ -101,13 +101,13 @@ async function main() {
 
   // Compile
   console.log("Compiling contracts…");
-  const bounty = compileSolidity("DevVaultBounty.sol");
-  const swap = compileSolidity("DevVaultSwap.sol");
+  const bounty = compileSolidity("VursoBounty.sol");
+  const swap = compileSolidity("VursoSwap.sol");
   console.log("✅  Compilation successful");
 
   // Deploy
-  const bountyContractId = await deployContract(client, bounty.bytecode, "DevVaultBounty");
-  const swapContractId = await deployContract(client, swap.bytecode, "DevVaultSwap");
+  const bountyContractId = await deployContract(client, bounty.bytecode, "VursoBounty");
+  const swapContractId = await deployContract(client, swap.bytecode, "VursoSwap");
 
   console.log("\n─────────────────────────────────────────────");
   console.log("Add these to your .env.local:");

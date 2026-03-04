@@ -27,9 +27,9 @@ export async function generateMetadata({
   const topicId = process.env.NEXT_PUBLIC_ANNOUNCEMENTS_TOPIC_ID!;
   try {
     const msg = await getTopicMessage<HCSAnnouncementPayload>(topicId, seqNum);
-    return { title: `${msg.data?.title || "Announcement"} | DevVault` };
+    return { title: `${msg.data?.title || "Announcement"} | Vurso` };
   } catch {
-    return { title: "DevVault Announcement" };
+    return { title: "Vurso Announcement" };
   }
 }
 

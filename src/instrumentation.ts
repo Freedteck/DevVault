@@ -11,7 +11,7 @@ export async function register() {
     const { startAIAgent } = await import("./lib/agent-service");
     const { startSwapService } = await import("./lib/swap-service");
 
-    console.log("🚀  Initializing DevVault Background Services...");
+    console.log("🚀  Initializing Vurso Background Services...");
 
     // Launch services without awaiting so they don't block server startup
     startAIAgent().catch((err) =>

@@ -117,7 +117,7 @@ export default function PostUpdatePage() {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Announcing DevVault's integration with HCS-11"
+            placeholder="e.g. Announcing Vurso's integration with HCS-11"
             className="w-full px-4 py-2.5 bg-bg-panel border border-border-main rounded-md text-sm text-text-main outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/20 transition-all"
           />
         </div>

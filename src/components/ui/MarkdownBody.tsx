@@ -14,7 +14,7 @@ interface MarkdownBodyProps {
  */
 export function MarkdownBody({ content, className = "" }: MarkdownBodyProps) {
   return (
-    <div className={`prose-devvault ${className}`}>
+    <div className={`prose-vurso ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

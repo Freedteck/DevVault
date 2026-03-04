@@ -4,13 +4,12 @@ import { getTopicMessage, getTopicMessages } from "@/lib/hedera-mirror";
 import { fetchFromIPFS } from "@/lib/ipfs";
 import type { HCSUpdatePayload, HCSCommentPayload } from "@/lib/hcs-types";
 import type { LiveComment } from "@/lib/live-types";
-import { Tag, Timestamp, StatPill, Avatar } from "@/components/ui/primitives";
+import { Tag, Timestamp, StatPill } from "@/components/ui/primitives";
 import { CommentCard } from "@/components/cards/CommentCard";
 import { MarkdownBody } from "@/components/ui/MarkdownBody";
 import { Metadata } from "next";
-import { CommentForm } from "@/components/forms/CommentForm";
 
-export const revalidate = 3600; // Cache for 1 hour, manually revalidated on activity
+export const revalidate = 10;
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -25,9 +24,9 @@ export async function generateMetadata({
   const topicId = process.env.NEXT_PUBLIC_UPDATES_TOPIC_ID!;
   try {
     const msg = await getTopicMessage<HCSUpdatePayload>(topicId, seqNum);
-    return { title: `${msg.data?.title || "Update"} | DevVault` };
+    return { title: `${msg.data?.title || "Update"} | Vurso` };
   } catch {
-    return { title: "DevVault Update" };
+    return { title: "Vurso Update" };
   }
 }
 
@@ -103,14 +102,17 @@ export default async function UpdateDetailPage({ params }: PageProps) {
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border-main pb-4">
             <div className="flex items-center gap-2">
-              <Avatar
-                accountId={msg.data.author.accountId}
-                displayName={msg.data.author.displayName}
-                size={24}
-              />
+              <span className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold shrink-0 bg-primary-800 text-primary-300">
+                {msg.data.author.displayName.charAt(0).toUpperCase()}
+              </span>
+              <span className="text-xs font-medium text-text-main">
+                {msg.data.author.displayName}
+              </span>
             </div>
             <span className="text-border-main">|</span>
             <Timestamp iso={msg.consensusTimestamp} />
+            <span className="text-border-main">|</span>
+            <StatPill value={0} label="VRS Tipped" variant="primary" />
           </div>
         </div>
 
@@ -144,18 +146,17 @@ export default async function UpdateDetailPage({ params }: PageProps) {
           <h3 className="text-sm font-semibold uppercase tracking-widest text-text-muted">
             Join the Discussion
           </h3>
-          {msg.data.discussionTopicId ? (
-            <CommentForm
-              discussionTopicId={msg.data.discussionTopicId}
+          <div className="rounded-lg border border-border-main bg-bg-panel p-4">
+            <textarea
               placeholder="Share your thoughts on this update..."
+              className="w-full h-24 bg-transparent border-none outline-none text-sm text-text-primary resize-none font-sans"
             />
-          ) : (
-            <div className="rounded-lg border border-dashed border-border-main p-8 text-center bg-bg-panel/50">
-              <p className="text-sm text-text-muted">
-                Discussion topic not available for this update.
-              </p>
+            <div className="flex items-center justify-end mt-4 border-t border-border-main pt-4">
+              <button className="px-4 py-2 rounded-md text-sm font-medium bg-primary-600 hover:bg-primary-700 text-white transition-colors">
+                Post Comment
+              </button>
             </div>
-          )}
+          </div>
         </section>
       </div>
     );

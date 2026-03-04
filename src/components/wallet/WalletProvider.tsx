@@ -20,7 +20,7 @@ import { getHCS11Profile } from "@/lib/hedera-mirror";
 // Reown/WalletConnect Project ID - get yours at https://cloud.reown.com
 // For the hackathon, you can create a free project.
 const WALLETCONNECT_PROJECT_ID =
-  process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? "devvault-hackathon-dev";
+  process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? "vurso-hackathon-dev";
 
 import type { HCS11Profile } from "@/lib/hedera-mirror";
 
@@ -96,12 +96,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const init = async () => {
       const dappConnector = new DAppConnector(
         {
-          name: "DevVault",
+          name: "Vurso",
           description: "Decentralised developer knowledge network on Hedera",
           url:
             typeof window !== "undefined"
               ? window.location.origin
-              : "https://devvault.xyz",
+              : "https://vurso.xyz",
           icons: [
             `${typeof window !== "undefined" ? window.location.origin : ""}/favicon.ico`,
           ],

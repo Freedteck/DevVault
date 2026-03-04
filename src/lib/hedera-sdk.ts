@@ -91,15 +91,15 @@ export async function transferHBAR(
 }
 
 /**
- * Associate the DVT token with an account so it can receive DVT.
+ * Associate the VRS token with an account so it can receive VRS.
  * Needs the account's private key — only for server-side flows.
  */
-export async function associateDVTToken(
+export async function associateVRSToken(
   accountId: string,
   accountPrivateKey: string,
 ): Promise<void> {
   const client = getClient();
-  const tokenId = TokenId.fromString(process.env.NEXT_PUBLIC_DVT_TOKEN_ID!);
+  const tokenId = TokenId.fromString(process.env.NEXT_PUBLIC_VRS_TOKEN_ID!);
   const accId = AccountId.fromString(accountId);
 
   let key: PrivateKey;

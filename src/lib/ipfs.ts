@@ -34,7 +34,7 @@ const PUBLIC_GATEWAY = "https://gateway.pinata.cloud";
  */
 export async function uploadToIPFS(
   content: string,
-  name = "devvault-content",
+  name = "vurso-content",
 ): Promise<string> {
   const jwt = process.env.PINATA_JWT;
   if (!jwt) throw new Error("PINATA_JWT not configured");

@@ -108,7 +108,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               <button
                 onClick={() => setIsSwapModalOpen(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-border-main text-text-secondary hover:border-primary-500 hover:text-primary-500 transition-colors"
-                title="Swap HBAR for DVT"
+                title="Swap HBAR for VRS"
               >
                 <svg
                   width="14"
@@ -125,7 +125,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                   <path d="m8 21-4-4 4-4" />
                   <path d="M4 17h16" />
                 </svg>
-                <span className="hidden sm:inline">Swap DVT</span>
+                <span className="hidden sm:inline">Swap VRS</span>
               </button>
             )}
             <Link

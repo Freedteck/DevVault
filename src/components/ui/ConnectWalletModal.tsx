@@ -29,7 +29,7 @@ export function ConnectWalletModal({
     <Modal isOpen={isOpen} onClose={onClose} title="Connect Wallet">
       <div className="space-y-4">
         <p className="text-sm text-text-secondary">
-          Select your preferred Hedera wallet to access your DVT balance and
+          Select your preferred Hedera wallet to access your VRS balance and
           interact with the vault.
         </p>
         <div className="space-y-2">

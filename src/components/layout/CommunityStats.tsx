@@ -46,7 +46,7 @@ export function CommunityStats() {
               })}
             </p>
           )}
-          <p className="text-[10px] text-text-muted uppercase">DVT Circ</p>
+          <p className="text-[10px] text-text-muted uppercase">VRS Circ</p>
         </div>
         <div>
           {loading ? (

@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DevVault — Developer Knowledge Network",
+  title: "Vurso — Developer Knowledge Network",
   description:
-    "A decentralised knowledge-sharing platform for developers. Ask questions, share insights, and earn DVT for your contributions.",
+    "A decentralised knowledge-sharing platform for developers. Ask questions, share insights, and earn VRS for your contributions.",
 };
 
 export default function RootLayout({

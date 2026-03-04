@@ -1,8 +1,8 @@
 /**
- * DevVault Swap Listener
+ * Vurso Swap Listener
  *
- * Polls the Mirror Node for SwapRequested events emitted by DevVaultSwap,
- * then transfers DVT to the requesting account using the operator key.
+ * Polls the Mirror Node for SwapRequested events emitted by VursoSwap,
+ * then transfers VRS to the requesting account using the operator key.
  *
  * Run: node scripts/swap-listener.mjs
  *   or: pnpm swap:listen
@@ -31,7 +31,7 @@ dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const SWAP_CONTRACT_ID = process.env.NEXT_PUBLIC_SWAP_CONTRACT_ID;
-const DVT_TOKEN_ID = process.env.NEXT_PUBLIC_DVT_TOKEN_ID;
+const VRS_TOKEN_ID = process.env.NEXT_PUBLIC_VRS_TOKEN_ID;
 const OPERATOR_ID = process.env.OPERATOR_ACCOUNT_ID;
 const OPERATOR_KEY_STR = process.env.OPERATOR_PRIVATE_KEY;
 const NETWORK = process.env.NEXT_PUBLIC_HEDERA_NETWORK || "testnet";
@@ -67,7 +67,7 @@ function saveCursor(cursor) {
 /**
  * Decode a SwapRequested log.
  * topics[1] = indexed address user
- * data = abi.encode(uint256 hbarAmount, uint256 dvtAmount, string hederaAccountId)
+ * data = abi.encode(uint256 hbarAmount, uint256 vrsAmount, string hederaAccountId)
  */
 function decodeSwapEvent(log) {
   const data = log.data.replace("0x", "");
@@ -75,8 +75,8 @@ function decodeSwapEvent(log) {
   // uint256 hbarAmount — bytes 0-63
   const hbarAmount = BigInt("0x" + data.slice(0, 64));
 
-  // uint256 dvtAmount — bytes 64-127
-  const dvtAmount = BigInt("0x" + data.slice(64, 128));
+  // uint256 vrsAmount — bytes 64-127
+  const vrsAmount = BigInt("0x" + data.slice(64, 128));
 
   // string offset — bytes 128-191 (points to where string length is stored)
   const stringOffset = Number(BigInt("0x" + data.slice(128, 192))); // in bytes
@@ -93,7 +93,7 @@ function decodeSwapEvent(log) {
   );
   const hederaAccountId = Buffer.from(stringHex, "hex").toString("utf8");
 
-  return { hbarAmount, dvtAmount, hederaAccountId };
+  return { hbarAmount, vrsAmount, hederaAccountId };
 }
 
 // ─── Hedera Client ────────────────────────────────────────────────────────────
@@ -122,16 +122,16 @@ function buildClient() {
   return client;
 }
 
-// ─── DVT Transfer ─────────────────────────────────────────────────────────────
+// ─── VRS Transfer ─────────────────────────────────────────────────────────────
 
-async function sendDVT(client, toAccountId, dvtUnits) {
-  const tokenId = TokenId.fromString(DVT_TOKEN_ID);
+async function sendVRS(client, toAccountId, vrsUnits) {
+  const tokenId = TokenId.fromString(VRS_TOKEN_ID);
   const operatorId = AccountId.fromString(OPERATOR_ID);
   const recipient = AccountId.fromString(toAccountId);
 
   const tx = await new TransferTransaction()
-    .addTokenTransfer(tokenId, operatorId, -dvtUnits)
-    .addTokenTransfer(tokenId, recipient, dvtUnits)
+    .addTokenTransfer(tokenId, operatorId, -vrsUnits)
+    .addTokenTransfer(tokenId, recipient, vrsUnits)
     .execute(client);
 
   const receipt = await tx.getReceipt(client);
@@ -187,16 +187,16 @@ async function pollOnce(client, cursor) {
       continue;
     }
 
-    const { hbarAmount, dvtAmount, hederaAccountId } = decoded;
-    const dvtWhole = Number(dvtAmount) / 100;
+    const { hbarAmount, vrsAmount, hederaAccountId } = decoded;
+    const vrsWhole = Number(vrsAmount) / 100;
     const hbarWhole = Number(hbarAmount) / 100_000_000;
 
     console.log(
-      `[swap] ${hederaAccountId}  ${hbarWhole.toFixed(4)} HBAR → ${dvtWhole.toFixed(2)} DVT`,
+      `[swap] ${hederaAccountId}  ${hbarWhole.toFixed(4)} HBAR → ${vrsWhole.toFixed(2)} VRS`,
     );
 
     try {
-      const txId = await sendDVT(client, hederaAccountId, Number(dvtAmount));
+      const txId = await sendVRS(client, hederaAccountId, Number(vrsAmount));
       console.log(`[sent] ${txId}`);
 
       cursor.processed.push(txHash);
@@ -207,7 +207,7 @@ async function pollOnce(client, cursor) {
       saveCursor(cursor);
     } catch (err) {
       console.error(
-        `[error] DVT transfer to ${hederaAccountId} failed: ${err.message}`,
+        `[error] VRS transfer to ${hederaAccountId} failed: ${err.message}`,
       );
       // Don't add to processed — will retry on next poll
     }
@@ -222,7 +222,7 @@ async function main() {
   // Validate env
   const missing = [
     "NEXT_PUBLIC_SWAP_CONTRACT_ID",
-    "NEXT_PUBLIC_DVT_TOKEN_ID",
+    "NEXT_PUBLIC_VRS_TOKEN_ID",
     "OPERATOR_ACCOUNT_ID",
     "OPERATOR_PRIVATE_KEY",
   ].filter((k) => !process.env[k]);
@@ -231,10 +231,10 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("DevVault Swap Listener");
+  console.log("Vurso Swap Listener");
   console.log(`  Network:  ${NETWORK}`);
   console.log(`  Contract: ${SWAP_CONTRACT_ID}`);
-  console.log(`  DVT:      ${DVT_TOKEN_ID}`);
+  console.log(`  VRS:      ${VRS_TOKEN_ID}`);
   console.log(`  Operator: ${OPERATOR_ID}`);
 
   const client = buildClient();

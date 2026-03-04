@@ -5,7 +5,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@/components/wallet/WalletProvider";
 import { useToast } from "@/components/ui/ToastContext";
-import { userPostQuestion, userLockDVTBounty } from "@/lib/hedera-client-tx";
+import { userPostQuestion, userLockVRSBounty } from "@/lib/hedera-client-tx";
 import { lockBounty } from "@/lib/hedera-contracts";
 
 export default function AskQuestionPage() {
@@ -13,7 +13,7 @@ export default function AskQuestionPage() {
   const [body, setBody] = useState("");
   const [tags, setTags] = useState("");
   const [bounty, setBounty] = useState("");
-  const [currency, setCurrency] = useState<"DVT" | "HBAR">("DVT");
+  const [currency, setCurrency] = useState<"VRS" | "HBAR">("VRS");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
@@ -74,18 +74,18 @@ export default function AskQuestionPage() {
         bountyCurrency: currency,
       });
 
-      // Lock bounty on-chain: HBAR → smart contract escrow, DVT → operator escrow
-      if (bounty && parseFloat(bounty) > 0 && currency === "DVT") {
+      // Lock bounty on-chain: HBAR → smart contract escrow, VRS → operator escrow
+      if (bounty && parseFloat(bounty) > 0 && currency === "VRS") {
         try {
-          await userLockDVTBounty(connector, accountId, parseFloat(bounty));
+          await userLockVRSBounty(connector, accountId, parseFloat(bounty));
           showToast(
-            `Question live + ${bounty} DVT bounty locked in escrow! TX: ${result.transactionId.slice(0, 20)}…`,
+            `Question live + ${bounty} VRS bounty locked in escrow! TX: ${result.transactionId.slice(0, 20)}…`,
             "success",
           );
         } catch (bountyErr) {
-          console.error("DVT bounty lock failed:", bountyErr);
+          console.error("VRS bounty lock failed:", bountyErr);
           showToast(
-            `Question posted! DVT bounty lock failed: ${String(bountyErr)}`,
+            `Question posted! VRS bounty lock failed: ${String(bountyErr)}`,
             "error",
           );
         }
@@ -201,14 +201,14 @@ export default function AskQuestionPage() {
             {/* Currency Switcher */}
             <div className="flex p-0.5 rounded-md bg-bg-subtle border border-border-main">
               <button
-                onClick={() => setCurrency("DVT")}
+                onClick={() => setCurrency("VRS")}
                 className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${
-                  currency === "DVT"
+                  currency === "VRS"
                     ? "bg-bg-panel text-primary-500 shadow-sm border border-border-main"
                     : "text-text-muted hover:text-text-main"
                 }`}
               >
-                DVT
+                VRS
               </button>
               <button
                 onClick={() => setCurrency("HBAR")}
@@ -233,14 +233,14 @@ export default function AskQuestionPage() {
                 className="w-full px-4 py-2 bg-bg-subtle border border-border-main rounded-lg text-sm font-mono font-bold text-text-main outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/20 transition-all"
               />
               <span
-                className={`absolute right-4 top-1/2 -translate-y-1/2 font-mono text-xs font-bold ${currency === "DVT" ? "text-primary-600" : "text-accent-600"}`}
+                className={`absolute right-4 top-1/2 -translate-y-1/2 font-mono text-xs font-bold ${currency === "VRS" ? "text-primary-600" : "text-accent-600"}`}
               >
                 {currency}
               </span>
             </div>
 
             <div className="flex flex-wrap gap-2 pt-1 border-t border-border-main/50 sm:border-0 sm:pt-0">
-              {(currency === "DVT"
+              {(currency === "VRS"
                 ? ["10", "25", "100", "500"]
                 : ["1", "5", "10", "50"]
               ).map((amt) => (

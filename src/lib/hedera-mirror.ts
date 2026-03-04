@@ -215,12 +215,12 @@ export async function getTopicMessagesSince<T = Record<string, unknown>>(
 
 /**
  * Fetch account token balances from Mirror Node.
- * Returns DVT balance for a given account.
+ * Returns VRS balance for a given account.
  */
 export async function getTokenBalance(
   accountId: string,
-): Promise<{ dvt: number; hbar: number }> {
-  const tokenId = process.env.NEXT_PUBLIC_DVT_TOKEN_ID;
+): Promise<{ vrs: number; hbar: number }> {
+  const tokenId = process.env.NEXT_PUBLIC_VRS_TOKEN_ID;
 
   const [tokenRes, accountRes] = await Promise.all([
     fetchWithRetry(
@@ -232,11 +232,11 @@ export async function getTokenBalance(
     }),
   ]);
 
-  let dvt = 0;
+  let vrs = 0;
   if (tokenRes.ok) {
     const tokenJson = await tokenRes.json();
     const token = tokenJson.tokens?.[0];
-    if (token) dvt = Number(token.balance) / 100; // 2 decimals
+    if (token) vrs = Number(token.balance) / 100; // 2 decimals
   }
 
   let hbar = 0;
@@ -245,7 +245,7 @@ export async function getTokenBalance(
     hbar = Number(accountJson.balance?.balance ?? 0) / 100_000_000; // tinybars → HBAR
   }
 
-  return { dvt, hbar };
+  return { vrs, hbar };
 }
 
 /**
@@ -287,9 +287,9 @@ export async function getTokenInfo(tokenId: string): Promise<{
 }
 
 /**
- * Fetch the top DVT token holders, sorted by balance descending.
+ * Fetch the top VRS token holders, sorted by balance descending.
  * Returns { accountId, balance } where balance is in smallest units.
- * DVT has 2 decimals: divide by 100 for display.
+ * VRS has 2 decimals: divide by 100 for display.
  */
 export async function getTokenTopHolders(
   tokenId: string,

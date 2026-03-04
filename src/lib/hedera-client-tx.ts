@@ -72,7 +72,7 @@ export interface PostQuestionInput {
   tags: string[];
   author: HCSAuthor;
   bountyAmount?: number;
-  bountyCurrency?: "DVT" | "HBAR";
+  bountyCurrency?: "VRS" | "HBAR";
 }
 
 /**
@@ -109,7 +109,7 @@ export async function userPostQuestion(
     tags: input.tags,
     author: input.author,
     bountyAmount: input.bountyAmount ?? 0,
-    bountyCurrency: input.bountyCurrency ?? "DVT",
+    bountyCurrency: input.bountyCurrency ?? "VRS",
     discussionTopicId,
   };
 
@@ -263,21 +263,21 @@ export async function userSendHBARTip(
 }
 
 /**
- * Send a DVT tip — user signs an HTS token transfer from their wallet to recipient.
- * amountDVT is in whole DVT units (e.g. 5 = 5 DVT = 500 in the smallest unit at 2 decimals).
+ * Send a VRS tip — user signs an HTS token transfer from their wallet to recipient.
+ * amountVRS is in whole VRS units (e.g. 5 = 5 VRS = 500 in the smallest unit at 2 decimals).
  */
-export async function userSendDVTTip(
+export async function userSendVRSTip(
   connector: DAppConnector,
   fromAccountId: string,
   toAccountId: string,
-  amountDVT: number,
+  amountVRS: number,
 ): Promise<{ transactionId: string }> {
-  const tokenId = process.env.NEXT_PUBLIC_DVT_TOKEN_ID;
-  if (!tokenId) throw new Error("DVT token ID not configured");
+  const tokenId = process.env.NEXT_PUBLIC_VRS_TOKEN_ID;
+  if (!tokenId) throw new Error("VRS token ID not configured");
 
   const signer = getSigner(connector, fromAccountId);
-  // DVT has 2 decimals: 5 DVT = 500 units
-  const units = Math.round(amountDVT * 100);
+  // VRS has 2 decimals: 5 VRS = 500 units
+  const units = Math.round(amountVRS * 100);
 
   const tx = new TransferTransaction()
     .addTokenTransfer(
@@ -297,22 +297,22 @@ export async function userSendDVTTip(
 }
 
 /**
- * Lock a DVT bounty by transferring DVT from the user to the platform operator
+ * Lock a VRS bounty by transferring VRS from the user to the platform operator
  * account as escrow. The platform releases it to the answerer on answer acceptance.
- * amountDVT is in whole units (e.g. 50 = 50 DVT).
+ * amountVRS is in whole units (e.g. 50 = 50 VRS).
  */
-export async function userLockDVTBounty(
+export async function userLockVRSBounty(
   connector: DAppConnector,
   fromAccountId: string,
-  amountDVT: number,
+  amountVRS: number,
 ): Promise<{ transactionId: string }> {
-  const tokenId = process.env.NEXT_PUBLIC_DVT_TOKEN_ID;
-  if (!tokenId) throw new Error("DVT token ID not configured");
+  const tokenId = process.env.NEXT_PUBLIC_VRS_TOKEN_ID;
+  if (!tokenId) throw new Error("VRS token ID not configured");
   const escrowAccountId = process.env.NEXT_PUBLIC_OPERATOR_ACCOUNT_ID;
   if (!escrowAccountId) throw new Error("Escrow account not configured");
 
   const signer = getSigner(connector, fromAccountId);
-  const units = Math.round(amountDVT * 100); // 2 decimals
+  const units = Math.round(amountVRS * 100); // 2 decimals
 
   const tx = new TransferTransaction()
     .addTokenTransfer(
@@ -409,7 +409,7 @@ export async function userCreateProfile(
   );
 
   // Step 3: User updates account memo to point to profile topic (HCS-11)
-  // and enables auto-association for future tokens (DVT rewards/tips)
+  // and enables auto-association for future tokens (VRS rewards/tips)
   const signer = getSigner(connector, input.accountId);
   const memoTx = new AccountUpdateTransaction()
     .setAccountId(AccountId.fromString(input.accountId))
@@ -451,10 +451,10 @@ export async function userUpdateProfile(
 // ─── Token Association ────────────────────────────────────────────────────────────────────────────
 
 /**
- * Check whether an account already has the DVT token associated via Mirror Node.
+ * Check whether an account already has the VRS token associated via Mirror Node.
  */
-export async function isDVTAssociated(accountId: string): Promise<boolean> {
-  const tokenId = process.env.NEXT_PUBLIC_DVT_TOKEN_ID;
+export async function isVRSAssociated(accountId: string): Promise<boolean> {
+  const tokenId = process.env.NEXT_PUBLIC_VRS_TOKEN_ID;
   if (!tokenId) return false;
   const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK;
   const base =
@@ -474,15 +474,15 @@ export async function isDVTAssociated(accountId: string): Promise<boolean> {
 }
 
 /**
- * Associate the DVT token with the user's wallet account.
- * Must be called before the user can receive DVT (e.g. before a swap).
+ * Associate the VRS token with the user's wallet account.
+ * Must be called before the user can receive VRS (e.g. before a swap).
  */
-export async function userAssociateDVT(
+export async function userAssociateVRS(
   connector: DAppConnector,
   accountId: string,
 ): Promise<{ transactionId: string }> {
-  const tokenId = process.env.NEXT_PUBLIC_DVT_TOKEN_ID;
-  if (!tokenId) throw new Error("DVT token ID not configured");
+  const tokenId = process.env.NEXT_PUBLIC_VRS_TOKEN_ID;
+  if (!tokenId) throw new Error("VRS token ID not configured");
   const signer = getSigner(connector, accountId);
 
   const tx = new TokenAssociateTransaction()

@@ -1,5 +1,5 @@
 /**
- * DevVault HCS-10 AI Duplicate-Detection Agent  v3.0.0
+ * Vurso HCS-10 AI Duplicate-Detection Agent  v3.0.0
  *
  * Stack:
  *   hedera-agent-kit      — HederaLangchainToolkit wraps Hedera HCS ops as
@@ -13,7 +13,7 @@
  *   1. Bootstrap: create/reuse HCS-10 inbound + outbound topics, register in
  *      HOL registry via HCS10Client.registerAgent(), store HCS-11 profile.
  *   2. Poll every 30 s: call get_topic_messages_query_tool (hedera-agent-kit)
- *      on the DevVault Questions topic.
+ *      on the Vurso Questions topic.
  *   3. For each new QUESTION message, ask ChatGroq (Groq) whether it is a
  *      semantic duplicate of any previously seen question.
  *   4. If duplicate detected: call submit_topic_message_tool (hedera-agent-kit)
@@ -108,7 +108,7 @@ const OPERATOR_KEY = OPERATOR_KEY_RAW.startsWith("0x")
   ? OPERATOR_KEY_RAW.slice(2)
   : OPERATOR_KEY_RAW;
 
-const AGENT_NAME = "DevVault Duplicate Detector";
+const AGENT_NAME = "Vurso Duplicate Detector";
 const AGENT_DESCRIPTION =
   "AI-powered duplicate question detection. " +
   "Uses Hedera Agent Kit (HCS LangChain tools) + Groq llama-3.3-70b-versatile + HCS-10 OpenConvAI.";
@@ -275,7 +275,7 @@ async function storeHCS11Profile() {
       {
         type: "autonomous",
         model: GROQ_MODEL,
-        creator: "DevVault",
+        creator: "Vurso",
         version: "3.0.0",
         properties: {
           specialization: "duplicate question detection",
@@ -344,7 +344,7 @@ async function detectDuplicate(newQ, cachedQuestions) {
     .join("\n");
 
   const systemMsg = new SystemMessage(
-    `You are a technical question deduplication engine for DevVault, a developer Q&A platform.\n` +
+    `You are a technical question deduplication engine for Vurso, a developer Q&A platform.\n` +
       `Detect whether a NEW question is a semantic duplicate (same core problem, different wording) of any EXISTING question.\n` +
       `Respond ONLY with a valid JSON object — no markdown, no prose outside the JSON.\n` +
       `Schema: { "isDuplicate": boolean, "matchSeq": number|null, "similarity": number (0-1), "explanation": string }`,
@@ -392,7 +392,7 @@ async function postDuplicateComment(
     body:
       `> 🤖 **Possible duplicate** (${pct}% match) — see [question #${matchSeq}](/questions/${matchSeq})\n\n` +
       `${explanation}`,
-    author: { accountId: OPERATOR_ID, displayName: "🤖 DevVault AI" },
+    author: { accountId: OPERATOR_ID, displayName: "🤖 Vurso AI" },
     isAgentComment: true,
     similarToSequence: matchSeq,
     similarityScore: similarity,
@@ -539,7 +539,7 @@ async function main() {
     "╔═══════════════════════════════════════════════════════════════╗",
   );
   console.log(
-    "║    DevVault HCS-10 AI Agent  v3.0.0                          ║",
+    "║    Vurso HCS-10 AI Agent  v3.0.0                          ║",
   );
   console.log(
     "║    hedera-agent-kit  +  @langchain/groq  +  standards-sdk    ║",

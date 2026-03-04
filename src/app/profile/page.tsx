@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@/components/wallet/WalletProvider";
 import { useToast } from "@/components/ui/ToastContext";
-import { Tag, StatPill, Avatar } from "@/components/ui/primitives";
+import { Tag, StatPill } from "@/components/ui/primitives";
 import { QuestionCard } from "@/components/cards/QuestionCard";
 import { userCreateProfile, userUpdateProfile } from "@/lib/hedera-client-tx";
 import type { LiveQuestion } from "@/lib/live-types";
@@ -27,8 +27,8 @@ async function fetchAccountInfo(
   };
 }
 
-async function fetchDVTBalance(accountId: string): Promise<number> {
-  const tokenId = process.env.NEXT_PUBLIC_DVT_TOKEN_ID;
+async function fetchVRSBalance(accountId: string): Promise<number> {
+  const tokenId = process.env.NEXT_PUBLIC_VRS_TOKEN_ID;
   if (!tokenId) return 0;
   const res = await fetch(
     `${MIRROR}/accounts/${accountId}/tokens?token.id=${tokenId}`,
@@ -87,7 +87,7 @@ async function fetchUserQuestions(accountId: string): Promise<LiveQuestion[]> {
           tags: data.tags || [],
           author: data.author,
           bountyAmount: data.bountyAmount || 0,
-          bountyCurrency: data.bountyCurrency || "DVT",
+          bountyCurrency: data.bountyCurrency || "VRS",
           discussionTopicId: data.discussionTopicId,
           answerCount: 0,
           accepted: false,
@@ -128,7 +128,7 @@ interface ProfileData {
   bio: string;
   skills: string[];
   profileTopicId: string | null;
-  dvtBalance: number;
+  vrsBalance: number;
   hbarBalance: number;
 }
 
@@ -153,9 +153,9 @@ export default function ProfilePage() {
     if (!accountId) return;
     setIsLoading(true);
     try {
-      const [accountInfo, dvtBalance, userQuestions] = await Promise.all([
+      const [accountInfo, vrsBalance, userQuestions] = await Promise.all([
         fetchAccountInfo(accountId),
-        fetchDVTBalance(accountId),
+        fetchVRSBalance(accountId),
         fetchUserQuestions(accountId),
       ]);
 
@@ -170,7 +170,7 @@ export default function ProfilePage() {
         bio: String(profilePayload?.bio ?? ""),
         skills: (profilePayload?.skills as string[]) ?? [],
         profileTopicId,
-        dvtBalance,
+        vrsBalance,
         hbarBalance: accountInfo.hbarBalance,
       });
       setEditDisplayName(profilePayload?.displayName ?? "");
@@ -269,8 +269,8 @@ export default function ProfilePage() {
     <div className="max-w-4xl mx-auto space-y-10 pb-12">
       {/* Profile Header */}
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-8 rounded-2xl border border-border-main bg-bg-panel shadow-sm">
-        <div className="w-24 h-24 shrink-0">
-          <Avatar accountId={accountId!} hideText size={96} />
+        <div className="w-24 h-24 rounded-3xl bg-primary-800 text-primary-200 flex items-center justify-center text-4xl font-bold shadow-2xl shadow-primary-900/40 shrink-0">
+          {profile.displayName.charAt(0).toUpperCase()}
         </div>
 
         <div className="flex-1 text-center sm:text-left space-y-3">
@@ -286,10 +286,10 @@ export default function ProfilePage() {
 
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
             <StatPill
-              value={profile.dvtBalance.toLocaleString(undefined, {
+              value={profile.vrsBalance.toLocaleString(undefined, {
                 maximumFractionDigits: 2,
               })}
-              label="DVT Balance"
+              label="VRS Balance"
               variant="primary"
             />
             <span className="hidden sm:block text-border-main">|</span>
@@ -388,9 +388,9 @@ export default function ProfilePage() {
             </h3>
             <div className="space-y-2">
               <div className="flex justify-between items-center p-3 rounded-lg bg-bg-subtle border border-border-main">
-                <span className="text-xs text-text-secondary">DVT Balance</span>
+                <span className="text-xs text-text-secondary">VRS Balance</span>
                 <span className="font-mono text-sm font-bold text-primary-400">
-                  {profile.dvtBalance.toLocaleString(undefined, {
+                  {profile.vrsBalance.toLocaleString(undefined, {
                     maximumFractionDigits: 2,
                   })}
                 </span>

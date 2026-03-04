@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 /**
- * DevVault Bounty Contract
+ * Vurso Bounty Contract
  *
  * Deployed on Hedera Smart Contract Service (HSCS).
  *
@@ -18,7 +18,7 @@ pragma solidity ^0.8.28;
  *     presents the release button to the asker.
  *   - Future upgrade: add a multi-sig release after oracle validates the HCS message.
  */
-contract DevVaultBounty {
+contract VursoBounty {
     struct Bounty {
         address payable depositor;
         uint256 amount; // tinybars (1 HBAR = 100,000,000 tinybars on Hedera)

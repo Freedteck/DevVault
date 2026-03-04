@@ -6,7 +6,7 @@ import Jazzicon, { jsNumberForAddress } from "react-jazzicon";
 interface AuthorBadgeProps {
   accountId: string;
   displayName: string;
-  dvtEarned?: number;
+  vrsEarned?: number;
   size?: "sm" | "md";
 }
 
@@ -40,7 +40,7 @@ export function Avatar({
 export function AuthorBadge({
   accountId,
   displayName,
-  dvtEarned,
+  vrsEarned,
   size = "sm",
 }: AuthorBadgeProps) {
   const px = size === "sm" ? 24 : 32;
@@ -55,12 +55,12 @@ export function AuthorBadge({
         >
           {displayName}
         </p>
-        {dvtEarned !== undefined && (
+        {vrsEarned !== undefined && (
           <p
             className="text-[11px] font-mono"
             style={{ color: "var(--text-muted)" }}
           >
-            {dvtEarned.toLocaleString()} DVT earned
+            {vrsEarned.toLocaleString()} VRS earned
           </p>
         )}
       </div> */}

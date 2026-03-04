@@ -1,5 +1,5 @@
 /**
- * DevVault Admin: Post Official Announcement to HCS
+ * Vurso Admin: Post Official Announcement to HCS
  *
  * This script allows the platform operator to post high-priority
  * announcements to the dedicated Announcements HCS topic.
@@ -88,7 +88,7 @@ async function main() {
       body,
       author: {
         accountId: operatorIdStr,
-        displayName: "DevVault Admin",
+        displayName: "Vurso Admin",
       },
       discussionTopicId,
       link,

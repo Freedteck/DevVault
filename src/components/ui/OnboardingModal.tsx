@@ -30,11 +30,11 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
       await userCreateProfile(connector, {
         accountId,
         displayName: displayName.trim(),
-        bio: "Joined DevVault",
+        bio: "Joined Vurso",
         skills: [],
       });
 
-      showToast("Account activated! You're ready for DVT rewards.", "success");
+      showToast("Account activated! You're ready for VRS rewards.", "success");
       await refreshActivationStatus();
       onClose();
     } catch (err) {
@@ -49,9 +49,9 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-sm text-text-secondary">
-            DevVault uses <strong>HCS-11</strong> for on-chain identities. Activating your
-            account sets up your decentralized profile and enables <strong>automatic
-            DVT rewards</strong>.
+            Vurso uses <strong>HCS-11</strong> for on-chain identities.
+            Activating your account sets up your decentralized profile and
+            enables <strong>automatic VRS rewards</strong>.
           </p>
           <p className="text-[11px] text-text-muted italic">
             Note: This requires a one-time blockchain transaction to set your

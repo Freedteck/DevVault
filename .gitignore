@@ -28,6 +28,11 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# runtime cursor state (ephemeral, regenerated at boot)
+.vurso-agent-cursor.json
+.vurso-swap-cursor.json
+scripts/.swap-cursor.json
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)

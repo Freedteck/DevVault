@@ -114,17 +114,15 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { accountId } = useWallet();
-  const [balance, setBalance] = useState({ hbar: 0, dvt: 0 });
+  const [balance, setBalance] = useState({ hbar: 0, vrs: 0 });
+  const displayBalance = accountId ? balance : { hbar: 0, vrs: 0 };
 
   useEffect(() => {
-    if (!accountId) {
-      setBalance({ hbar: 0, dvt: 0 });
-      return;
-    }
+    if (!accountId) return;
 
     const fetchBalance = async () => {
       try {
-        const tokenId = process.env.NEXT_PUBLIC_DVT_TOKEN_ID;
+        const tokenId = process.env.NEXT_PUBLIC_VRS_TOKEN_ID;
         if (!tokenId) return;
         const mirrorNodeBase =
           process.env.NEXT_PUBLIC_HEDERA_NETWORK === "mainnet"
@@ -139,7 +137,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         ]);
 
         let hbar = 0;
-        let dvt = 0;
+        let vrs = 0;
 
         if (accountRes.ok) {
           const req = await accountRes.json();
@@ -150,11 +148,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           const body = await tokenRes.json();
           const token = body.tokens?.[0];
           if (token) {
-            dvt = Number(token.balance) / 100; // 2 decimals for DVT
+            vrs = Number(token.balance) / 100; // 2 decimals for VRS
           }
         }
 
-        setBalance({ hbar, dvt });
+        setBalance({ hbar, vrs });
       } catch (err) {
         console.error("Failed to fetch balance", err);
       }
@@ -179,7 +177,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex items-center justify-between px-5 h-14 border-b shrink-0 border-border-main">
           <div className="flex items-center">
             <span className="font-bold tracking-tight text-lg text-text-main">
-              Dev<span className="text-primary-500">Vault</span>
+              Vur<span className="text-primary-500">so</span>
             </span>
           </div>
           <button
@@ -233,7 +231,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           <div className="my-4 border-t border-border-main" />
 
-          {/* DVT Balance */}
+          {/* VRS Balance */}
           {accountId && (
             <div className="mx-1 px-3 py-3 rounded-md bg-bg-subtle">
               <p className="text-[11px] uppercase tracking-widest font-medium mb-2 text-text-muted">
@@ -241,17 +239,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </p>
               <div className="flex items-baseline gap-1">
                 <span className="font-mono text-lg font-bold text-primary-500">
-                  {balance.dvt.toLocaleString(undefined, {
+                  {displayBalance.vrs.toLocaleString(undefined, {
                     maximumFractionDigits: 2,
                   })}
                 </span>
                 <span className="text-xs font-medium text-text-secondary">
-                  DVT
+                  VRS
                 </span>
               </div>
               <div className="flex items-baseline gap-1 mt-0.5">
                 <span className="font-mono text-sm text-text-secondary">
-                  {balance.hbar.toLocaleString(undefined, {
+                  {displayBalance.hbar.toLocaleString(undefined, {
                     maximumFractionDigits: 4,
                   })}
                 </span>
@@ -263,7 +261,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Footer */}
         <div className="px-5 py-4 border-t text-[11px] shrink-0 border-border-main text-text-muted">
-          <p>DevVault · Hedera Testnet</p>
+          <p>Vurso · Hedera Testnet</p>
           <p className="mt-0.5">Apex 2026</p>
         </div>
       </aside>
