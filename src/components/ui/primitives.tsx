@@ -1,7 +1,24 @@
 "use client";
 
 import { formatDistanceToNow } from "@/lib/utils";
-import Jazzicon, { jsNumberForAddress } from "react-jazzicon";
+import Jazzicon from "react-jazzicon";
+
+/**
+ * Derive a stable numeric seed from a Hedera account ID (e.g. "0.0.12345").
+ * jsNumberForAddress only works with 0x hex addresses, so we roll our own.
+ */
+function seedForAccountId(accountId: string): number {
+  // Use the numeric portion after the last dot: "0.0.12345" → 12345
+  const parts = accountId.split(".");
+  const num = parseInt(parts[parts.length - 1], 10);
+  if (!isNaN(num) && num > 0) return num * 7_919; // multiply by prime to spread values
+  // Fallback: simple hash over the full string
+  let hash = 0;
+  for (let i = 0; i < accountId.length; i++) {
+    hash = (Math.imul(31, hash) + accountId.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
 
 interface AuthorBadgeProps {
   accountId: string;
@@ -26,7 +43,7 @@ export function Avatar({
 }: AvatarProps) {
   return (
     <div className="flex items-center gap-2">
-      <Jazzicon diameter={size} seed={jsNumberForAddress(accountId)} />
+      <Jazzicon diameter={size} seed={seedForAccountId(accountId)} />
       {!hideText && (
         <p className="text-xs font-medium flex flex-col text-text-muted">
           <span className="truncate font-medium">{displayName}</span>
@@ -131,10 +148,16 @@ export function Timestamp({ iso }: TimestampProps) {
 interface StatPillProps {
   value: number | string;
   label: string;
+  icon?: React.ReactNode;
   variant?: "default" | "primary" | "accent";
 }
 
-export function StatPill({ value, label, variant = "default" }: StatPillProps) {
+export function StatPill({
+  value,
+  label,
+  icon,
+  variant = "default",
+}: StatPillProps) {
   const colors = {
     default: {
       text: "text-primary-500",
@@ -159,10 +182,13 @@ export function StatPill({ value, label, variant = "default" }: StatPillProps) {
     <div
       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-sm ${style.bg} ${style.border}`}
     >
+      {icon && <span className={`sm:hidden ${style.text}`}>{icon}</span>}
       <span className={`text-sm font-bold font-mono ${style.text}`}>
         {value}
       </span>
-      <span className="text-[11px] font-bold uppercase tracking-widest text-text-muted">
+      <span
+        className={`text-[11px] font-bold uppercase tracking-widest text-text-muted ${icon ? "hidden sm:inline" : ""}`}
+      >
         {label}
       </span>
     </div>

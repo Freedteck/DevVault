@@ -14,7 +14,7 @@ import {
   HederaChainId,
   HederaJsonRpcMethod,
 } from "@hashgraph/hedera-wallet-connect";
-import { LedgerId } from "@hashgraph/sdk";
+import { LedgerId } from "@hiero-ledger/sdk";
 import { getHCS11Profile } from "@/lib/hedera-mirror";
 
 // Reown/WalletConnect Project ID - get yours at https://cloud.reown.com

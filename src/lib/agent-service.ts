@@ -155,7 +155,10 @@ async function bootstrapCache() {
     );
     saveAgentCursor();
   } catch (err) {
-    console.warn("⚠️  Failed to bootstrap AI agent cache:", (err as Error).message);
+    console.warn(
+      "⚠️  Failed to bootstrap AI agent cache:",
+      (err as Error).message,
+    );
   }
 }
 

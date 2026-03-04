@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import {
-  Client,
   AccountId,
+  Client,
   PrivateKey,
-  TransferTransaction,
   TokenId,
-} from "@hashgraph/sdk";
+  TransferTransaction,
+} from "@hiero-ledger/sdk";
 import fs from "fs";
 import path from "path";
 

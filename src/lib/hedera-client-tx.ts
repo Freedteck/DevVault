@@ -401,7 +401,7 @@ export async function userCreateProfile(
     skills: input.skills ?? [],
     authorAccountId: input.accountId,
   };
-  const { transactionId } = await userSubmitHCSMessage(
+  await userSubmitHCSMessage(
     connector,
     input.accountId,
     profileTopicId,

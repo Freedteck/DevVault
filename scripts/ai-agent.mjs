@@ -538,9 +538,7 @@ async function main() {
   console.log(
     "╔═══════════════════════════════════════════════════════════════╗",
   );
-  console.log(
-    "║    Vurso HCS-10 AI Agent  v3.0.0                          ║",
-  );
+  console.log("║    Vurso HCS-10 AI Agent  v3.0.0                          ║");
   console.log(
     "║    hedera-agent-kit  +  @langchain/groq  +  standards-sdk    ║",
   );

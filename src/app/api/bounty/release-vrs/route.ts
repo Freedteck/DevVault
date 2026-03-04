@@ -5,7 +5,7 @@ import {
   PrivateKey,
   TransferTransaction,
   TokenId,
-} from "@hashgraph/sdk";
+} from "@hiero-ledger/sdk";
 
 /**
  * POST /api/bounty/release-vrs

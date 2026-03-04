@@ -31,7 +31,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
             <main className="flex-1 overflow-y-auto">
               {/* The Centered Container that brings things together */}
-              <div className="max-w-[1500px] mx-auto w-full px-4 sm:px-6 py-6 lg:flex lg:gap-8">
+              <div className="max-w-375 mx-auto w-full px-4 sm:px-6 py-6 lg:flex lg:gap-8">
                 {/* Main Thread Content */}
                 <div className="flex-1 min-w-0">
                   <OnboardingBanner />

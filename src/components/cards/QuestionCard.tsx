@@ -59,6 +59,22 @@ export function QuestionCard({ question }: QuestionCardProps) {
             <StatPill
               value={question.answerCount ?? 0}
               label={question.answerCount === 1 ? "answer" : "answers"}
+              icon={
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  <polyline points="9 10 12 13 16 8" />
+                </svg>
+              }
             />
           </div>
         </div>

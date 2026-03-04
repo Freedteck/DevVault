@@ -29,17 +29,16 @@ const operatorId = process.env.OPERATOR_ACCOUNT_ID;
 const operatorKey = process.env.OPERATOR_PRIVATE_KEY;
 
 if (!operatorId || !operatorKey) {
-  console.error("❌  OPERATOR_ACCOUNT_ID and OPERATOR_PRIVATE_KEY must be set in .env.local");
+  console.error(
+    "❌  OPERATOR_ACCOUNT_ID and OPERATOR_PRIVATE_KEY must be set in .env.local",
+  );
   process.exit(1);
 }
 
 // ─── Dynamic Hedera SDK import (avoids ESM/CJS issues) ─────────────────────
 
-const {
-  Client,
-  ContractCreateFlow,
-  PrivateKey,
-} = await import("@hashgraph/sdk");
+const { Client, ContractCreateFlow, PrivateKey } =
+  await import("@hiero-ledger/sdk");
 
 // ─── Compile contracts ───────────────────────────────────────────────────────
 
@@ -106,8 +105,16 @@ async function main() {
   console.log("✅  Compilation successful");
 
   // Deploy
-  const bountyContractId = await deployContract(client, bounty.bytecode, "VursoBounty");
-  const swapContractId = await deployContract(client, swap.bytecode, "VursoSwap");
+  const bountyContractId = await deployContract(
+    client,
+    bounty.bytecode,
+    "VursoBounty",
+  );
+  const swapContractId = await deployContract(
+    client,
+    swap.bytecode,
+    "VursoSwap",
+  );
 
   console.log("\n─────────────────────────────────────────────");
   console.log("Add these to your .env.local:");

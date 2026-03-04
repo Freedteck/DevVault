@@ -6,7 +6,7 @@ import {
   TokenType,
   TokenSupplyType,
   TopicCreateTransaction,
-} from "@hashgraph/sdk";
+} from "@hiero-ledger/sdk";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";

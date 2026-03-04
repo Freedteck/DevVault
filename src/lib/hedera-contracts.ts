@@ -33,10 +33,6 @@ function encodeString(s: string): Buffer {
   return Buffer.concat([lengthWord, data]);
 }
 
-function encodeFunctionCall(selector: Buffer, ...args: Buffer[]): Uint8Array {
-  return Buffer.concat([selector, ...args]);
-}
-
 function keccak256Selector(sig: string): Buffer {
   // We precompute these selectors for our functions
   // Using ethers would be cleaner but we want zero extra deps

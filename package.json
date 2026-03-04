@@ -15,7 +15,7 @@
   "dependencies": {
     "@hashgraph/hedera-wallet-connect": "^2.0.6",
     "@hashgraph/sdk": "^2.80.0",
-    "@hashgraphonline/standards-sdk": "^0.1.163",
+    "@hashgraphonline/standards-sdk": "^0.1.164",
     "@hiero-did-sdk/registrar": "^0.1.8",
     "@hiero-ledger/sdk": "2.79.0",
     "@langchain/core": "^1.1.29",

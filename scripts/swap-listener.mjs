@@ -12,12 +12,12 @@
  */
 
 import {
-  Client,
   AccountId,
+  Client,
   PrivateKey,
-  TransferTransaction,
   TokenId,
-} from "@hashgraph/sdk";
+  TransferTransaction,
+} from "@hiero-ledger/sdk";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";

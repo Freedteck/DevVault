@@ -17,7 +17,7 @@ import {
   Client,
   TopicMessageSubmitTransaction,
   TopicCreateTransaction,
-} from "@hashgraph/sdk";
+} from "@hiero-ledger/sdk";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";

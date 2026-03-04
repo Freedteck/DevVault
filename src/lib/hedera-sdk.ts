@@ -1,17 +1,9 @@
-import {
-  Client,
-  AccountId,
-  PrivateKey,
-  TopicMessageSubmitTransaction,
-  TopicCreateTransaction,
-  TransferTransaction,
-  Hbar,
-  TokenAssociateTransaction,
-  TokenId,
-} from "@hashgraph/sdk";
+
 
 // IMPORTANT: This module is server-only. Do NOT import into client components.
 // It requires OPERATOR_PRIVATE_KEY which must never reach the browser.
+
+import { AccountId, Client, Hbar, PrivateKey, TokenAssociateTransaction, TokenId, TopicCreateTransaction, TopicMessageSubmitTransaction, TransferTransaction } from "@hiero-ledger/sdk";
 
 function getClient(): Client {
   const operatorId = process.env.OPERATOR_ACCOUNT_ID;
