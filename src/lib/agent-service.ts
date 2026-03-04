@@ -1,4 +1,4 @@
-import { Client, PrivateKey, TopicMessageQuery, TopicId } from "@hashgraph/sdk";
+import { Client, PrivateKey } from "@hashgraph/sdk";
 import {
   HederaLangchainToolkit,
   AgentMode,
@@ -17,12 +17,15 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const QUESTIONS_TOPIC = process.env.NEXT_PUBLIC_QUESTIONS_TOPIC_ID;
 
 const GROQ_MODEL = "llama-3.3-70b-versatile";
-const RECONNECT_INTERVAL_MS = 10_000;
+const POLL_INTERVAL_MS = 15_000;
+const MIRROR_BASE =
+  NETWORK === "mainnet"
+    ? "https://mainnet-public.mirrornode.hedera.com/api/v1"
+    : "https://testnet.mirrornode.hedera.com/api/v1";
 
 const CURSOR_FILE = path.join(process.cwd(), ".vurso-agent-cursor.json");
 
 let lastProcessedSequence = 0;
-let cursorLoaded = false;
 const questionCache = new Map();
 
 function loadAgentCursor() {
@@ -30,12 +33,11 @@ function loadAgentCursor() {
     if (fs.existsSync(CURSOR_FILE)) {
       const data = JSON.parse(fs.readFileSync(CURSOR_FILE, "utf8"));
       lastProcessedSequence = data.lastProcessedSequence || 0;
-      cursorLoaded = true;
       console.log(
         `🤖  AI Agent loaded cursor at sequence: ${lastProcessedSequence}`,
       );
     }
-  } catch (err) {
+  } catch {
     // Ignore read errors
   }
 }
@@ -47,7 +49,7 @@ function saveAgentCursor() {
       JSON.stringify({ lastProcessedSequence }),
       "utf8",
     );
-  } catch (err) {
+  } catch {
     // Ignore write errors
   }
 }
@@ -94,35 +96,36 @@ export async function startAIAgent() {
   // Warm up cache from Mirror Node first
   await bootstrapCache();
 
-  function subscribe() {
-    console.log(`📡  Subscribing to HCS Topic: ${QUESTIONS_TOPIC}`);
-    new TopicMessageQuery()
-      .setTopicId(TopicId.fromString(QUESTIONS_TOPIC!))
-      .setStartTime(cursorLoaded ? 0 : new Date()) // fresh deploy: only new messages
-      .subscribe(
-        hederaClient,
-        (err) => {
-          console.warn("⚠️  Agent subscription error, reconnecting...", err);
-          setTimeout(subscribe, RECONNECT_INTERVAL_MS);
-        },
-        async (msg) => {
-          const seq = msg.sequenceNumber.toNumber();
-          if (seq <= lastProcessedSequence) return;
-          lastProcessedSequence = Math.max(lastProcessedSequence, seq);
-          saveAgentCursor();
-
-          const content = Buffer.from(msg.contents).toString("utf8");
-          try {
-            const payload = JSON.parse(content);
-            if (payload.type === "QUESTION") {
-              await processQuestion(seq, payload, groq, submitTopicMsgTool);
-            }
-          } catch {}
-        },
-      );
+  async function pollTopicMessages() {
+    const url = `${MIRROR_BASE}/topics/${QUESTIONS_TOPIC}/messages?order=asc&limit=25&sequenceNumber=gt:${lastProcessedSequence}`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const json = await res.json();
+      for (const m of json.messages || []) {
+        const seq: number = m.sequence_number;
+        if (seq <= lastProcessedSequence) continue;
+        lastProcessedSequence = Math.max(lastProcessedSequence, seq);
+        saveAgentCursor();
+        try {
+          const payload = JSON.parse(
+            Buffer.from(m.message, "base64").toString("utf8"),
+          );
+          if (payload.type === "QUESTION") {
+            await processQuestion(seq, payload, groq, submitTopicMsgTool);
+          }
+        } catch {}
+      }
+    } catch (err) {
+      console.warn("⚠️  Agent poll error:", (err as Error).message);
+    }
   }
 
-  subscribe();
+  console.log(
+    `📡  AI Agent polling HCS Topic: ${QUESTIONS_TOPIC} every ${POLL_INTERVAL_MS / 1000}s`,
+  );
+  await pollTopicMessages(); // immediate first poll
+  setInterval(pollTopicMessages, POLL_INTERVAL_MS);
 }
 
 async function bootstrapCache() {
@@ -151,15 +154,18 @@ async function bootstrapCache() {
       `✅  AI Agent warmed up: ${questionCache.size} questions cached.`,
     );
     saveAgentCursor();
-  } catch (err: any) {
-    console.warn("⚠️  Failed to bootstrap AI agent cache:", err.message);
+  } catch (err) {
+    console.warn("⚠️  Failed to bootstrap AI agent cache:", (err as Error).message);
   }
 }
 
 async function processQuestion(
   seq: number,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   groq: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   postTool: any,
 ) {
   const title = payload.title || "Untitled";
@@ -205,8 +211,8 @@ async function processQuestion(
         }),
       });
     }
-  } catch (err: any) {
-    console.error("❌  AI detection error:", err.message);
+  } catch (err) {
+    console.error("❌  AI detection error:", (err as Error).message);
   }
 
   questionCache.set(seq, { title, body: payload.shortDescription });
