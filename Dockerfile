@@ -13,5 +13,6 @@ RUN pnpm build
 EXPOSE 3000
 
 ENV NODE_ENV=production
+ENV PORT=3000
 
-CMD ["pnpm", "start"]
+CMD ["sh", "-c", "pnpm start -p ${PORT}"]
