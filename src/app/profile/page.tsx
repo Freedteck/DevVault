@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@/components/wallet/WalletProvider";
 import { useToast } from "@/components/ui/ToastContext";
-import { Tag, StatPill } from "@/components/ui/primitives";
+import { Tag, StatPill, Avatar } from "@/components/ui/primitives";
 import { QuestionCard } from "@/components/cards/QuestionCard";
 import { userCreateProfile, userUpdateProfile } from "@/lib/hedera-client-tx";
 import type { LiveQuestion } from "@/lib/live-types";
@@ -269,8 +269,8 @@ export default function ProfilePage() {
     <div className="max-w-4xl mx-auto space-y-10 pb-12">
       {/* Profile Header */}
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-8 rounded-2xl border border-border-main bg-bg-panel shadow-sm">
-        <div className="w-24 h-24 rounded-3xl bg-primary-800 text-primary-200 flex items-center justify-center text-4xl font-bold shadow-2xl shadow-primary-900/40 shrink-0">
-          {profile.displayName.charAt(0).toUpperCase()}
+        <div className="w-24 h-24 shrink-0">
+          <Avatar accountId={accountId!} hideText size={96} />
         </div>
 
         <div className="flex-1 text-center sm:text-left space-y-3">

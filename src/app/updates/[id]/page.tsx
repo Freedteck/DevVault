@@ -4,12 +4,14 @@ import { getTopicMessage, getTopicMessages } from "@/lib/hedera-mirror";
 import { fetchFromIPFS } from "@/lib/ipfs";
 import type { HCSUpdatePayload, HCSCommentPayload } from "@/lib/hcs-types";
 import type { LiveComment } from "@/lib/live-types";
-import { Tag, Timestamp, StatPill } from "@/components/ui/primitives";
+import { Tag, Timestamp } from "@/components/ui/primitives";
+import { Avatar } from "@/components/ui/primitives";
 import { CommentCard } from "@/components/cards/CommentCard";
 import { MarkdownBody } from "@/components/ui/MarkdownBody";
+import { CommentForm } from "@/components/forms/CommentForm";
 import { Metadata } from "next";
 
-export const revalidate = 10;
+export const revalidate = 3600; // Cache for 1 hour, manually revalidated on activity
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -102,17 +104,14 @@ export default async function UpdateDetailPage({ params }: PageProps) {
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border-main pb-4">
             <div className="flex items-center gap-2">
-              <span className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold shrink-0 bg-primary-800 text-primary-300">
-                {msg.data.author.displayName.charAt(0).toUpperCase()}
-              </span>
-              <span className="text-xs font-medium text-text-main">
-                {msg.data.author.displayName}
-              </span>
+              <Avatar
+                accountId={msg.data.author.accountId}
+                displayName={msg.data.author.displayName}
+                size={24}
+              />
             </div>
             <span className="text-border-main">|</span>
             <Timestamp iso={msg.consensusTimestamp} />
-            <span className="text-border-main">|</span>
-            <StatPill value={0} label="VRS Tipped" variant="primary" />
           </div>
         </div>
 
@@ -146,17 +145,18 @@ export default async function UpdateDetailPage({ params }: PageProps) {
           <h3 className="text-sm font-semibold uppercase tracking-widest text-text-muted">
             Join the Discussion
           </h3>
-          <div className="rounded-lg border border-border-main bg-bg-panel p-4">
-            <textarea
+          {msg.data.discussionTopicId ? (
+            <CommentForm
+              discussionTopicId={msg.data.discussionTopicId}
               placeholder="Share your thoughts on this update..."
-              className="w-full h-24 bg-transparent border-none outline-none text-sm text-text-primary resize-none font-sans"
             />
-            <div className="flex items-center justify-end mt-4 border-t border-border-main pt-4">
-              <button className="px-4 py-2 rounded-md text-sm font-medium bg-primary-600 hover:bg-primary-700 text-white transition-colors">
-                Post Comment
-              </button>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border-main p-8 text-center bg-bg-panel/50">
+              <p className="text-sm text-text-muted">
+                Discussion topic not available for this update.
+              </p>
             </div>
-          </div>
+          )}
         </section>
       </div>
     );

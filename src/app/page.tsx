@@ -2,7 +2,7 @@ import Link from "next/link";
 import { QuestionCard } from "@/components/cards/QuestionCard";
 import { UpdateCard } from "@/components/cards/UpdateCard";
 import { formatNumber } from "@/lib/utils";
-import { getTopicMessages, getTopicInfo } from "@/lib/hedera-mirror";
+import { getTopicMessagesPaged, getTopicInfo } from "@/lib/hedera-mirror";
 import type { HCSQuestionPayload, HCSUpdatePayload } from "@/lib/hcs-types";
 import type { LiveQuestion, LiveUpdate } from "@/lib/live-types";
 
@@ -39,11 +39,21 @@ export default async function HomePage() {
   let vrsCirculating = 0;
 
   try {
-    const [qInfo, uInfo, qMessages, uMessages, vrsSupply] = await Promise.all([
+    const [qInfo, uInfo, qPage, uPage, vrsSupply] = await Promise.all([
       getTopicInfo(questionsTopicId),
       getTopicInfo(updatesTopicId),
-      getTopicMessages<HCSQuestionPayload>(questionsTopicId, 500),
-      getTopicMessages<HCSUpdatePayload>(updatesTopicId, 5),
+      getTopicMessagesPaged<HCSQuestionPayload>(
+        questionsTopicId,
+        50,
+        undefined,
+        true,
+      ),
+      getTopicMessagesPaged<HCSUpdatePayload>(
+        updatesTopicId,
+        5,
+        undefined,
+        true,
+      ),
       getVRSCirculatingSupply(vrsTokenId),
     ]);
 
@@ -53,14 +63,14 @@ export default async function HomePage() {
 
     // Count unique contributors from all question authors
     const authorSet = new Set<string>();
-    for (const msg of qMessages) {
+    for (const msg of qPage.messages) {
       if (msg.data?.author?.accountId) {
         authorSet.add(msg.data.author.accountId);
       }
     }
     totalContributors = authorSet.size;
 
-    recentQuestions = qMessages
+    recentQuestions = qPage.messages
       .filter((msg) => msg.data?.type === "QUESTION")
       .map((msg) => ({
         sequenceNumber: msg.sequenceNumber,
@@ -73,14 +83,13 @@ export default async function HomePage() {
         bountyAmount: msg.data!.bountyAmount || 0,
         bountyCurrency: msg.data!.bountyCurrency || "VRS",
         discussionTopicId: msg.data!.discussionTopicId,
-        answerCount: 0,
+        answerCount: msg.answerCount ?? 0,
         accepted: false,
         tipTotal: 0,
       }))
-      .reverse()
       .slice(0, 3);
 
-    recentUpdates = uMessages
+    recentUpdates = uPage.messages
       .filter((msg) => msg.data?.type === "UPDATE")
       .map((msg) => ({
         sequenceNumber: msg.sequenceNumber,
@@ -90,10 +99,9 @@ export default async function HomePage() {
           msg.data!.shortDescription || msg.data!.body?.slice(0, 160) || "",
         tags: msg.data!.tags || [],
         author: msg.data!.author,
-        commentCount: 0,
+        commentCount: msg.answerCount ?? 0,
         tipTotal: 0,
       }))
-      .reverse()
       .slice(0, 2);
   } catch (error) {
     console.error("Failed to fetch live home feed", error);

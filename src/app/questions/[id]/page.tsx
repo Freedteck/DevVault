@@ -11,7 +11,7 @@ import type { LiveQuestion, LiveAnswer, LiveComment } from "@/lib/live-types";
 import { QuestionDetailClient } from "./QuestionDetailClient";
 import { Metadata } from "next";
 
-export const revalidate = 0;
+export const revalidate = 3600; // Cache for 1 hour, manually revalidated on activity
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -103,7 +103,8 @@ export default async function QuestionDetailPage({ params }: PageProps) {
 
         // Build answer list, marking the accepted one, resolving IPFS bodies
         const answerMessages = allMessages.filter(
-          (msg) => msg.data?.type === "ANSWER",
+          (msg) =>
+            msg.data?.type === "ANSWER" || msg.data?.type === "AI_ANSWER",
         );
         answers = await Promise.all(
           answerMessages.map(async (msg) => {
@@ -123,11 +124,13 @@ export default async function QuestionDetailPage({ params }: PageProps) {
         );
         answers = answers.reverse();
 
-        // Collect COMMENT and AI_COMMENT messages
+        // Collect COMMENT, AI_COMMENT, and AI_FEEDBACK messages
         comments = allMessages
           .filter(
             (msg) =>
-              msg.data?.type === "COMMENT" || msg.data?.type === "AI_COMMENT",
+              msg.data?.type === "COMMENT" ||
+              msg.data?.type === "AI_COMMENT" ||
+              msg.data?.type === "AI_FEEDBACK",
           )
           .map((msg) => {
             const cData = msg.data as unknown as HCSCommentPayload;

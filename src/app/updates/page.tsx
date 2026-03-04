@@ -1,7 +1,12 @@
-import { getTopicMessagesPaged, getTopicInfo } from "@/lib/hedera-mirror";
-import type { HCSUpdatePayload } from "@/lib/hcs-types";
+import {
+  getTopicMessagesPaged,
+  getTopicMessages,
+  ParsedHCSMessage,
+} from "@/lib/hedera-mirror";
+import type { HCSUpdatePayload, HCSAnnouncementPayload } from "@/lib/hcs-types";
 import type { LiveUpdate } from "@/lib/live-types";
 import { UpdateCard } from "@/components/cards/UpdateCard";
+import { AnnouncementCarousel } from "@/components/announcements/AnnouncementCarousel";
 import Link from "next/link";
 import { Metadata } from "next";
 
@@ -11,7 +16,7 @@ export const metadata: Metadata = {
     "Stay updated with the latest Hedera ecosystem news and developer insights.",
 };
 
-export const revalidate = 0;
+export const revalidate = 3600; // Cache for 1 hour, manually revalidated on post
 
 interface PageProps {
   searchParams: Promise<{ cursor?: string }>;
@@ -22,10 +27,16 @@ export default async function UpdatesPage({ searchParams }: PageProps) {
   const topicId = process.env.NEXT_PUBLIC_UPDATES_TOPIC_ID!;
   let liveUpdates: LiveUpdate[] = [];
   let nextCursor: string | null = null;
+  let announcements: ParsedHCSMessage<HCSAnnouncementPayload>[] = [];
 
   try {
     const { messages, nextCursor: nc } =
-      await getTopicMessagesPaged<HCSUpdatePayload>(topicId, 20, cursor);
+      await getTopicMessagesPaged<HCSUpdatePayload>(
+        topicId,
+        20,
+        cursor,
+        true, // withAnswerCount = true
+      );
     nextCursor = nc;
 
     liveUpdates = messages
@@ -39,32 +50,22 @@ export default async function UpdatesPage({ searchParams }: PageProps) {
         tags: msg.data!.tags || [],
         author: msg.data!.author,
         discussionTopicId: msg.data!.discussionTopicId,
-        commentCount: 0,
+        commentCount: msg.answerCount ?? 0,
       }));
-    // Already newest-first from Mirror Node (order=desc)
 
-    // Batch-fetch comment counts from each update's discussion topic
-    const updateTopicInfos = await Promise.allSettled(
-      liveUpdates.map((u) =>
-        u.discussionTopicId
-          ? getTopicInfo(u.discussionTopicId)
-          : Promise.resolve({ sequenceNumber: 0 }),
-      ),
-    );
-
-    console.log("Debug - Updates:", {
-      count: liveUpdates.length,
-      firstUpdate: liveUpdates[0],
-      topicInfosFirst: updateTopicInfos[0],
-    });
-
-    liveUpdates = liveUpdates.map((u, i) => ({
-      ...u,
-      commentCount:
-        updateTopicInfos[i].status === "fulfilled"
-          ? updateTopicInfos[i].value.sequenceNumber
-          : 0,
-    }));
+    // Fetch latest announcements from the dedicated topic
+    const announcementsTopicId = process.env.NEXT_PUBLIC_ANNOUNCEMENTS_TOPIC_ID;
+    if (announcementsTopicId) {
+      try {
+        const annMsgs = await getTopicMessages<HCSAnnouncementPayload>(
+          announcementsTopicId,
+          5,
+        );
+        announcements = annMsgs.filter((a) => a.data?.type === "ANNOUNCEMENT");
+      } catch (err) {
+        console.error("Failed to fetch announcements", err);
+      }
+    }
   } catch (error) {
     console.error("Failed to fetch live updates", error);
   }
@@ -103,21 +104,10 @@ export default async function UpdatesPage({ searchParams }: PageProps) {
         </Link>
       </div>
 
-      {/* Featured / Announcement Bar (Mock) */}
-      <div className="rounded-lg border border-primary-600/20 bg-primary-950/20 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary-600 text-white text-[10px] shrink-0">
-            📢
-          </span>
-          <p className="text-sm text-primary-200">
-            Hedera Apex 2026 Hackathon is officially live! Submit your project
-            by March 15th.
-          </p>
-        </div>
-        <button className="self-start sm:self-auto text-xs font-bold text-primary-400 hover:text-primary-300 transition-colors uppercase tracking-widest shrink-0">
-          Details
-        </button>
-      </div>
+      {/* Featured Announcements (Carousel) */}
+      {announcements.length > 0 && (
+        <AnnouncementCarousel announcements={announcements} />
+      )}
 
       {/* Feed */}
       <div className="space-y-4">
