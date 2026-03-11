@@ -14,7 +14,7 @@ interface MarkdownBodyProps {
  */
 export function MarkdownBody({ content, className = "" }: MarkdownBodyProps) {
   return (
-    <div className={`prose-vurso min-w-0 overflow-hidden ${className}`}>
+    <div className={`prose-vurso min-w-0 ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
