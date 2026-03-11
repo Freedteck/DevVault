@@ -287,6 +287,30 @@ export async function getTokenInfo(tokenId: string): Promise<{
 }
 
 /**
+ * Count the total number of unique accounts holding a given token.
+ * Paginates through all balance pages (100 per page) to get an exact count.
+ * Used to count registered Vurso experts.
+ */
+export async function getTokenHolderCount(tokenId: string): Promise<number> {
+  let count = 0;
+  let url: string | null =
+    `${MIRROR_NODE_BASE}/tokens/${tokenId}/balances?limit=100&order=asc`;
+
+  while (url) {
+    const res = await fetchWithRetry(url, { cache: "no-store" });
+    if (!res.ok) break;
+    const json = await res.json();
+    const balances: { account: string; balance: number }[] =
+      json.balances ?? [];
+    count += balances.length;
+    const nextPath: string | null = json.links?.next ?? null;
+    url = nextPath ? `https://testnet.mirrornode.hedera.com${nextPath}` : null;
+  }
+
+  return count;
+}
+
+/**
  * Fetch the top VRS token holders, sorted by balance descending.
  * Returns { accountId, balance } where balance is in smallest units.
  * VRS has 2 decimals: divide by 100 for display.
