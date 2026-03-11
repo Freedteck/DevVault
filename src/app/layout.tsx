@@ -15,10 +15,36 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const APP_URL = "https://legislative-lark-freedteck-77552fdd.koyeb.app";
+
 export const metadata: Metadata = {
   title: "Vurso — Developer Knowledge Network",
   description:
     "A decentralised knowledge-sharing platform for developers. Ask questions, share insights, and earn VRS for your contributions.",
+  metadataBase: new URL(APP_URL),
+  openGraph: {
+    title: "Vurso — Developer Knowledge Network",
+    description:
+      "A decentralised knowledge-sharing platform for developers, built on Hedera. Ask questions, share insights, and earn VRS for your contributions.",
+    url: APP_URL,
+    siteName: "Vurso",
+    images: [
+      {
+        url: "/Vurso.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Vurso — Developer Knowledge Network",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vurso — Developer Knowledge Network",
+    description:
+      "A decentralised knowledge-sharing platform for developers, built on Hedera.",
+    images: ["/Vurso.jpg"],
+  },
 };
 
 export default function RootLayout({
