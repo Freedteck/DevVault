@@ -14,7 +14,7 @@ interface MarkdownBodyProps {
  */
 export function MarkdownBody({ content, className = "" }: MarkdownBodyProps) {
   return (
-    <div className={`prose-vurso ${className}`}>
+    <div className={`prose-vurso min-w-0 overflow-hidden ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -23,7 +23,7 @@ export function MarkdownBody({ content, className = "" }: MarkdownBodyProps) {
             const isBlock = cls?.includes("language-");
             if (isBlock) {
               return (
-                <pre className="bg-bg-subtle border border-border-main rounded-md px-4 py-3 overflow-x-auto text-xs font-mono my-3">
+                <pre className="bg-bg-subtle border border-border-main rounded-md px-4 py-3 overflow-x-auto text-xs font-mono my-3 max-w-full w-full">
                   <code className={cls} {...props}>
                     {children}
                   </code>
