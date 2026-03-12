@@ -78,7 +78,7 @@ async function deployContract(client, bytecode, name) {
 
   const tx = await new ContractCreateFlow()
     .setBytecode(bytecode)
-    .setGas(1_000_000)
+    .setGas(4_000_000)
     .execute(client);
 
   const receipt = await tx.getReceipt(client);

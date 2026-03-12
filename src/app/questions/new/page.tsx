@@ -5,8 +5,8 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@/components/wallet/WalletProvider";
 import { useToast } from "@/components/ui/ToastContext";
-import { userPostQuestion, userLockVRSBounty } from "@/lib/hedera-client-tx";
-import { lockBounty } from "@/lib/hedera-contracts";
+import { userPostQuestion } from "@/lib/hedera-client-tx";
+import { lockBounty, lockVRSBounty } from "@/lib/hedera-contracts";
 
 export default function AskQuestionPage() {
   const [title, setTitle] = useState("");
@@ -77,9 +77,18 @@ export default function AskQuestionPage() {
       // Lock bounty on-chain: HBAR → smart contract escrow, VRS → operator escrow
       if (bounty && parseFloat(bounty) > 0 && currency === "VRS") {
         try {
-          await userLockVRSBounty(connector, accountId, parseFloat(bounty));
+          // Two wallet popups:
+          // 1) Approve contract to spend VRS (TokenAllowance)
+          // 2) Contract pulls VRS into escrow (lockVRS via HTS precompile)
+          showToast(`Step 1/2: Approving VRS allowance…`, "success");
+          await lockVRSBounty(connector, {
+            accountId,
+            topicId: result.discussionTopicId,
+            sequenceNumber: 0,
+            amountVRS: parseFloat(bounty),
+          });
           showToast(
-            `Question live + ${bounty} VRS bounty locked in escrow! TX: ${result.transactionId.slice(0, 20)}…`,
+            `Question live + ${bounty} VRS bounty locked in contract escrow!`,
             "success",
           );
         } catch (bountyErr) {
@@ -192,8 +201,9 @@ export default function AskQuestionPage() {
                   <path d="M12 8h.01" />
                 </svg>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-bg-panel border border-border-main rounded text-[10px] text-text-secondary leading-tight opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-10 shadow-xl">
-                  Bounties are held in a secure Hedera Smart Contract escrow and
-                  released only when you accept a solution.
+                  Bounties are held in a <strong>Hedera Smart Contract</strong>{" "}
+                  — HBAR locked instantly, VRS locked via on-chain approval.
+                  Released only when you accept a solution.
                 </div>
               </div>
             </div>

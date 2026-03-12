@@ -9,6 +9,7 @@ import { ChatGroq } from "@langchain/groq";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import fs from "fs";
 import path from "path";
+import { fetchFromIPFS } from "@/lib/ipfs";
 
 const NETWORK = process.env.NEXT_PUBLIC_HEDERA_NETWORK || "testnet";
 const OPERATOR_ID = process.env.OPERATOR_ACCOUNT_ID;
@@ -56,7 +57,15 @@ function saveAgentCursor() {
 
 /**
  * AI Agent Background Service
- * Launched via instrumentation.ts to provide autonomous real-time duplicates detection.
+ * Launched via instrumentation.ts.
+ *
+ * For every new QUESTION on HCS:
+ *  1. Check for semantic duplicates against the cached question list.
+ *     If duplicate found → post a duplicate-warning AI_COMMENT.
+ *  2. If NOT a duplicate → generate a real developer answer via Groq
+ *     and post it as type:"AI_ANSWER" to the question's discussionTopicId.
+ *
+ * The AI is the platform operator account and is never eligible for bounties.
  */
 export async function startAIAgent() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
@@ -162,6 +171,46 @@ async function bootstrapCache() {
   }
 }
 
+// ─── Answer Generation ────────────────────────────────────────────────────────
+
+/**
+ * Generate a real developer answer using Groq Llama 3.3 70B.
+ * Returns a markdown-formatted answer string, or null on failure.
+ */
+async function generateAIAnswer(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  groq: any,
+  title: string,
+  body: string,
+  tags: string[],
+): Promise<string | null> {
+  try {
+    const tagContext = tags.length > 0 ? `Tags: ${tags.join(", ")}` : "";
+    const response = await groq.invoke([
+      new SystemMessage(
+        `You are Vurso AI, an expert developer assistant. Answer the developer's technical question with a clear, accurate, and practical markdown-formatted response.
+
+Rules:
+- Be concise but complete. Include code examples using fenced code blocks when helpful.
+- If you reference a library or framework, name the specific version if relevant.
+- End with a brief note if there are important caveats or alternative approaches.
+- Do NOT use phrases like "Great question!" or filler. Get straight to the answer.
+- Format: start directly with the answer, use headers sparingly only for long multi-part answers.`,
+      ),
+      new HumanMessage(
+        `Question: ${title}\n\n${body}${tagContext ? `\n\n${tagContext}` : ""}`,
+      ),
+    ]);
+    const text = response.content?.toString().trim();
+    return text || null;
+  } catch (err) {
+    console.error("❌  AI answer generation error:", (err as Error).message);
+    return null;
+  }
+}
+
+// ─── Question Processing ──────────────────────────────────────────────────────
+
 async function processQuestion(
   seq: number,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -172,51 +221,115 @@ async function processQuestion(
   postTool: any,
 ) {
   const title = payload.title || "Untitled";
+  const tags: string[] = payload.tags || [];
+  const hasBounty: boolean =
+    typeof payload.bountyAmount === "number" && payload.bountyAmount > 0;
+  const discussionTopicId: string | undefined = payload.discussionTopicId;
+
   console.log(`🔍  Analyzing Q#${seq}: "${title.slice(0, 50)}..."`);
 
-  if (!groq || !postTool) return;
+  if (!groq || !postTool) {
+    // No LLM configured — just cache and exit
+    questionCache.set(seq, { title, body: payload.shortDescription });
+    return;
+  }
 
+  // ── Step 1: Resolve full question body (IPFS if bodyCid set) ────────────────
+  let questionBody: string = payload.shortDescription || payload.body || "";
+  if (payload.bodyCid) {
+    try {
+      const ipfsBody = await fetchFromIPFS(payload.bodyCid);
+      if (ipfsBody) questionBody = ipfsBody;
+    } catch {
+      // Fall back to inline body
+    }
+  }
+
+  // ── Step 2: Check for duplicate against question cache ──────────────────────
   const cache = [...questionCache.entries()]
     .filter(([s]) => s !== seq)
     .slice(-30)
     .map(([s, q]) => `[${s}] ${q.title}`)
     .join("\n");
 
-  if (cache.length === 0) {
-    questionCache.set(seq, { title, body: payload.shortDescription });
-    return;
+  let isDuplicate = false;
+  let matchSeq: number | null = null;
+  let duplicateExplanation = "";
+
+  if (cache.length > 0) {
+    try {
+      const dupResponse = await groq.invoke(
+        [
+          new SystemMessage(
+            'Detect semantic duplicates. Respond ONLY with JSON: { "isDuplicate": boolean, "matchSeq": number|null, "explanation": string }',
+          ),
+          new HumanMessage(`NEW: ${title}\nEXISTING:\n${cache}`),
+        ],
+        { response_format: { type: "json_object" } },
+      );
+      const result = JSON.parse(dupResponse.content.toString());
+      isDuplicate = result.isDuplicate === true;
+      matchSeq = result.matchSeq ?? null;
+      duplicateExplanation = result.explanation ?? "";
+    } catch (err) {
+      console.error("❌  Duplicate detection error:", (err as Error).message);
+    }
   }
 
-  try {
-    const response = await groq.invoke(
-      [
-        new SystemMessage(
-          'Detect semantic duplicates. Respond ONLY with JSON: { "isDuplicate": boolean, "matchSeq": number|null, "explanation": string }',
-        ),
-        new HumanMessage(`NEW: ${title}\nEXISTING:\n${cache}`),
-      ],
-      { response_format: { type: "json_object" } },
-    );
-
-    const result = JSON.parse(response.content.toString());
-    if (result.isDuplicate && result.matchSeq && payload.discussionTopicId) {
-      console.log(
-        `🚩  Duplicate detected! Q#${seq} matches Q#${result.matchSeq}`,
-      );
+  // ── Step 3: Post duplicate warning OR generate a real answer ─────────────────
+  if (isDuplicate && matchSeq && discussionTopicId) {
+    // Duplicate found — warn, do not answer
+    console.log(`🚩  Duplicate detected! Q#${seq} matches Q#${matchSeq}`);
+    try {
       await postTool.invoke({
-        topicId: payload.discussionTopicId,
+        topicId: discussionTopicId,
         message: JSON.stringify({
           type: "AI_COMMENT",
-          body: `> 🤖 **Duplicate detected** — similar to [question #${result.matchSeq}](/questions/${result.matchSeq})\n\n${result.explanation}`,
+          body: `> 🤖 **Similar question detected** — this may already be answered at [question #${matchSeq}](/questions/${matchSeq})\n\n${duplicateExplanation}`,
           author: { accountId: OPERATOR_ID, displayName: "🤖 Vurso AI" },
           isAgentComment: true,
           timestamp: Date.now(),
         }),
       });
+    } catch (err) {
+      console.error(
+        "❌  Failed to post duplicate warning:",
+        (err as Error).message,
+      );
     }
-  } catch (err) {
-    console.error("❌  AI detection error:", (err as Error).message);
+  } else if (discussionTopicId) {
+    // Not a duplicate — generate and post a real answer
+    console.log(
+      `✍️  Generating AI answer for Q#${seq}: "${title.slice(0, 50)}..."`,
+    );
+    const aiAnswer = await generateAIAnswer(groq, title, questionBody, tags);
+
+    if (aiAnswer) {
+      // Append human-competition note if there's a bounty
+      const bountyNote = hasBounty
+        ? `\n\n---\n*💰 This question has a bounty. The bounty is reserved for human experts — post a better answer to compete for it.*`
+        : "";
+
+      try {
+        await postTool.invoke({
+          topicId: discussionTopicId,
+          message: JSON.stringify({
+            type: "AI_ANSWER",
+            questionSequenceNumber: seq,
+            body: aiAnswer + bountyNote,
+            author: { accountId: OPERATOR_ID, displayName: "🤖 Vurso AI" },
+            isAgentAnswer: true,
+            hasBounty,
+            timestamp: Date.now(),
+          }),
+        });
+        console.log(`✅  AI answer posted for Q#${seq}`);
+      } catch (err) {
+        console.error("❌  Failed to post AI answer:", (err as Error).message);
+      }
+    }
   }
 
+  // Cache question for future duplicate detection
   questionCache.set(seq, { title, body: payload.shortDescription });
 }

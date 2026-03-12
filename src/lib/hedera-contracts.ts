@@ -17,6 +17,9 @@ import {
   ContractId,
   Hbar,
   HbarUnit,
+  TokenId,
+  AccountId,
+  AccountAllowanceApproveTransaction,
 } from "@hiero-ledger/sdk";
 
 // ABI-encode helpers — manual encoding for simple functions
@@ -43,6 +46,11 @@ function keccak256Selector(sig: string): Buffer {
     "cancel(string,uint256)": "0x06909f69",
     "swap(string)": "0x78d410e6",
     "quote(uint256)": "0xed1bd76c",
+    "depositToAnswer(string,uint256)": "0x7a4b3c8e",
+    "getRequiredDeposit(string,uint256)": "0x9f2a1d45",
+    "lockVRS(string,uint256,address,int64)": "0xa1b2c3d4",
+    "releaseVRS(string,uint256,address)": "0xe5f6a7b8",
+    "cancelVRS(string,uint256)": "0xc9d0e1f2",
   };
   const hex = selectors[sig];
   if (!hex) throw new Error(`Unknown function sig: ${sig}`);
@@ -99,6 +107,46 @@ export async function lockBounty(
   const tx = new ContractExecuteTransaction()
     .setContractId(ContractId.fromString(contractId))
     .setGas(100_000)
+    .setPayableAmount(new Hbar(input.hbarAmount, HbarUnit.Hbar))
+    .setFunctionParameters(callData);
+
+  const result = await tx.executeWithSigner(signer);
+  return { transactionId: result.transactionId?.toString() ?? "" };
+}
+
+// ─── Answer Deposit ───────────────────────────────────────────────────────────
+
+export interface DepositToAnswerInput {
+  accountId: string; // answerer's Hedera account ID
+  topicId: string; // discussion topic ID of the question
+  sequenceNumber: number; // question sequence number
+  hbarAmount: number; // deposit in HBAR (e.g. 0.5 HBAR)
+}
+
+/**
+ * Pay a deposit to answer a bounty question.
+ * The answerer's wallet signs a ContractExecuteTransaction with a payable HBAR value.
+ * If their answer is accepted, the deposit is refunded alongside the bounty payout.
+ * If not accepted, the deposit stays in the contract.
+ */
+export async function depositToAnswer(
+  connector: DAppConnector,
+  input: DepositToAnswerInput,
+): Promise<{ transactionId: string }> {
+  const contractId = process.env.NEXT_PUBLIC_BOUNTY_CONTRACT_ID!;
+  const signer = getSigner(connector, input.accountId);
+
+  const selector = keccak256Selector("depositToAnswer(string,uint256)");
+
+  // ABI encoding for (string, uint256): same layout as lockHbar
+  const offset = encodeUint256(BigInt(64));
+  const seqNum = encodeUint256(BigInt(input.sequenceNumber));
+  const stringEncoded = encodeString(input.topicId);
+  const callData = Buffer.concat([selector, offset, seqNum, stringEncoded]);
+
+  const tx = new ContractExecuteTransaction()
+    .setContractId(ContractId.fromString(contractId))
+    .setGas(150_000)
     .setPayableAmount(new Hbar(input.hbarAmount, HbarUnit.Hbar))
     .setFunctionParameters(callData);
 
@@ -191,4 +239,128 @@ export async function swapHbarForVRS(
     transactionId: result.transactionId?.toString() ?? "",
     expectedVRS,
   };
+}
+// ─── VRS Bounty (Trustless via HTS precompile) ────────────────────────────────
+
+export interface LockVRSBountyInput {
+  accountId: string; // asker Hedera account ID
+  topicId: string; // discussion topic ID
+  sequenceNumber: number;
+  amountVRS: number; // whole VRS units (e.g. 50 = 50 VRS)
+}
+
+/**
+ * Lock VRS tokens as a bounty in the VursoBounty contract.
+ *
+ * Two-step wallet flow:
+ *   Step 1: TokenAllowanceApproveTransaction — user approves the bounty contract
+ *           to spend `amountVRS` VRS from their account.
+ *   Step 2: ContractExecuteTransaction — contract calls lockVRS() pulling the
+ *           approved VRS into contract custody via HTS precompile.
+ *
+ * Both transactions are signed by the user's wallet. No operator involved.
+ */
+export async function lockVRSBounty(
+  connector: DAppConnector,
+  input: LockVRSBountyInput,
+): Promise<{ transactionId: string }> {
+  const contractId = process.env.NEXT_PUBLIC_BOUNTY_CONTRACT_ID!;
+  const vrsTokenId = process.env.NEXT_PUBLIC_VRS_TOKEN_ID!;
+  const signer = getSigner(connector, input.accountId);
+  const units = BigInt(Math.round(input.amountVRS * 100)); // 2 decimals
+
+  // ── Step 1: Approve the contract to spend VRS tokens ───────────────────────
+  // TokenAllowanceApproveTransaction grants a smart contract EVM address
+  // permission to transfer VRS from the user's account via the HTS precompile.
+  const approvalTx =
+    new AccountAllowanceApproveTransaction().approveTokenAllowance(
+      TokenId.fromString(vrsTokenId),
+      AccountId.fromString(input.accountId),
+      ContractId.fromString(contractId),
+      Number(units),
+    );
+
+  await approvalTx.executeWithSigner(signer);
+
+  // ── Step 2: Call lockVRS() to pull approved VRS into the contract ───────────
+  const selector = keccak256Selector("lockVRS(string,uint256,address,int64)");
+
+  // ABI encoding for (string, uint256, address, int64):
+  // [offset_string(128), seq, address, int64_amount, string_len, string_data]
+  const offset = encodeUint256(BigInt(128)); // string starts at slot 4 (4*32=128)
+  const seqNum = encodeUint256(BigInt(input.sequenceNumber));
+
+  // VRS token EVM address (convert from 0.0.XXXXX format)
+  // Hedera token addresses: 0x0000000000000000000000000000000000<shard_in_hex><realm_in_hex><num_in_hex>
+  const tokenNum = BigInt(vrsTokenId.split(".")[2]);
+  const addrBuf = Buffer.alloc(32);
+  {
+    // write token address as 20-byte EVM addr, right-padded to 32 bytes
+    const hex = tokenNum.toString(16).padStart(40, "0");
+    Buffer.from(hex, "hex").copy(addrBuf, 12);
+  }
+
+  // int64 amount — packed into 32 bytes (int64 ABI type, signed, right-padded)
+  const amtBuf = Buffer.alloc(32);
+  amtBuf.writeBigInt64BE(BigInt(units), 24);
+
+  const stringEncoded = encodeString(input.topicId);
+  const callData = Buffer.concat([
+    selector,
+    offset,
+    seqNum,
+    addrBuf,
+    amtBuf,
+    stringEncoded,
+  ]);
+
+  const tx = new ContractExecuteTransaction()
+    .setContractId(ContractId.fromString(contractId))
+    .setGas(200_000)
+    .setFunctionParameters(callData);
+
+  const result = await tx.executeWithSigner(signer);
+  return { transactionId: result.transactionId?.toString() ?? "" };
+}
+
+export interface ReleaseVRSBountyInput {
+  accountId: string; // asker's Hedera account ID (signer)
+  topicId: string; // discussion topic ID
+  sequenceNumber: number;
+  recipientAddress: string; // answerer's EVM address
+}
+
+/**
+ * Release the VRS bounty to the accepted answerer.
+ * Callable by the original asker (or the platform operator, via server-side).
+ */
+export async function releaseVRSBounty(
+  connector: DAppConnector,
+  input: ReleaseVRSBountyInput,
+): Promise<{ transactionId: string }> {
+  const contractId = process.env.NEXT_PUBLIC_BOUNTY_CONTRACT_ID!;
+  const signer = getSigner(connector, input.accountId);
+
+  const selector = keccak256Selector("releaseVRS(string,uint256,address)");
+
+  const offset = encodeUint256(BigInt(96));
+  const seqNum = encodeUint256(BigInt(input.sequenceNumber));
+  const addrBuf = Buffer.alloc(32);
+  Buffer.from(input.recipientAddress.slice(2), "hex").copy(addrBuf, 12);
+  const stringEncoded = encodeString(input.topicId);
+  const callData = Buffer.concat([
+    selector,
+    offset,
+    seqNum,
+    addrBuf,
+    stringEncoded,
+  ]);
+
+  const tx = new ContractExecuteTransaction()
+    .setContractId(ContractId.fromString(contractId))
+    .setGas(200_000)
+    .setFunctionParameters(callData);
+
+  const result = await tx.executeWithSigner(signer);
+  return { transactionId: result.transactionId?.toString() ?? "" };
 }

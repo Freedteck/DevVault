@@ -4,6 +4,7 @@ import { fetchFromIPFS } from "@/lib/ipfs";
 import type {
   HCSQuestionPayload,
   HCSAnswerPayload,
+  HCSAIAnswerPayload,
   HCSAcceptPayload,
   HCSReplyPayload,
 } from "@/lib/hcs-types";
@@ -108,8 +109,11 @@ export default async function QuestionDetailPage({ params }: PageProps) {
         );
         answers = await Promise.all(
           answerMessages.map(async (msg) => {
-            const aData = msg.data as HCSAnswerPayload;
-            const bodyCid = aData.bodyCid as string | undefined;
+            const isAiAnswer = msg.data?.type === "AI_ANSWER";
+            const aData = msg.data as HCSAnswerPayload | HCSAIAnswerPayload;
+            const bodyCid = (aData as HCSAnswerPayload).bodyCid as
+              | string
+              | undefined;
             const body = bodyCid
               ? ((await fetchFromIPFS(bodyCid)) ?? aData.body)
               : aData.body;
@@ -118,11 +122,18 @@ export default async function QuestionDetailPage({ params }: PageProps) {
               consensusTimestamp: msg.consensusTimestamp,
               body,
               author: aData.author,
-              accepted: msg.sequenceNumber === acceptedSequence,
+              accepted: !isAiAnswer && msg.sequenceNumber === acceptedSequence,
+              isAiAnswer,
+              hasBounty: isAiAnswer
+                ? !!(aData as HCSAIAnswerPayload).hasBounty
+                : undefined,
             };
           }),
         );
-        answers = answers.reverse();
+        // AI answer always first, then human answers newest-first
+        const aiAnswers = answers.filter((a) => a.isAiAnswer);
+        const humanAnswers = answers.filter((a) => !a.isAiAnswer).reverse();
+        answers = [...aiAnswers, ...humanAnswers];
 
         // Build replies grouped by the answer sequence they target
         const replyMessages = allMessages.filter(

@@ -34,8 +34,9 @@ export function AnswerCard({
   onReplyBodyChange,
   onSubmitReply,
 }: AnswerCardProps) {
-  // Accepted answers start expanded; all others start collapsed
-  const [expanded, setExpanded] = useState(answer.accepted ?? false);
+  const isAI = answer.isAiAnswer === true;
+  // AI answers start expanded; accepted answers start expanded; others collapsed
+  const [expanded, setExpanded] = useState(isAI || (answer.accepted ?? false));
 
   const isLong = answer.body.length > EXCERPT_LEN;
   const excerpt = isLong
@@ -45,9 +46,11 @@ export function AnswerCard({
   return (
     <div
       className={`rounded-lg border transition-colors duration-150 ${
-        answer.accepted
-          ? "border-primary-600/50 bg-primary-600/5"
-          : "bg-bg-panel border-border-main"
+        isAI
+          ? "border-violet-600/40 bg-violet-600/5"
+          : answer.accepted
+            ? "border-primary-600/50 bg-primary-600/5"
+            : "bg-bg-panel border-border-main"
       }`}
     >
       {/* Header — always visible */}
@@ -56,15 +59,32 @@ export function AnswerCard({
         onClick={() => setExpanded((v) => !v)}
       >
         <div className="flex items-center gap-3 min-w-0">
-          <Avatar
-            accountId={answer.author.accountId}
-            displayName={answer.author.displayName}
-            size={28}
-          />
-          <div className="flex items-center h-full">
-            <span className="text-border-main/50 self-stretch border-l border-border-main mx-1 ml-2" />
-            <Timestamp iso={answer.consensusTimestamp} />
-          </div>
+          {isAI ? (
+            // AI Agent header
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-violet-600/20 text-violet-400 text-sm">
+                🤖
+              </span>
+              <span className="text-sm font-semibold text-violet-300">
+                Vurso AI
+              </span>
+              <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-400 border border-violet-600/30">
+                AI Answer
+              </span>
+            </div>
+          ) : (
+            <Avatar
+              accountId={answer.author.accountId}
+              displayName={answer.author.displayName}
+              size={28}
+            />
+          )}
+          {!isAI && (
+            <div className="flex items-center h-full">
+              <span className="text-border-main/50 self-stretch border-l border-border-main mx-1 ml-2" />
+              <Timestamp iso={answer.consensusTimestamp} />
+            </div>
+          )}
           {answer.accepted && (
             <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary-600 text-white">
               <svg
@@ -123,8 +143,19 @@ export function AnswerCard({
       {/* Expanded: full body + replies + reply form */}
       {expanded && (
         <div className="px-5">
-          {/* Body */}
+          {/* Full body */}
           <MarkdownBody content={answer.body} className="mb-4" />
+
+          {/* AI bounty note */}
+          {isAI && answer.hasBounty && (
+            <div className="mb-4 flex items-start gap-2 rounded-md border border-violet-600/30 bg-violet-600/10 px-3 py-2.5 text-xs text-violet-300">
+              <span className="shrink-0 mt-0.5">💰</span>
+              <span>
+                This question has a bounty. The bounty is for human experts —{" "}
+                <strong>post a better answer</strong> to compete for it.
+              </span>
+            </div>
+          )}
 
           {/* Replies Thread */}
           {replies.length > 0 && (
@@ -182,34 +213,14 @@ export function AnswerCard({
         </div>
       )}
 
-      {/* Actions — always visible */}
-      <div className="flex flex-wrap items-center gap-2 border-t border-border-main px-5 py-3 mt-auto">
-        <button
-          onClick={() =>
-            onTip?.(answer.author.displayName, answer.author.accountId)
-          }
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border-main text-text-secondary hover:border-primary-500 hover:text-primary-500 transition-colors"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-          </svg>
-          Tip VRS
-        </button>
-
-        {canAccept && !answer.accepted && (
+      {/* Actions — hidden for AI answers (can't tip or reply-to an AI) */}
+      {!isAI && (
+        <div className="flex flex-wrap items-center gap-2 border-t border-border-main px-5 py-3 mt-auto">
           <button
-            onClick={onAccept}
-            disabled={isAccepting}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border-main text-text-secondary hover:border-primary-500 hover:text-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() =>
+              onTip?.(answer.author.displayName, answer.author.accountId)
+            }
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border-main text-text-secondary hover:border-primary-500 hover:text-primary-500 transition-colors"
           >
             <svg
               width="14"
@@ -221,40 +232,62 @@ export function AnswerCard({
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <polyline points="20 6 9 17 4 12" />
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
-            {isAccepting ? "Signing..." : "Accept Solution"}
+            Tip VRS
           </button>
-        )}
 
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!expanded) setExpanded(true);
-            onToggleReply?.();
-          }}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ml-auto ${
-            replyingTo
-              ? "text-primary-400 hover:text-primary-300"
-              : "text-text-muted hover:text-text-main"
-          }`}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          {canAccept && !answer.accepted && (
+            <button
+              onClick={onAccept}
+              disabled={isAccepting}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border border-border-main text-text-secondary hover:border-primary-500 hover:text-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              {isAccepting ? "Signing..." : "Accept Solution"}
+            </button>
+          )}
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!expanded) setExpanded(true);
+              onToggleReply?.();
+            }}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ml-auto ${
+              replyingTo
+                ? "text-primary-400 hover:text-primary-300"
+                : "text-text-muted hover:text-text-main"
+            }`}
           >
-            <polyline points="15 10 20 15 15 20" />
-            <path d="M4 4v7a4 4 0 0 0 4 4h12" />
-          </svg>
-          Reply
-        </button>
-      </div>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="15 10 20 15 15 20" />
+              <path d="M4 4v7a4 4 0 0 0 4 4h12" />
+            </svg>
+            Reply
+          </button>
+        </div>
+      )}
     </div>
   );
 }

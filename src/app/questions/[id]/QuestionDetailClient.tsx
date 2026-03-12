@@ -15,7 +15,7 @@ import {
   userAcceptAnswer,
   userPostReply,
 } from "@/lib/hedera-client-tx";
-import { releaseBounty } from "@/lib/hedera-contracts";
+import { releaseBounty, depositToAnswer } from "@/lib/hedera-contracts";
 import type { LiveQuestion, LiveAnswer, LiveReply } from "@/lib/live-types";
 import { useRouter } from "next/navigation";
 
@@ -370,6 +370,29 @@ export function QuestionDetailClient({
 
     setIsSubmitting(true);
     try {
+      let answerDepositTxId: string | undefined;
+
+      // ── Pay deposit first if the question has an HBAR bounty ────────────────
+      if (question.bountyAmount > 0 && question.bountyCurrency === "HBAR") {
+        const depositHbar = Math.max(question.bountyAmount * 0.01, 0.1);
+        showToast(
+          `Step 1/2: Signing deposit of ${depositHbar.toFixed(2)} HBAR…`,
+          "success",
+        );
+        const depositResult = await depositToAnswer(connector, {
+          accountId,
+          topicId: question.discussionTopicId,
+          sequenceNumber: question.sequenceNumber,
+          hbarAmount: depositHbar,
+        });
+        answerDepositTxId = depositResult.transactionId;
+        showToast(
+          `Deposit confirmed! Step 2/2: Signing answer post…`,
+          "success",
+        );
+      }
+
+      // ── Post the answer to HCS ───────────────────────────────────────────────
       await userPostAnswer(connector, {
         questionSequenceNumber: question.sequenceNumber,
         discussionTopicId: question.discussionTopicId,
@@ -378,6 +401,7 @@ export function QuestionDetailClient({
           accountId,
           displayName: profile?.displayName ?? accountId,
         },
+        answerDepositTxId,
       });
 
       showToast("Contribution posted on Hedera!", "success");
@@ -573,6 +597,26 @@ export function QuestionDetailClient({
         </h3>
         {accountId ? (
           <div className="rounded-md border border-border-main overflow-hidden bg-bg-panel">
+            {/* Deposit requirement banner — shown when question has HBAR bounty */}
+            {question.bountyAmount > 0 &&
+              question.bountyCurrency === "HBAR" && (
+                <div className="flex items-start gap-3 px-4 py-3 border-b border-amber-500/30 bg-amber-500/8">
+                  <span className="text-amber-400 shrink-0 mt-0.5">💰</span>
+                  <div className="text-xs text-amber-300 leading-relaxed">
+                    <span className="font-semibold">Bounty question.</span>{" "}
+                    Answering requires a{" "}
+                    <span className="font-mono font-bold">
+                      {Math.max(question.bountyAmount * 0.01, 0.1).toFixed(2)}{" "}
+                      HBAR
+                    </span>{" "}
+                    deposit (1% of {question.bountyAmount} HBAR bounty).{" "}
+                    <span className="text-amber-200">
+                      If your answer is accepted, you receive the{" "}
+                      {question.bountyAmount} HBAR bounty + your deposit back.
+                    </span>
+                  </div>
+                </div>
+              )}
             {/* Markdown toolbar */}
             <div className="flex items-center gap-1 px-2 py-1.5 bg-bg-subtle border-b border-border-main">
               <button

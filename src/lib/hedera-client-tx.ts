@@ -131,6 +131,8 @@ export interface PostAnswerInput {
   questionSequenceNumber: number;
   body: string;
   author: HCSAuthor;
+  /** TX ID of the answer deposit paid to the bounty contract (if applicable). */
+  answerDepositTxId?: string;
 }
 
 /** Max chars kept inline in HCS (matches /api/answers INLINE_LIMIT). */
@@ -171,6 +173,9 @@ export async function userPostAnswer(
     // If full body was uploaded to IPFS, store only the excerpt inline
     body: bodyCid ? input.body.slice(0, ANSWER_INLINE_LIMIT) : input.body,
     ...(bodyCid && { bodyCid }),
+    ...(input.answerDepositTxId && {
+      answerDepositTxId: input.answerDepositTxId,
+    }),
     author: input.author,
   };
 

@@ -38,6 +38,19 @@ export interface HCSAnswerPayload {
   body: string; // Full Markdown or truncated fallback if bodyCid is set
   bodyCid?: string; // IPFS CID for full body
   author: HCSAuthor;
+  /** Optional proof-of-deposit tx ID when answering a bounty question */
+  answerDepositTxId?: string;
+  [key: string]: unknown;
+}
+
+/** Posted by the Vurso AI Agent — ineligible for bounties or tips. */
+export interface HCSAIAnswerPayload {
+  type: "AI_ANSWER";
+  questionSequenceNumber: number;
+  body: string;
+  author: HCSAuthor; // accountId = operator, displayName = "🤖 Vurso AI"
+  isAgentAnswer: true;
+  hasBounty?: boolean; // true if the original question had a bounty set
   [key: string]: unknown;
 }
 
