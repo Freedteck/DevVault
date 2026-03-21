@@ -1,7 +1,19 @@
 {
   "pendingReleases": {
+    "0.0.8294165": {
+      "acceptedAt": 1774134087932,
+      "answererAccountId": "0.0.4612578",
+      "questionSeq": 16,
+      "discussionTopicId": "0.0.8294165"
+    },
+    "0.0.8204508": {
+      "acceptedAt": 1774134088720,
+      "answererAccountId": "0.0.6413426",
+      "questionSeq": 12,
+      "discussionTopicId": "0.0.8204508"
+    },
     "0.0.8081421": {
-      "acceptedAt": 1773346184829,
+      "acceptedAt": 1774134089139,
       "answererAccountId": "0.0.6413426",
       "questionSeq": 1,
       "discussionTopicId": "0.0.8081421"

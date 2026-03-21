@@ -5,6 +5,7 @@ import type {
   HCSQuestionPayload,
   HCSAnswerPayload,
   HCSAIAnswerPayload,
+  HCSAICommentPayload,
   HCSAcceptPayload,
   HCSReplyPayload,
 } from "@/lib/hcs-types";
@@ -77,6 +78,8 @@ export default async function QuestionDetailPage({ params }: PageProps) {
 
     let answers: LiveAnswer[] = [];
     let repliesMap: Record<number, LiveReply[]> = {};
+    let summaryAnswer: LiveAnswer | null = null;
+    let autoAnswer: LiveAnswer | null = null;
     if (question.discussionTopicId) {
       // Gracefully catch errors if the discussion topic has no messages yet
       try {
@@ -105,12 +108,18 @@ export default async function QuestionDetailPage({ params }: PageProps) {
         // Build answer list, marking the accepted one, resolving IPFS bodies
         const answerMessages = allMessages.filter(
           (msg) =>
-            msg.data?.type === "ANSWER" || msg.data?.type === "AI_ANSWER",
+            msg.data?.type === "ANSWER" ||
+            msg.data?.type === "AI_ANSWER" ||
+            msg.data?.type === "AI_COMMENT",
         );
         answers = await Promise.all(
           answerMessages.map(async (msg) => {
             const isAiAnswer = msg.data?.type === "AI_ANSWER";
-            const aData = msg.data as HCSAnswerPayload | HCSAIAnswerPayload;
+            const isAiComment = msg.data?.type === "AI_COMMENT";
+            const aData = msg.data as
+              | HCSAnswerPayload
+              | HCSAIAnswerPayload
+              | HCSAICommentPayload;
             const bodyCid = (aData as HCSAnswerPayload).bodyCid as
               | string
               | undefined;
@@ -122,18 +131,32 @@ export default async function QuestionDetailPage({ params }: PageProps) {
               consensusTimestamp: msg.consensusTimestamp,
               body,
               author: aData.author,
-              accepted: !isAiAnswer && msg.sequenceNumber === acceptedSequence,
+              accepted:
+                !isAiAnswer &&
+                !isAiComment &&
+                msg.sequenceNumber === acceptedSequence,
               isAiAnswer,
               hasBounty: isAiAnswer
                 ? !!(aData as HCSAIAnswerPayload).hasBounty
                 : undefined,
+              isSummary: isAiComment
+                ? !!(aData as HCSAICommentPayload).isSummary
+                : undefined,
+              isSpamFlag: isAiComment
+                ? !!(aData as HCSAICommentPayload).isSpamFlag
+                : undefined,
+              isAgentComment: isAiComment,
             };
           }),
         );
-        // AI answer always first, then human answers newest-first
-        const aiAnswers = answers.filter((a) => a.isAiAnswer);
-        const humanAnswers = answers.filter((a) => !a.isAiAnswer).reverse();
-        answers = [...aiAnswers, ...humanAnswers];
+        // Extract summary and isolate answers
+        summaryAnswer = answers.find((a) => a.isSummary) || null;
+        autoAnswer = answers.find((a) => a.isAiAnswer) || null;
+
+        // Final answers list should ONLY contain human contributions
+        answers = answers
+          .filter((a) => !a.isAiAnswer && !a.isAgentComment)
+          .reverse();
 
         // Build replies grouped by the answer sequence they target
         const replyMessages = allMessages.filter(
@@ -149,6 +172,8 @@ export default async function QuestionDetailPage({ params }: PageProps) {
             replyToSequence: key,
             body: rData.body,
             author: rData.author,
+            isSpamFlag: !!rData.isSpamFlag,
+            isAgentComment: !!rData.isAgentComment,
           });
         }
       } catch (err) {
@@ -161,6 +186,8 @@ export default async function QuestionDetailPage({ params }: PageProps) {
         question={question}
         answers={answers}
         repliesMap={repliesMap}
+        summary={summaryAnswer}
+        autoAnswer={autoAnswer}
       />
     );
   } catch (err) {

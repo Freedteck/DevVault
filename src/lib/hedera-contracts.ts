@@ -43,14 +43,16 @@ function keccak256Selector(sig: string): Buffer {
   const selectors: Record<string, string> = {
     "lockHbar(string,uint256)": "0x36efbbfc",
     "release(string,uint256,address)": "0x5d2767a7",
+    "slashDeposit(string,uint256,address)": "0xe389cb10",
+    "refundDeposit(string,uint256,address)": "0x0ee4c5aa",
     "cancel(string,uint256)": "0x06909f69",
     "swap(string)": "0x78d410e6",
     "quote(uint256)": "0xed1bd76c",
-    "depositToAnswer(string,uint256)": "0x7a4b3c8e",
-    "getRequiredDeposit(string,uint256)": "0x9f2a1d45",
-    "lockVRS(string,uint256,address,int64)": "0xa1b2c3d4",
-    "releaseVRS(string,uint256,address)": "0xe5f6a7b8",
-    "cancelVRS(string,uint256)": "0xc9d0e1f2",
+    "depositToAnswer(string,uint256)": "0x92e93f1e",
+    "getRequiredDeposit(string,uint256)": "0xef907595",
+    "lockVRS(string,uint256,address,int64)": "0x50e544d1",
+    "releaseVRS(string,uint256,address)": "0x23fc886e",
+    "cancelVRS(string,uint256)": "0x8b13ddb1",
   };
   const hex = selectors[sig];
   if (!hex) throw new Error(`Unknown function sig: ${sig}`);
@@ -111,6 +113,12 @@ export async function lockBounty(
     .setFunctionParameters(callData);
 
   const result = await tx.executeWithSigner(signer);
+  const receipt = await result.getReceiptWithSigner(signer);
+  if (receipt.status.toString() !== "SUCCESS") {
+    throw new Error(
+      `Transaction failed with status: ${receipt.status.toString()}`,
+    );
+  }
   return { transactionId: result.transactionId?.toString() ?? "" };
 }
 
@@ -151,6 +159,12 @@ export async function depositToAnswer(
     .setFunctionParameters(callData);
 
   const result = await tx.executeWithSigner(signer);
+  const receipt = await result.getReceiptWithSigner(signer);
+  if (receipt.status.toString() !== "SUCCESS") {
+    throw new Error(
+      `Deposit transaction failed with status: ${receipt.status.toString()}`,
+    );
+  }
   return { transactionId: result.transactionId?.toString() ?? "" };
 }
 
@@ -195,6 +209,12 @@ export async function releaseBounty(
     .setFunctionParameters(callData);
 
   const result = await tx.executeWithSigner(signer);
+  const receipt = await result.getReceiptWithSigner(signer);
+  if (receipt.status.toString() !== "SUCCESS") {
+    throw new Error(
+      `Transaction failed with status: ${receipt.status.toString()}`,
+    );
+  }
   return { transactionId: result.transactionId?.toString() ?? "" };
 }
 
@@ -231,6 +251,12 @@ export async function swapHbarForVRS(
     .setFunctionParameters(callData);
 
   const result = await tx.executeWithSigner(signer);
+  const receipt = await result.getReceiptWithSigner(signer);
+  if (receipt.status.toString() !== "SUCCESS") {
+    throw new Error(
+      `Transaction failed with status: ${receipt.status.toString()}`,
+    );
+  }
 
   // Expected VRS = hbarAmount * 92 (at default rate)
   const expectedVRS = input.hbarAmount * 92;
@@ -280,7 +306,13 @@ export async function lockVRSBounty(
       Number(units),
     );
 
-  await approvalTx.executeWithSigner(signer);
+  const approvalResult = await approvalTx.executeWithSigner(signer);
+  const approvalReceipt = await approvalResult.getReceiptWithSigner(signer);
+  if (approvalReceipt.status.toString() !== "SUCCESS") {
+    throw new Error(
+      `Approval failed with status: ${approvalReceipt.status.toString()}`,
+    );
+  }
 
   // ── Step 2: Call lockVRS() to pull approved VRS into the contract ───────────
   const selector = keccak256Selector("lockVRS(string,uint256,address,int64)");
@@ -320,6 +352,12 @@ export async function lockVRSBounty(
     .setFunctionParameters(callData);
 
   const result = await tx.executeWithSigner(signer);
+  const receipt = await result.getReceiptWithSigner(signer);
+  if (receipt.status.toString() !== "SUCCESS") {
+    throw new Error(
+      `Transaction failed with status: ${receipt.status.toString()}`,
+    );
+  }
   return { transactionId: result.transactionId?.toString() ?? "" };
 }
 
@@ -362,5 +400,11 @@ export async function releaseVRSBounty(
     .setFunctionParameters(callData);
 
   const result = await tx.executeWithSigner(signer);
+  const receipt = await result.getReceiptWithSigner(signer);
+  if (receipt.status.toString() !== "SUCCESS") {
+    throw new Error(
+      `Transaction failed with status: ${receipt.status.toString()}`,
+    );
+  }
   return { transactionId: result.transactionId?.toString() ?? "" };
 }

@@ -23,19 +23,26 @@ interface IHederaTokenService {
 }
 
 /**
- * Vurso Bounty Contract v3
+ * Vurso Bounty Contract v4
  *
  * Deployed on Hedera Smart Contract Service (HSCS).
  *
  * Supports both HBAR and VRS (HTS) bounties held in trustless escrow.
  *
- * HBAR flow (unchanged from v2):
- *   1. lockHbar() — HBAR deposited directly to contract.
- *   2. depositToAnswer() — answerers lock 1% deposit.
- *   3. release() — asker or operator unlocks bounty to answerer.
- *   4. cancel() — asker reclaims HBAR bounty.
+ * HBAR flow:
+ *   1. lockHbar()         — HBAR deposited directly to contract.
+ *   2. depositToAnswer()  — answerers lock 1% deposit ("skin in the game").
+ *   3. release()          — asker or operator releases bounty + refunds winner deposit.
+ *   4. refundDeposit()    — operator refunds a non-winning valid answerer's deposit.
+ *   5. slashDeposit()     — operator slashes a spam / AI-hallucinated answerer's deposit.
+ *   6. cancel()           — asker reclaims HBAR bounty (all deposits must be refunded first).
  *
- * VRS (HTS) flow (new in v3):
+ * Deposit economics:
+ *   - Winner:              deposit refunded + bounty paid.
+ *   - Valid non-winners:   deposit refunded via refundDeposit().
+ *   - Spam / malicious:    deposit burned to owner via slashDeposit().
+ *
+ * VRS (HTS) flow (unchanged from v3):
  *   1. Asker calls VRS token approve() via HTS precompile (wallet-side).
  *   2. lockVRS() — contract pulls approved VRS from asker via HTS precompile.
  *      VRS is now held in the contract (not the operator wallet).
@@ -79,6 +86,8 @@ contract VursoBounty {
     event BountyReleased(bytes32 indexed bountyId, address indexed recipient, uint256 payout, uint256 depositRefunded);
     event BountyCancelled(bytes32 indexed bountyId, address indexed depositor, uint256 amount);
     event AnswerDeposited(bytes32 indexed bountyId, address indexed answerer, uint256 amount);
+    event DepositRefunded(bytes32 indexed bountyId, address indexed answerer, uint256 amount);
+    event DepositSlashed(bytes32 indexed bountyId, address indexed answerer, uint256 amount);
     event VRSBountyLocked(bytes32 indexed bountyId, address indexed depositor, address token, int64 amount);
     event VRSBountyReleased(bytes32 indexed bountyId, address indexed recipient, int64 amount);
     event VRSBountyCancelled(bytes32 indexed bountyId, address indexed depositor, int64 amount);
@@ -261,6 +270,57 @@ contract VursoBounty {
         require(code == HTS_SUCCESS, "VRS refund failed");
 
         emit VRSBountyCancelled(bountyId, vb.depositor, vb.amount);
+    }
+
+    // ─── Deposit Management ─────────────────────────────────────────────────────
+
+    /**
+     * @notice Refund the deposit of a valid non-winning answerer.
+     *         Called by the operator after a bounty is released to the winner.
+     *         Only valid deposits (non-zero) are refundable.
+     * @param topicId        HCS discussion topic ID string
+     * @param sequenceNumber Question sequence number
+     * @param answerer       Address of the answerer to refund
+     */
+    function refundDeposit(
+        string calldata topicId,
+        uint256 sequenceNumber,
+        address payable answerer
+    ) external {
+        require(msg.sender == operator || msg.sender == owner, "Not authorised");
+        bytes32 bountyId = keccak256(abi.encodePacked(topicId, sequenceNumber));
+        uint256 depositAmount = answerDeposits[bountyId][answerer];
+        require(depositAmount > 0, "No deposit to refund");
+
+        answerDeposits[bountyId][answerer] = 0;
+        (bool sent, ) = answerer.call{value: depositAmount}("");
+        require(sent, "Refund transfer failed");
+        emit DepositRefunded(bountyId, answerer, depositAmount);
+    }
+
+    /**
+     * @notice Slash (burn to owner) the deposit of a spam or malicious answerer.
+     *         Callable by the operator or owner when an answer is flagged as
+     *         spam, AI-hallucinated garbage, or otherwise malicious.
+     * @param topicId        HCS discussion topic ID string
+     * @param sequenceNumber Question sequence number
+     * @param answerer       Address of the answerer whose deposit to slash
+     */
+    function slashDeposit(
+        string calldata topicId,
+        uint256 sequenceNumber,
+        address answerer
+    ) external {
+        require(msg.sender == operator || msg.sender == owner, "Not authorised");
+        bytes32 bountyId = keccak256(abi.encodePacked(topicId, sequenceNumber));
+        uint256 depositAmount = answerDeposits[bountyId][answerer];
+        require(depositAmount > 0, "No deposit to slash");
+
+        answerDeposits[bountyId][answerer] = 0;
+        // Transfer slashed deposit to owner (platform treasury)
+        (bool sent, ) = payable(owner).call{value: depositAmount}("");
+        require(sent, "Slash transfer failed");
+        emit DepositSlashed(bountyId, answerer, depositAmount);
     }
 
     // ─── View Functions ─────────────────────────────────────────────────────────

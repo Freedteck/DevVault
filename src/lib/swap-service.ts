@@ -68,7 +68,7 @@ function saveCursor() {
 export async function startSwapService() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   if (!SWAP_CONTRACT_ID || !OPERATOR_ID || !OPERATOR_KEY_STR || !VRS_TOKEN_ID) {
-    console.warn("⚠️  Swap Service missing env vars — skipping startup");
+    console.warn("Swap Service missing env vars — skipping startup");
     return;
   }
 
@@ -134,10 +134,10 @@ async function pollOnce(client: Client) {
           )
           .execute(client);
 
-        console.log(`✅  Swap processed successfully for ${hederaAccountId}`);
+        console.log(`Swap processed successfully for ${hederaAccountId}`);
         processedTxs.add(txHash);
       } catch (err: any) {
-        console.error(`❌  Swap failed for ${hederaAccountId}:`, err.message);
+        console.error(`Swap failed for ${hederaAccountId}:`, err.message);
       }
     }
   } catch (err: any) {

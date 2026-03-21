@@ -42,6 +42,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <aside className="hidden xl:block w-72 shrink-0 space-y-6">
                   <CommunityStats />
                   <HotBounties />
+                  <div id="thread-summary-portal" />
 
                   {/* Network Status */}
                   <div className="flex items-center gap-2 px-1">

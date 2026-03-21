@@ -104,6 +104,19 @@ async function main() {
   const swap = compileSolidity("VursoSwap.sol");
   console.log("✅  Compilation successful");
 
+  // Print ABI function signatures to confirm signatures for the selector table
+  console.log(
+    "\n─── VursoBounty function signatures ─────────────────────────────",
+  );
+  for (const item of bounty.abi) {
+    if (item.type !== "function") continue;
+    const paramTypes = item.inputs.map((i) => i.type).join(",");
+    console.log(`  ${item.name}(${paramTypes})`);
+  }
+  console.log(
+    "──────────────────────────────────────────────────────────────────\n",
+  );
+
   // Deploy
   const bountyContractId = await deployContract(
     client,

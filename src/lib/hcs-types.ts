@@ -48,7 +48,7 @@ export interface HCSAIAnswerPayload {
   type: "AI_ANSWER";
   questionSequenceNumber: number;
   body: string;
-  author: HCSAuthor; // accountId = operator, displayName = "🤖 Vurso AI"
+  author: HCSAuthor; // accountId = operator, displayName = "Vurso AI"
   isAgentAnswer: true;
   hasBounty?: boolean; // true if the original question had a bounty set
   [key: string]: unknown;
@@ -61,12 +61,27 @@ export interface HCSCommentPayload {
   [key: string]: unknown;
 }
 
+export interface HCSAICommentPayload {
+  type: "AI_COMMENT";
+  body: string;
+  author: HCSAuthor;
+  isAgentComment: true;
+  isSummary?: boolean;
+  isSpamFlag?: boolean;
+  flaggedSequence?: number;
+  timestamp?: number;
+  [key: string]: unknown;
+}
+
 export interface HCSReplyPayload {
   type: "REPLY";
   /** Sequence number of the ANSWER this is replying to */
   replyToSequence: number;
   body: string;
   author: HCSAuthor;
+  isAgentComment?: boolean;
+  isSpamFlag?: boolean;
+  timestamp?: number;
   [key: string]: unknown;
 }
 

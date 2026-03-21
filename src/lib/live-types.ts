@@ -48,6 +48,9 @@ export interface LiveAnswer {
   isAiAnswer?: boolean;
   /** True when the original question had a bounty (used by AI answer for note) */
   hasBounty?: boolean;
+  isSummary?: boolean;
+  isSpamFlag?: boolean;
+  isAgentComment?: boolean;
 }
 
 export interface LiveComment {
@@ -63,4 +66,6 @@ export interface LiveReply {
   replyToSequence: number;
   body: string;
   author: LiveAuthor;
+  isSpamFlag?: boolean;
+  isAgentComment?: boolean;
 }

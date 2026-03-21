@@ -55,10 +55,15 @@ export interface ParsedHCSMessage<T = Record<string, unknown>> {
 
 /**
  * Decode a base64 HCS message payload into a typed object.
+ * Returns null if the payload is not valid JSON (e.g. a raw text message).
  */
-function decodeMessage<T>(base64: string): T {
-  const decoded = Buffer.from(base64, "base64").toString("utf-8");
-  return JSON.parse(decoded) as T;
+function decodeMessage<T>(base64: string): T | null {
+  try {
+    const decoded = Buffer.from(base64, "base64").toString("utf-8");
+    return JSON.parse(decoded) as T;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -80,12 +85,18 @@ export async function getTopicMessages<T = Record<string, unknown>>(
   const json = await res.json();
   const messages: HCSMessage[] = json.messages ?? [];
 
-  return messages.map((msg) => ({
-    sequenceNumber: msg.sequence_number,
-    consensusTimestamp: msg.consensus_timestamp,
-    payerAccountId: msg.payer_account_id,
-    data: decodeMessage<T>(msg.message),
-  }));
+  const parsed: ParsedHCSMessage<T>[] = [];
+  for (const msg of messages) {
+    const data = decodeMessage<T>(msg.message);
+    if (data === null) continue;
+    parsed.push({
+      sequenceNumber: msg.sequence_number,
+      consensusTimestamp: msg.consensus_timestamp,
+      payerAccountId: msg.payer_account_id,
+      data,
+    });
+  }
+  return parsed;
 }
 
 /**
@@ -108,12 +119,16 @@ export async function getTopicMessage<T = Record<string, unknown>>(
   }
 
   const msg: HCSMessage = await res.json();
+  const data = decodeMessage<T>(msg.message);
+  if (data === null) {
+    throw new Error(`Message ${sequenceNumber} is not valid JSON`);
+  }
 
   return {
     sequenceNumber: msg.sequence_number,
     consensusTimestamp: msg.consensus_timestamp,
     payerAccountId: msg.payer_account_id,
-    data: decodeMessage<T>(msg.message),
+    data,
   };
 }
 
@@ -148,13 +163,18 @@ export async function getTopicMessagesPaged<T = Record<string, unknown>>(
   const json = await res.json();
   const rawMessages: HCSMessage[] = json.messages ?? [];
 
-  const messages = rawMessages.map((msg) => ({
-    sequenceNumber: msg.sequence_number,
-    consensusTimestamp: msg.consensus_timestamp,
-    payerAccountId: msg.payer_account_id,
-    data: decodeMessage<T>(msg.message),
-    answerCount: 0,
-  }));
+  const messages: (ParsedHCSMessage<T> & { answerCount: number })[] = [];
+  for (const msg of rawMessages) {
+    const data = decodeMessage<T>(msg.message);
+    if (data === null) continue;
+    messages.push({
+      sequenceNumber: msg.sequence_number,
+      consensusTimestamp: msg.consensus_timestamp,
+      payerAccountId: msg.payer_account_id,
+      data,
+      answerCount: 0,
+    });
+  }
 
   // Optionally enrich each message with the answer/comment count from its discussion topic
   if (withAnswerCount) {
@@ -205,12 +225,18 @@ export async function getTopicMessagesSince<T = Record<string, unknown>>(
   const json = await res.json();
   const messages: HCSMessage[] = json.messages ?? [];
 
-  return messages.map((msg) => ({
-    sequenceNumber: msg.sequence_number,
-    consensusTimestamp: msg.consensus_timestamp,
-    payerAccountId: msg.payer_account_id,
-    data: decodeMessage<T>(msg.message),
-  }));
+  const parsed: ParsedHCSMessage<T>[] = [];
+  for (const msg of messages) {
+    const data = decodeMessage<T>(msg.message);
+    if (data === null) continue;
+    parsed.push({
+      sequenceNumber: msg.sequence_number,
+      consensusTimestamp: msg.consensus_timestamp,
+      payerAccountId: msg.payer_account_id,
+      data,
+    });
+  }
+  return parsed;
 }
 
 /**
@@ -249,23 +275,30 @@ export async function getTokenBalance(
 }
 
 /**
- * Fetch topic metadata — primarily used to get the current sequence_number,
- * which equals the total number of messages ever posted to the topic.
- * We use this as a cheap proxy for answerCount / commentCount.
+ * Count only genuine ANSWER and AI_ANSWER messages on a discussion topic.
+ * Used for the answerCount badge on question cards.
+ *
+ * Previously we used the raw sequence_number (total messages ever posted),
+ * which inflated the count with duplicate-check comments, ACCEPT signals,
+ * REPLY messages, and any other non-answer messages the AI agent posts.
  */
 export async function getTopicInfo(
   topicId: string,
 ): Promise<{ sequenceNumber: number }> {
-  // The base /topics/{id} endpoint does not return sequence_number.
-  // We fetch the latest message to find the highest sequence number.
   const res = await fetch(
-    `${MIRROR_NODE_BASE}/topics/${topicId}/messages?limit=1&order=desc`,
+    `${MIRROR_NODE_BASE}/topics/${topicId}/messages?limit=50&order=desc`,
     { cache: "no-store" },
   );
   if (!res.ok) return { sequenceNumber: 0 };
   const json = await res.json();
-  const lastMsg = json.messages?.[0];
-  return { sequenceNumber: Number(lastMsg?.sequence_number ?? 0) };
+  const messages: HCSMessage[] = json.messages ?? [];
+
+  let count = 0;
+  for (const msg of messages) {
+    const data = decodeMessage<{ type?: string }>(msg.message);
+    if (data?.type === "ANSWER" || data?.type === "AI_ANSWER") count++;
+  }
+  return { sequenceNumber: count };
 }
 
 /**

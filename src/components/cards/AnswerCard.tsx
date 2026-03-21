@@ -34,9 +34,12 @@ export function AnswerCard({
   onReplyBodyChange,
   onSubmitReply,
 }: AnswerCardProps) {
-  const isAI = answer.isAiAnswer === true;
-  // AI answers start expanded; accepted answers start expanded; others collapsed
-  const [expanded, setExpanded] = useState(isAI || (answer.accepted ?? false));
+  const isAI =
+    answer.isAiAnswer === true ||
+    answer.isSpamFlag === true ||
+    answer.isAgentComment === true;
+  // All answers start collapsed by default
+  const [expanded, setExpanded] = useState(false);
 
   const isLong = answer.body.length > EXCERPT_LEN;
   const excerpt = isLong
@@ -62,14 +65,20 @@ export function AnswerCard({
           {isAI ? (
             // AI Agent header
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-violet-600/20 text-violet-400 text-sm">
-                🤖
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-violet-600/20 text-violet-400 text-[10px] font-bold">
+                AI
               </span>
               <span className="text-sm font-semibold text-violet-300">
                 Vurso AI
               </span>
-              <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-400 border border-violet-600/30">
-                AI Answer
+              <span
+                className={`inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                  answer.isSpamFlag
+                    ? "bg-red-500/10 text-red-500 border-red-500/20"
+                    : "bg-violet-600/20 text-violet-400 border-violet-600/30"
+                }`}
+              >
+                {answer.isSpamFlag ? "Spam Detected" : "AI Answer"}
               </span>
             </div>
           ) : (
@@ -149,7 +158,6 @@ export function AnswerCard({
           {/* AI bounty note */}
           {isAI && answer.hasBounty && (
             <div className="mb-4 flex items-start gap-2 rounded-md border border-violet-600/30 bg-violet-600/10 px-3 py-2.5 text-xs text-violet-300">
-              <span className="shrink-0 mt-0.5">💰</span>
               <span>
                 This question has a bounty. The bounty is for human experts —{" "}
                 <strong>post a better answer</strong> to compete for it.
@@ -160,24 +168,59 @@ export function AnswerCard({
           {/* Replies Thread */}
           {replies.length > 0 && (
             <div className="space-y-3 mb-4 pl-4 border-l-2 border-border-main">
-              {replies.map((reply) => (
-                <div key={reply.sequenceNumber} className="flex gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
-                      <Avatar
-                        accountId={reply.author.accountId}
-                        displayName={reply.author.displayName}
-                        size={22}
-                      />
-                      <div className="flex items-center h-full">
-                        <span className="text-border-main/50 self-stretch border-l border-border-main mx-1 ml-2" />
-                        <Timestamp iso={reply.consensusTimestamp} />
+              {replies.map((reply) => {
+                if (reply.isSpamFlag) {
+                  return (
+                    <div
+                      key={reply.sequenceNumber}
+                      className="flex gap-3 mb-3 border-l-2 border-red-500/30 pl-3 ml-1"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-600/20 text-violet-400 text-[8px] font-bold">
+                              AI
+                            </span>
+                            <span className="text-xs font-semibold text-violet-300">
+                              Vurso AI
+                            </span>
+                            <span className="inline-flex items-center text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border bg-red-500/10 text-red-400 border-red-500/20">
+                              Spam Detected
+                            </span>
+                          </div>
+                          <div className="flex items-center h-full">
+                            <span className="text-border-main/50 self-stretch border-l border-border-main mx-1 ml-1" />
+                            <Timestamp iso={reply.consensusTimestamp} />
+                          </div>
+                        </div>
+                        <MarkdownBody
+                          content={reply.body}
+                          className="text-sm"
+                        />
                       </div>
                     </div>
-                    <MarkdownBody content={reply.body} className="text-sm" />
+                  );
+                }
+
+                return (
+                  <div key={reply.sequenceNumber} className="flex gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        <Avatar
+                          accountId={reply.author.accountId}
+                          displayName={reply.author.displayName}
+                          size={22}
+                        />
+                        <div className="flex items-center h-full">
+                          <span className="text-border-main/50 self-stretch border-l border-border-main mx-1 ml-2" />
+                          <Timestamp iso={reply.consensusTimestamp} />
+                        </div>
+                      </div>
+                      <MarkdownBody content={reply.body} className="text-sm" />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
