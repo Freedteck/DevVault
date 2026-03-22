@@ -2,13 +2,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTopicMessage, getTopicMessages } from "@/lib/hedera-mirror";
 import { fetchFromIPFS } from "@/lib/ipfs";
-import type { HCSUpdatePayload, HCSCommentPayload } from "@/lib/hcs-types";
-import type { LiveComment } from "@/lib/live-types";
+import type {
+  HCSUpdatePayload,
+  HCSCommentPayload,
+  HCSReplyPayload,
+} from "@/lib/hcs-types";
+import type { LiveComment, LiveReply } from "@/lib/live-types";
 import { Tag, Timestamp } from "@/components/ui/primitives";
 import { Avatar } from "@/components/ui/primitives";
 import { CommentCard } from "@/components/cards/CommentCard";
 import { MarkdownBody } from "@/components/ui/MarkdownBody";
 import { CommentForm } from "@/components/forms/CommentForm";
+import { UpdateHeaderActions } from "./UpdateHeaderActions";
+import { UpdateCommentsClient } from "./UpdateCommentsClient";
 import { Metadata } from "next";
 
 export const revalidate = 3600; // Cache for 1 hour, manually revalidated on activity
@@ -52,23 +58,43 @@ export default async function UpdateDetailPage({ params }: PageProps) {
       ? ((await fetchFromIPFS(rawBodyCid)) ?? msg.data.body)
       : msg.data.body;
 
-    // Fetch comments from discussion topic if available
+    // Fetch comments AND replies from discussion topic if available
     let comments: LiveComment[] = [];
+    const repliesMap: Record<number, LiveReply[]> = {};
+
     if (msg.data.discussionTopicId) {
       try {
-        const commentMessages = await getTopicMessages<HCSCommentPayload>(
-          msg.data.discussionTopicId,
-          100,
-        );
-        comments = commentMessages
+        const allMessages = await getTopicMessages<
+          HCSCommentPayload | HCSReplyPayload | Record<string, unknown>
+        >(msg.data.discussionTopicId, 100);
+
+        comments = allMessages
           .filter((m) => m.data?.type === "COMMENT")
           .map((m) => ({
             sequenceNumber: m.sequenceNumber,
             consensusTimestamp: m.consensusTimestamp,
-            body: m.data!.body,
-            author: m.data!.author,
+            body: (m.data as HCSCommentPayload).body,
+            author: (m.data as HCSCommentPayload).author,
           }))
           .reverse();
+
+        const replies = allMessages
+          .filter((m) => m.data?.type === "REPLY")
+          .map((m) => ({
+            sequenceNumber: m.sequenceNumber,
+            consensusTimestamp: m.consensusTimestamp,
+            body: (m.data as HCSReplyPayload).body,
+            author: (m.data as HCSReplyPayload).author,
+            replyToSequence: (m.data as HCSReplyPayload).replyToSequence,
+          }))
+          .reverse();
+
+        for (const r of replies) {
+          if (!repliesMap[r.replyToSequence!]) {
+            repliesMap[r.replyToSequence!] = [];
+          }
+          repliesMap[r.replyToSequence!].push(r);
+        }
       } catch {
         // No comments yet — fine
       }
@@ -102,16 +128,22 @@ export default async function UpdateDetailPage({ params }: PageProps) {
             {msg.data.title}
           </h1>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border-main pb-4">
-            <div className="flex items-center gap-2">
-              <Avatar
-                accountId={msg.data.author.accountId}
-                displayName={msg.data.author.displayName}
-                size={24}
-              />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-main pb-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <div className="flex items-center gap-2">
+                <Avatar
+                  accountId={msg.data.author.accountId}
+                  displayName={msg.data.author.displayName}
+                  size={24}
+                />
+              </div>
+              <span className="text-border-main/40 hidden sm:inline">|</span>
+              <Timestamp iso={msg.consensusTimestamp} />
             </div>
-            <span className="text-border-main">|</span>
-            <Timestamp iso={msg.consensusTimestamp} />
+            <UpdateHeaderActions
+              authorDisplayName={msg.data.author.displayName}
+              authorAccountId={msg.data.author.accountId}
+            />
           </div>
         </div>
 
@@ -133,11 +165,11 @@ export default async function UpdateDetailPage({ params }: PageProps) {
             </h2>
           </div>
 
-          <div className="space-y-4">
-            {comments.map((comment) => (
-              <CommentCard key={comment.sequenceNumber} comment={comment} />
-            ))}
-          </div>
+          <UpdateCommentsClient
+            discussionTopicId={msg.data.discussionTopicId || ""}
+            comments={comments}
+            repliesMap={repliesMap}
+          />
         </section>
 
         {/* Post a Comment */}

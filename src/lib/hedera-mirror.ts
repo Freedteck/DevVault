@@ -296,7 +296,12 @@ export async function getTopicInfo(
   let count = 0;
   for (const msg of messages) {
     const data = decodeMessage<{ type?: string }>(msg.message);
-    if (data?.type === "ANSWER" || data?.type === "AI_ANSWER") count++;
+    if (
+      data?.type === "ANSWER" ||
+      data?.type === "AI_ANSWER" ||
+      data?.type === "COMMENT"
+    )
+      count++;
   }
   return { sequenceNumber: count };
 }
