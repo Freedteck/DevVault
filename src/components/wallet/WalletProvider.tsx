@@ -23,6 +23,11 @@ const WALLETCONNECT_PROJECT_ID =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? "vurso-hackathon-dev";
 
 import type { HCS11Profile } from "@/lib/hedera-mirror";
+import { Buffer } from "buffer";
+
+if (typeof window !== "undefined") {
+  window.Buffer = Buffer;
+}
 
 interface WalletContextValue {
   accountId: string | null;

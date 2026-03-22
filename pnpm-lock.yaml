@@ -32,6 +32,9 @@ importers:
       '@langchain/langgraph':
         specifier: ^1.2.0
         version: 1.2.0(@langchain/core@1.1.29(@opentelemetry/api@1.9.0)(openai@6.25.0(ws@8.18.3(bufferutil@4.1.0)(utf-8-validate@6.0.6))(zod@4.3.6)))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod-to-json-schema@3.24.6(zod@4.3.6))(zod@4.3.6)
+      buffer:
+        specifier: ^6.0.3
+        version: 6.0.3
       dotenv:
         specifier: ^17.3.1
         version: 17.3.1
