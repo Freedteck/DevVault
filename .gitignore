@@ -55,5 +55,6 @@ agent-credentials.json
 
 # runtime cursor state (ephemeral, regenerated at boot)
 .vurso-agent-cursor.json
+.vurso-bounty-cursor.json
 .vurso-swap-cursor.json
 scripts/.swap-cursor.json
