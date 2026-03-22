@@ -76,42 +76,38 @@ export interface PostQuestionInput {
   bountyCurrency?: "VRS" | "HBAR";
 }
 
-/**
- * Two-step Question Submission:
- *   1. Call /api/questions → platform creates discussion topic (operator pays)
- *   2. User's wallet signs and submits the QUESTION payload to HCS
- */
-export async function userPostQuestion(
-  connector: DAppConnector,
-  input: PostQuestionInput,
-): Promise<{ transactionId: string; discussionTopicId: string }> {
-  // Step 1: Platform creates discussion topic + uploads body to IPFS
+export async function createQuestionTopic(
+  body: string,
+): Promise<{ discussionTopicId: string; bodyCid?: string }> {
   const res = await fetch("/api/questions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ body: input.body }),
+    body: JSON.stringify({ body }),
   });
   const data = await res.json();
   if (!res.ok)
     throw new Error(data.error ?? "Failed to create discussion topic");
 
-  const discussionTopicId: string = data.discussionTopicId;
-  const bodyCid: string | undefined = data.bodyCid;
+  return { discussionTopicId: data.discussionTopicId, bodyCid: data.bodyCid };
+}
+
+export async function submitQuestionMessage(
+  connector: DAppConnector,
+  input: PostQuestionInput & { discussionTopicId: string; bodyCid?: string },
+): Promise<{ transactionId: string; discussionTopicId: string }> {
   const questionsTopicId = process.env.NEXT_PUBLIC_QUESTIONS_TOPIC_ID!;
 
-  // Step 2: User's wallet signs and submits the question message
-  // If bodyCid is set, store only a short body fallback in HCS (saves bytes)
   const payload: HCSQuestionPayload = {
     type: "QUESTION",
     title: input.title,
     shortDescription: input.shortDescription,
-    body: bodyCid ? input.shortDescription : input.body,
-    ...(bodyCid && { bodyCid }),
+    body: input.bodyCid ? input.shortDescription : input.body,
+    ...(input.bodyCid && { bodyCid: input.bodyCid }),
     tags: input.tags,
     author: input.author,
     bountyAmount: input.bountyAmount ?? 0,
     bountyCurrency: input.bountyCurrency ?? "VRS",
-    discussionTopicId,
+    discussionTopicId: input.discussionTopicId,
   };
 
   const { transactionId } = await userSubmitHCSMessage(
@@ -121,7 +117,7 @@ export async function userPostQuestion(
     payload,
   );
 
-  return { transactionId, discussionTopicId };
+  return { transactionId, discussionTopicId: input.discussionTopicId };
 }
 
 // ─── Answers ─────────────────────────────────────────────────────────────────

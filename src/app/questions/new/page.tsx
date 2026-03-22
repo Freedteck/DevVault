@@ -5,7 +5,10 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@/components/wallet/WalletProvider";
 import { useToast } from "@/components/ui/ToastContext";
-import { userPostQuestion } from "@/lib/hedera-client-tx";
+import {
+  createQuestionTopic,
+  submitQuestionMessage,
+} from "@/lib/hedera-client-tx";
 import { lockBounty, lockVRSBounty } from "@/lib/hedera-contracts";
 
 export default function AskQuestionPage() {
@@ -58,7 +61,46 @@ export default function AskQuestionPage() {
 
     setIsSubmitting(true);
     try {
-      const result = await userPostQuestion(connector, {
+      // Step 1: Initialize topic / IPFS
+      showToast("Initializing discussion...", "success");
+      const { discussionTopicId, bodyCid } = await createQuestionTopic(
+        body.trim(),
+      );
+
+      // Step 2: Lock bounty on-chain: HBAR → smart contract escrow, VRS → operator escrow
+      const amt = bounty ? parseFloat(bounty) : 0;
+      if (amt > 0 && currency === "VRS") {
+        try {
+          showToast(`Step 1/2: Approving VRS allowance…`, "success");
+          await lockVRSBounty(connector, {
+            accountId,
+            topicId: discussionTopicId,
+            sequenceNumber: 0,
+            amountVRS: amt,
+          });
+          showToast(`${amt} VRS bounty locked in contract escrow!`, "success");
+        } catch (bountyErr) {
+          console.error("VRS bounty lock failed:", bountyErr);
+          throw new Error(`VRS bounty lock failed: ${String(bountyErr)}`);
+        }
+      } else if (amt > 0 && currency === "HBAR") {
+        try {
+          await lockBounty(connector, {
+            accountId,
+            topicId: discussionTopicId,
+            sequenceNumber: 0, // sequence not yet known; use topic as unique key
+            hbarAmount: amt,
+          });
+          showToast(`${amt} HBAR bounty locked in escrow!`, "success");
+        } catch (bountyErr) {
+          console.error("Bounty lock failed:", bountyErr);
+          throw new Error(`Bounty lock failed: ${String(bountyErr)}`);
+        }
+      }
+
+      // Step 3: Publish question to global topic
+      showToast("Publishing question...", "success");
+      const { transactionId } = await submitQuestionMessage(connector, {
         title: title.trim(),
         // shortDescription: first 160 chars of body, or a summary of title if body is empty
         shortDescription:
@@ -68,61 +110,17 @@ export default function AskQuestionPage() {
           .split(",")
           .map((t) => t.trim())
           .filter(Boolean),
-        // Use real HCS-11 display name if the user has an activated profile
         author: { accountId, displayName: profile?.displayName ?? accountId },
-        bountyAmount: bounty ? parseFloat(bounty) : 0,
+        bountyAmount: amt,
         bountyCurrency: currency,
+        discussionTopicId,
+        bodyCid,
       });
 
-      // Lock bounty on-chain: HBAR → smart contract escrow, VRS → operator escrow
-      if (bounty && parseFloat(bounty) > 0 && currency === "VRS") {
-        try {
-          // Two wallet popups:
-          // 1) Approve contract to spend VRS (TokenAllowance)
-          // 2) Contract pulls VRS into escrow (lockVRS via HTS precompile)
-          showToast(`Step 1/2: Approving VRS allowance…`, "success");
-          await lockVRSBounty(connector, {
-            accountId,
-            topicId: result.discussionTopicId,
-            sequenceNumber: 0,
-            amountVRS: parseFloat(bounty),
-          });
-          showToast(
-            `Question live + ${bounty} VRS bounty locked in contract escrow!`,
-            "success",
-          );
-        } catch (bountyErr) {
-          console.error("VRS bounty lock failed:", bountyErr);
-          showToast(
-            `Question posted! VRS bounty lock failed: ${String(bountyErr)}`,
-            "error",
-          );
-        }
-      } else if (bounty && currency === "HBAR" && parseFloat(bounty) > 0) {
-        try {
-          await lockBounty(connector, {
-            accountId,
-            topicId: result.discussionTopicId,
-            sequenceNumber: 0, // sequence not yet known; use topic as unique key
-            hbarAmount: parseFloat(bounty),
-          });
-          showToast(
-            `Question live + ${bounty} HBAR bounty locked in escrow! TX: ${result.transactionId.slice(0, 20)}…`,
-            "success",
-          );
-        } catch (bountyErr) {
-          console.error("Bounty lock failed:", bountyErr);
-          showToast(
-            `Question posted! Bounty lock failed: ${String(bountyErr)}`,
-            "error",
-          );
-        }
-      } else {
-        showToast(
-          `Question live on Hedera! TX: ${result.transactionId.slice(0, 24)}…`,
-          "success",
-        );
-      }
+      showToast(
+        `Question live on Hedera! TX: ${transactionId.slice(0, 24)}…`,
+        "success",
+      );
 
       // Trigger manual revalidation so the new question appears immediately despite the 1h cache
       try {
