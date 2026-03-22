@@ -334,7 +334,12 @@ export async function lockVRSBounty(
 
   // int64 amount — packed into 32 bytes (int64 ABI type, signed, right-padded)
   const amtBuf = Buffer.alloc(32);
-  amtBuf.writeBigInt64BE(BigInt(units), 24);
+  // writeBigInt64BE is missing in older buffer polyfills, so we use the 32-bit fallback
+  amtBuf.writeUInt32BE(
+    Number((BigInt(units) >> BigInt(32)) & BigInt(0xffffffff)),
+    24,
+  );
+  amtBuf.writeUInt32BE(Number(BigInt(units) & BigInt(0xffffffff)), 28);
 
   const stringEncoded = encodeString(input.topicId);
   const callData = Buffer.concat([
