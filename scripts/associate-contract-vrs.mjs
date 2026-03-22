@@ -60,7 +60,7 @@ console.log(`    VRS token: ${vrsTokenId} (EVM: 0x${tokenEvmHex})`);
 
 // keccak256("selfAssociate(address)") — computed offline
 // We manually specify the 4-byte selector (precomputed):
-const SELF_ASSOCIATE_SELECTOR = "222fb88f"; // keccak256("selfAssociate(address)")[0:4]
+const SELF_ASSOCIATE_SELECTOR = "2088e3ff"; // keccak256("selfAssociate(address)")[0:4] — verified via solc
 
 // Actually let's ABI-encode manually with the correct approach:
 // selector is first 4 bytes of keccak256 of "selfAssociate(address)"
@@ -76,7 +76,7 @@ const callData = Buffer.concat([selectorBuf, addrBuf]);
 try {
   const tx = await new ContractExecuteTransaction()
     .setContractId(ContractId.fromString(bountyContractId))
-    .setGas(200_000)
+    .setGas(1_000_000)
     .setFunctionParameters(callData)
     .execute(client);
 
