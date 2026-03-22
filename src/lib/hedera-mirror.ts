@@ -302,6 +302,21 @@ export async function getTopicInfo(
 }
 
 /**
+ * Fetch the raw sequence_number of the very last message in a topic.
+ * This represents the total number of messages ever posted to the topic,
+ * regardless of payload type.
+ */
+export async function getTopicSequenceCount(topicId: string): Promise<number> {
+  const url = `${MIRROR_NODE_BASE}/topics/${topicId}/messages?limit=1&order=desc`;
+  const res = await fetchWithRetry(url, { next: { revalidate: 60 } });
+  if (!res.ok) return 0;
+
+  const json = await res.json();
+  const lastMsg = json.messages?.[0];
+  return lastMsg ? lastMsg.sequence_number : 0;
+}
+
+/**
  * Fetch token metadata, including total supply.
  */
 export async function getTokenInfo(tokenId: string): Promise<{

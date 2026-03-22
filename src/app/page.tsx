@@ -2,7 +2,10 @@ import Link from "next/link";
 import { QuestionCard } from "@/components/cards/QuestionCard";
 import { UpdateCard } from "@/components/cards/UpdateCard";
 import { formatNumber } from "@/lib/utils";
-import { getTopicMessagesPaged, getTopicInfo } from "@/lib/hedera-mirror";
+import {
+  getTopicMessagesPaged,
+  getTopicSequenceCount,
+} from "@/lib/hedera-mirror";
 import type { HCSQuestionPayload, HCSUpdatePayload } from "@/lib/hcs-types";
 import type { LiveQuestion, LiveUpdate } from "@/lib/live-types";
 
@@ -39,9 +42,9 @@ export default async function HomePage() {
   let vrsCirculating = 0;
 
   try {
-    const [qInfo, uInfo, qPage, uPage, vrsSupply] = await Promise.all([
-      getTopicInfo(questionsTopicId),
-      getTopicInfo(updatesTopicId),
+    const [qCount, uCount, qPage, uPage, vrsSupply] = await Promise.all([
+      getTopicSequenceCount(questionsTopicId),
+      getTopicSequenceCount(updatesTopicId),
       getTopicMessagesPaged<HCSQuestionPayload>(
         questionsTopicId,
         50,
@@ -57,8 +60,8 @@ export default async function HomePage() {
       getVRSCirculatingSupply(vrsTokenId),
     ]);
 
-    totalQuestions = qInfo.sequenceNumber;
-    totalUpdates = uInfo.sequenceNumber;
+    totalQuestions = qCount;
+    totalUpdates = uCount;
     vrsCirculating = vrsSupply;
 
     // Count unique contributors from all question authors
